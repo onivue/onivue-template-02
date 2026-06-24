@@ -9,7 +9,7 @@ The interface follows a refined, app-like event-management aesthetic: warm off-w
 - Primary font: `Space Grotesk` via `next/font/google`.
 - Font stack: `var(--font-space-grotesk), 'Space Grotesk', 'Space Grotesk Fallback'`.
 - Headings use tight line-height, strong weight, and zero letter spacing.
-- Labels and small navigation text use bold weight and uppercase only where status or eyebrow semantics require it.
+- Labels and small navigation text use bold weight and uppercase only for status and compact section labels.
 
 ## Color Tokens
 
@@ -32,8 +32,8 @@ Global design utilities live in `src/app/globals.css` under `@layer utilities`:
 - `design-footer`: subtle centered creator credit for root pages and sidebar placement.
 - `design-panel`: elevated white panel with soft border and shadow.
 - `design-page-title`: large Space Grotesk display title.
-- `design-page-copy`: muted supporting copy.
-- `design-eyebrow`: compact lime-tinted label.
+- `design-page-description`: muted supporting description text.
+- `design-section-label`: compact lime-tinted section label.
 - `design-action-dark`: dark pill action with lime text.
 - `design-landing-shell`: full-height landing canvas with independent safe-area padding.
 - `design-landing-container`: landing content grid that separates header and hero spacing.
@@ -46,7 +46,7 @@ Global design utilities live in `src/app/globals.css` under `@layer utilities`:
 - `design-auth-shell`: centered auth route canvas.
 - `design-auth-card`: compact rounded white auth panel with subtle elevation.
 - `design-auth-title`: strong compact auth heading.
-- `design-auth-copy`: secondary auth text.
+- `design-auth-description`: secondary auth description text.
 - `design-auth-label`: uppercase auth field label.
 - `design-auth-input`: pill-shaped auth email input.
 - `design-auth-button-dark`: near-black pill CTA with lime text.

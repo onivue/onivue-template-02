@@ -34,7 +34,7 @@ export function MobileNavigation({ isSidebarOpen, onCloseSidebar, onOpenSidebar 
 	return (
 		<>
 			<nav
-				className='design-mobile-bar fixed inset-x-2 bottom-[calc(env(safe-area-inset-bottom)+0.5rem)] z-40 mx-auto grid max-w-sm grid-cols-4 gap-1 p-1.5 md:hidden'
+				className='fixed inset-x-2 bottom-[calc(env(safe-area-inset-bottom)+0.5rem)] z-40 mx-auto grid max-w-sm grid-cols-4 gap-1 rounded-full border border-white/10 bg-[var(--ink)] p-1.5 shadow-[0_18px_48px_oklch(0.16_0.012_260_/_22%),0_0_0_1px_oklch(0.16_0.012_260_/_45%)] md:hidden'
 				aria-label='Mobile Navigation'
 				data-testid='mobile-bottom-navigation'
 			>
@@ -49,8 +49,8 @@ export function MobileNavigation({ isSidebarOpen, onCloseSidebar, onOpenSidebar 
 							className={cn(
 								'flex min-h-12 flex-col items-center justify-center gap-1 rounded-full px-2 py-2 text-[0.62rem] font-bold leading-none outline-none transition-colors focus-visible:ring-3 focus-visible:ring-ring/50',
 								isActive
-									? 'design-mobile-item-active'
-									: 'design-mobile-item-muted hover:text-sidebar-primary-foreground'
+									? 'text-[var(--lime-glow)]'
+									: 'text-[oklch(0.69_0.01_260)] hover:text-sidebar-primary-foreground'
 							)}
 							aria-current={isActive ? 'page' : undefined}
 							data-testid={`mobile-${item.testId}`}

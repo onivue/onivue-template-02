@@ -1,7 +1,7 @@
-import { Mail } from 'lucide-react';
 import Link from 'next/link';
 
-import { AuthCard, AuthEmailField } from '@/components/auth/auth-card';
+import { AuthCard } from '@/components/auth/auth-card';
+import { RegisterForm } from '@/components/auth/register-form';
 import { APP_ROUTES } from '@/components/layout/navigation.config';
 
 export const metadata = {
@@ -17,10 +17,10 @@ export default function RegisterPage() {
 			testId='register-page'
 			footer={
 				<div className='grid gap-5 text-center'>
-					<p className='design-auth-copy max-w-xl text-xs sm:text-sm'>
+					<p className='design-auth-description max-w-xl text-xs sm:text-sm'>
 						Nach Bestätigung kannst du einen Passkey einrichten (optional).
 					</p>
-					<p className='design-auth-copy text-xs sm:text-sm' data-testid='register-login-link'>
+					<p className='design-auth-description text-xs sm:text-sm' data-testid='register-login-link'>
 						Schon Kunde?{' '}
 						<Link
 							href={APP_ROUTES.LOGIN}
@@ -32,16 +32,7 @@ export default function RegisterPage() {
 				</div>
 			}
 		>
-			<div className='grid gap-4'>
-				<AuthEmailField id='register-email' label='E-Mail-Adresse' placeholder='du@example.com' />
-				<button
-					type='button'
-					className='design-auth-button-dark inline-flex items-center justify-center gap-3 px-5'
-				>
-					<Mail data-icon='inline-start' aria-hidden='true' />
-					<span>Bestätigungslink senden</span>
-				</button>
-			</div>
+			<RegisterForm />
 		</AuthCard>
 	);
 }

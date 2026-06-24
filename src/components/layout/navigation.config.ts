@@ -1,17 +1,10 @@
 import { Home, Settings, UserRound, type LucideIcon } from 'lucide-react';
 
+import { APP_ROUTES, type AppRoute } from '@/config/routes';
+
 const PATH_SEPARATOR = '/';
 
-export const APP_ROUTES = {
-	HOME: '/',
-	LANDING: '/landing',
-	ACCOUNT: '/account',
-	SETTINGS: '/settings',
-	LOGIN: '/login',
-	REGISTER: '/register',
-} as const;
-
-export type AppRoute = (typeof APP_ROUTES)[keyof typeof APP_ROUTES];
+export { APP_ROUTES };
 
 export type NavigationLinkItem = {
 	href: AppRoute;

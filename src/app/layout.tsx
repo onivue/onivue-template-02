@@ -1,7 +1,9 @@
 import type { Metadata, Viewport } from 'next';
 
 import { Geist_Mono, Space_Grotesk } from 'next/font/google';
+import { Toaster } from 'sonner';
 
+import { AuthStatus } from '@/components/auth/auth-status';
 import { Footer } from '@/components/layout/footer';
 
 import './globals.css';
@@ -40,6 +42,8 @@ export default function RootLayout({
 					<div className='min-h-0 flex-1'>{children}</div>
 					<Footer />
 				</div>
+				<AuthStatus />
+				<Toaster richColors position='top-center' />
 			</body>
 		</html>
 	);

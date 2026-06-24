@@ -16,43 +16,29 @@ export const metadata = {
 
 export default function LandingPage() {
 	return (
-		<main className='design-landing-shell' data-testid='landing-page'>
-			<div className='design-landing-container'>
-				<header
-					className='design-landing-header flex items-center justify-between gap-4'
-					data-testid='landing-header'
-				>
+		<main
+			className='min-h-[calc(100dvh-var(--site-footer-height))] bg-background px-[clamp(1rem,3vw,1.5rem)] pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1.25rem,env(safe-area-inset-bottom))] text-foreground'
+			data-testid='landing-page'
+		>
+			<div className='mx-auto grid min-h-[calc(100dvh-var(--site-footer-height)-2.25rem)] w-full max-w-6xl grid-rows-[auto_minmax(0,1fr)] gap-[clamp(2rem,5vw,4rem)]'>
+				<header className='flex min-h-12 items-center justify-between gap-4' data-testid='landing-header'>
 					<Link
 						href={APP_ROUTES.LANDING}
 						className='text-lg font-bold text-foreground outline-none focus-visible:ring-3 focus-visible:ring-ring/50'
 					>
 						onivue
 					</Link>
-					<nav className='flex items-center gap-2' aria-label='Landing navigation'>
-						<Link
-							href={APP_ROUTES.LOGIN}
-							className='rounded-full px-4 py-2 text-sm font-bold text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50'
-						>
-							Login
-						</Link>
-						<Link
-							href={APP_ROUTES.REGISTER}
-							className='design-action-dark inline-flex min-h-10 items-center justify-center rounded-full px-5 text-sm font-bold outline-none transition-transform hover:-translate-y-0.5 focus-visible:ring-3 focus-visible:ring-ring/50'
-						>
-							Starten
-						</Link>
-					</nav>
 				</header>
 
 				<section
-					className='design-landing-hero grid items-center gap-8 md:grid-cols-[1.05fr_0.95fr]'
+					className='grid content-center items-center gap-8 py-[clamp(1rem,4vw,3rem)_clamp(2rem,5vw,4rem)] md:grid-cols-[1.05fr_0.95fr]'
 					data-testid='landing-hero'
 				>
 					<div className='flex max-w-3xl flex-col gap-6'>
-						<span className='design-eyebrow w-fit px-3 py-1'>Product template</span>
+						<span className='design-section-label w-fit px-3 py-1'>Product template</span>
 						<div className='flex flex-col gap-4'>
 							<h1 className='design-page-title max-w-4xl'>Build focused apps with a calm interface.</h1>
-							<p className='design-page-copy max-w-xl text-base'>
+							<p className='design-page-description max-w-xl text-base'>
 								onivue combines a restrained product shell, mobile-first navigation, and auth-ready
 								screens into one reusable Next.js starter.
 							</p>
@@ -60,7 +46,7 @@ export default function LandingPage() {
 						<div className='flex flex-col gap-3 sm:flex-row'>
 							<Link
 								href={APP_ROUTES.REGISTER}
-								className='design-action-dark inline-flex min-h-12 items-center justify-center gap-2 px-6 text-sm font-bold outline-none transition-transform hover:-translate-y-0.5 focus-visible:ring-3 focus-visible:ring-ring/50'
+								className='inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-white/10 bg-(--ink) px-6 text-sm font-bold text-(--lime-glow) shadow-[0_10px_28px_oklch(0.16_0.012_260/14%)] outline-none transition-transform hover:-translate-y-0.5 focus-visible:ring-3 focus-visible:ring-ring/50'
 							>
 								<span>Account erstellen</span>
 								<ArrowRight data-icon='inline-end' aria-hidden='true' />

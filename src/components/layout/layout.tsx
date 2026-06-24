@@ -15,7 +15,7 @@ export function Layout({ children }: LayoutProps) {
 
 	return (
 		<div
-			className='design-shell mx-auto min-h-dvh w-full max-w-400 p-3 pb-24 md:pb-3'
+			className='mx-auto min-h-dvh w-full max-w-400 bg-background p-3 pb-24 text-foreground md:pb-3'
 			data-has-sidebar='true'
 			data-testid='layout'
 		>
