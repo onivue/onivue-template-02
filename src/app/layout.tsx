@@ -1,11 +1,13 @@
 import type { Metadata, Viewport } from 'next';
 
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Geist_Mono, Space_Grotesk } from 'next/font/google';
+
+import { Footer } from '@/components/layout/footer';
 
 import './globals.css';
 
-const geistSans = Geist({
-	variable: '--font-geist-sans',
+const spaceGrotesk = Space_Grotesk({
+	variable: '--font-space-grotesk',
 	subsets: ['latin'],
 });
 
@@ -32,8 +34,13 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<html lang='de' className={`${geistSans.variable} ${geistMono.variable} h-full`}>
-			<body className={`${geistSans.className} min-h-full flex flex-col antialiased`}>{children}</body>
+		<html lang='de' className={`${spaceGrotesk.variable} ${geistMono.variable} h-full`}>
+			<body className={`${spaceGrotesk.className} min-h-dvh antialiased`}>
+				<div className='flex min-h-dvh flex-col'>
+					<div className='min-h-0 flex-1'>{children}</div>
+					<Footer />
+				</div>
+			</body>
 		</html>
 	);
 }

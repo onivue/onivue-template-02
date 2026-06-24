@@ -1,10 +1,10 @@
 import { Layout } from '@/components/layout/layout';
 import { PagePlaceholder } from '@/components/layout/page-placeholder';
 
-export default function Home() {
+export default function SettingsPage() {
 	return (
 		<Layout>
-			<PagePlaceholder label='home' title='Home' description='lorem ipsum' testId='home-page' />
+			<PagePlaceholder label='settings' title='Settings' description='lorem ipsum' testId='settings-page' />
 		</Layout>
 	);
 }

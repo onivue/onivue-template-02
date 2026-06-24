@@ -58,6 +58,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 ## React & UI
 
 - **Components:** Use shadcn/ui. Prefer `@base-ui/react` over `@radix-ui`. Always install via the shadcn CLI (`npx shadcn add <component>`).
+- **Design System:** Follow `DESIGN.md` for colors, typography, shape, motion, and global utility classes before adding new visual styles.
 - **Test IDs:** Add `data-testid` to components for reliable element identification in the HTML structure — Tailwind class names alone are not sufficient to identify elements.
 - **Layout Components:** Encapsulate repeated layout patterns (header, content area, etc.) into dedicated layout components stored under `components/layout/`. Accept `className` and spread `...props` so they remain composable. Example:
 
