@@ -14,8 +14,20 @@ function DropdownMenuPortal({ ...props }: MenuPrimitive.Portal.Props) {
 	return <MenuPrimitive.Portal data-slot='dropdown-menu-portal' {...props} />;
 }
 
-function DropdownMenuTrigger({ ...props }: MenuPrimitive.Trigger.Props) {
-	return <MenuPrimitive.Trigger data-slot='dropdown-menu-trigger' {...props} />;
+function DropdownMenuTrigger({
+	className,
+	...props
+}: MenuPrimitive.Trigger.Props & { className?: string }) {
+	return (
+		<MenuPrimitive.Trigger
+			data-slot='dropdown-menu-trigger'
+			className={cn(
+				'inline-flex items-center justify-center rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed',
+				className
+			)}
+			{...props}
+		/>
+	);
 }
 
 function DropdownMenuContent({

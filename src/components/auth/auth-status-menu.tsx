@@ -79,16 +79,17 @@ export function AuthStatusMenu({ user }: AuthStatusMenuProps) {
 				className='fixed top-[max(0.75rem,env(safe-area-inset-top))] right-[max(0.75rem,env(safe-area-inset-right))] z-50'
 				data-testid='auth-status'
 			>
-				<Button
-					render={<Link href={APP_ROUTES.LOGIN} />}
-					variant='outline'
-					size='lg'
-					className='rounded-full bg-background/92 shadow-lg shadow-foreground/10 backdrop-blur'
-					data-testid='global-login-button'
-				>
-					<LogIn data-icon='inline-start' aria-hidden='true' />
-					Anmelden
-				</Button>
+				<Link href={APP_ROUTES.LOGIN}>
+					<Button
+						variant='outline'
+						size='lg'
+						className='rounded-full bg-background/92 shadow-lg shadow-foreground/10 backdrop-blur'
+						data-testid='global-login-button'
+					>
+						<LogIn data-icon='inline-start' aria-hidden='true' />
+						Anmelden
+					</Button>
+				</Link>
 			</div>
 		);
 	}
@@ -100,16 +101,10 @@ export function AuthStatusMenu({ user }: AuthStatusMenuProps) {
 		>
 			<DropdownMenu>
 				<DropdownMenuTrigger
-					render={
-						<Button
-							type='button'
-							variant='outline'
-							size='lg'
-							className='h-11 rounded-full bg-background/92 px-1.5 shadow-lg shadow-foreground/10 backdrop-blur sm:px-2 sm:pr-3'
-							aria-label='Account-Menü öffnen'
-							data-testid='account-menu-trigger'
-						/>
-					}
+					type='button'
+					className='h-11 rounded-full bg-background/92 px-1.5 shadow-lg shadow-foreground/10 backdrop-blur border border-border hover:bg-muted sm:px-2 sm:pr-3 gap-1.5'
+					aria-label='Account-Menü öffnen'
+					data-testid='account-menu-trigger'
 				>
 					<Avatar>
 						{user.image ? <AvatarImage src={user.image} alt={user.name || user.email} /> : null}
@@ -130,19 +125,17 @@ export function AuthStatusMenu({ user }: AuthStatusMenuProps) {
 					</DropdownMenuGroup>
 					<DropdownMenuSeparator />
 					<DropdownMenuGroup>
-						<DropdownMenuItem
-							render={<Link href={APP_ROUTES.ACCOUNT} />}
-							data-testid='account-menu-account-link'
-						>
-							<UserRound data-icon='inline-start' aria-hidden='true' />
-							Account
+						<DropdownMenuItem data-testid='account-menu-account-link'>
+							<Link href={APP_ROUTES.ACCOUNT} className='flex items-center gap-1.5'>
+								<UserRound data-icon='inline-start' aria-hidden='true' />
+								Account
+							</Link>
 						</DropdownMenuItem>
-						<DropdownMenuItem
-							render={<Link href={APP_ROUTES.SETTINGS} />}
-							data-testid='account-menu-settings-link'
-						>
-							<Settings data-icon='inline-start' aria-hidden='true' />
-							Settings
+						<DropdownMenuItem data-testid='account-menu-settings-link'>
+							<Link href={APP_ROUTES.SETTINGS} className='flex items-center gap-1.5'>
+								<Settings data-icon='inline-start' aria-hidden='true' />
+								Settings
+							</Link>
 						</DropdownMenuItem>
 					</DropdownMenuGroup>
 					<DropdownMenuSeparator />
