@@ -2,7 +2,7 @@ import Link from 'next/link';
 
 import { AuthCard } from '@/components/auth/auth-card';
 import { RegisterForm } from '@/components/auth/register-form';
-import { APP_ROUTES } from '@/components/layout/navigation.config';
+import { APP_ROUTES } from '@/config/routes';
 
 export const metadata = {
 	title: 'Registrieren | onivue',

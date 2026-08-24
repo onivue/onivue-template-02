@@ -7,11 +7,9 @@ import { magicLink } from 'better-auth/plugins/magic-link';
 import { APP_CONFIG } from '@/config';
 import { db } from '@/db/client';
 import * as schema from '@/db/schema';
-import { AuthUrlHelper } from '@/lib/auth/auth-url-helper';
 import { EmailService } from '@/lib/email/email-service';
 
 const emailService = new EmailService();
-const authUrlHelper = new AuthUrlHelper();
 
 async function assertEmailSent(result: Awaited<ReturnType<EmailService['sendMagicLink']>>): Promise<void> {
 	if (result.success) {
@@ -35,7 +33,7 @@ export const auth = betterAuth({
 		window: 60,
 	},
 	secret: APP_CONFIG.auth.secret,
-	trustedOrigins: [authUrlHelper.getOrigin(APP_CONFIG.auth.baseUrl)],
+	trustedOrigins: [APP_CONFIG.auth.origin],
 	user: {
 		changeEmail: {
 			enabled: true,
@@ -55,8 +53,8 @@ export const auth = betterAuth({
 			storeToken: 'hashed',
 		}),
 		passkey({
-			origin: authUrlHelper.getOrigin(APP_CONFIG.auth.baseUrl),
-			rpID: authUrlHelper.getPasskeyRpId(APP_CONFIG.auth.baseUrl),
+			origin: APP_CONFIG.auth.origin,
+			rpID: APP_CONFIG.auth.passkeyRpId,
 			rpName: APP_CONFIG.auth.passkeyRpName,
 		}),
 		nextCookies(),

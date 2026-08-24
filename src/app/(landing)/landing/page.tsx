@@ -1,7 +1,7 @@
 import { ArrowRight, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 
-import { APP_ROUTES } from '@/components/layout/navigation.config';
+import { APP_ROUTES } from '@/config/routes';
 
 const LANDING_FEATURES = [
 	'App-like navigation for desktop and mobile',

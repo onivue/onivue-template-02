@@ -5,7 +5,8 @@ import { usePathname } from 'next/navigation';
 import { type ReactNode } from 'react';
 
 import { Footer } from '@/components/layout/footer';
-import { isActiveNavigationPath, PRIMARY_NAVIGATION_ITEMS } from '@/components/layout/navigation.config';
+import { PRIMARY_NAVIGATION_ITEMS } from '@/components/layout/navigation.config';
+import { matchesRoute } from '@/config/routes';
 import { cn } from '@/lib/utils';
 
 type NavigationProps = {
@@ -34,7 +35,7 @@ export function Navigation({ action, className, onNavigate }: NavigationProps) {
 			<nav className='grid gap-1.5'>
 				{PRIMARY_NAVIGATION_ITEMS.map((item) => {
 					const Icon = item.icon;
-					const isActive = isActiveNavigationPath(pathname, item.href);
+					const isActive = matchesRoute(pathname, item.href);
 
 					return (
 						<Link

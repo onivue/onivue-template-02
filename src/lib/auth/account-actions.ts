@@ -1,4 +1,4 @@
-import { APP_ROUTES, type AppRoute } from '@/config/routes';
+import { APP_ROUTES, getAccessFor, type AppRoute } from '@/config/routes';
 import { AuthErrorHelper } from '@/lib/auth/auth-error-helper';
 
 // narrow structural port over the better-auth client, so its types stay out of callers and tests
@@ -240,7 +240,8 @@ export class AccountActions {
 			return APP_ROUTES.ACCOUNT;
 		}
 
-		if (requested === APP_ROUTES.LOGIN || requested === APP_ROUTES.REGISTER) {
+		// bouncing a signed-in viewer back to an auth page would immediately redirect again
+		if (getAccessFor(requested) === 'guest') {
 			return APP_ROUTES.ACCOUNT;
 		}
 

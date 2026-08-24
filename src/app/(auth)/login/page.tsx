@@ -3,7 +3,7 @@ import { Suspense } from 'react';
 
 import { AuthCard } from '@/components/auth/auth-card';
 import { LoginForm } from '@/components/auth/login-form';
-import { APP_ROUTES } from '@/components/layout/navigation.config';
+import { APP_ROUTES } from '@/config/routes';
 
 export const metadata = {
 	title: 'Login | onivue',

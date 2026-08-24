@@ -5,9 +5,10 @@ import { AnimatePresence, motion } from 'motion/react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-import { isActiveNavigationPath, PRIMARY_NAVIGATION_ITEMS } from '@/components/layout/navigation.config';
+import { PRIMARY_NAVIGATION_ITEMS } from '@/components/layout/navigation.config';
 import { Navigation } from '@/components/layout/navigation.desktop';
 import { Button } from '@/components/ui/button';
+import { matchesRoute } from '@/config/routes';
 import { cn } from '@/lib/utils';
 
 type MobileNavigationProps = {
@@ -40,7 +41,7 @@ export function MobileNavigation({ isSidebarOpen, onCloseSidebar, onOpenSidebar 
 			>
 				{PRIMARY_NAVIGATION_ITEMS.map((item) => {
 					const Icon = item.icon;
-					const isActive = isActiveNavigationPath(pathname, item.href);
+					const isActive = matchesRoute(pathname, item.href);
 
 					return (
 						<Link
