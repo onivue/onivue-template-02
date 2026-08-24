@@ -1,22 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
-import { APP_ROUTES } from '@/config/routes';
-import { auth } from '@/lib/auth/auth';
-
-const PUBLIC_PAGE_ROUTES = [APP_ROUTES.LANDING] as const;
-const AUTH_PAGE_ROUTES = [APP_ROUTES.LOGIN, APP_ROUTES.REGISTER] as const;
-
-function isRouteMatch(pathname: string, route: string): boolean {
-	return pathname === route || pathname.startsWith(`${route}/`);
-}
-
-function isPublicPage(pathname: string): boolean {
-	return PUBLIC_PAGE_ROUTES.some((route) => isRouteMatch(pathname, route));
-}
-
-function isAuthPage(pathname: string): boolean {
-	return AUTH_PAGE_ROUTES.some((route) => isRouteMatch(pathname, route));
-}
+import { APP_ROUTES, getAccessFor } from '@/config/routes';
+import { getViewerFrom } from '@/lib/auth/viewer';
 
 function createLoginRedirect(request: NextRequest): NextResponse {
 	const url = request.nextUrl.clone();
@@ -29,36 +14,27 @@ function createLoginRedirect(request: NextRequest): NextResponse {
 
 export async function proxy(request: NextRequest) {
 	const { pathname } = request.nextUrl;
+	const access = getAccessFor(pathname);
 
-	if (isPublicPage(pathname)) {
+	if (access === 'public') {
 		return NextResponse.next();
 	}
 
-	const session = await getSession(request);
+	const viewer = await getViewerFrom(request.headers);
 
-	if (isAuthPage(pathname)) {
-		if (session) {
+	if (access === 'guest') {
+		if (viewer) {
 			return NextResponse.redirect(new URL(APP_ROUTES.ACCOUNT, request.url));
 		}
 
 		return NextResponse.next();
 	}
 
-	if (!session) {
+	if (!viewer) {
 		return createLoginRedirect(request);
 	}
 
 	return NextResponse.next();
-}
-
-async function getSession(request: NextRequest) {
-	try {
-		return await auth.api.getSession({
-			headers: request.headers,
-		});
-	} catch {
-		return null;
-	}
 }
 
 export const config = {

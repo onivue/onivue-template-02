@@ -1,10 +1,9 @@
 'use client';
 
-import { LogIn, LogOut, Settings, UserRound } from 'lucide-react';
+import { ChevronsUpDown, LogIn, LogOut, Settings, UserRound } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { useState } from 'react';
-import { toast } from 'sonner';
+
+import type { Viewer } from '@/lib/auth/viewer';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -18,22 +17,27 @@ import {
 	DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { APP_ROUTES } from '@/config/routes';
-import { authClient } from '@/lib/auth/auth-client';
-import { authErrorHelper } from '@/lib/auth/auth-error-helper';
+import { useAccountActions } from '@/lib/auth/use-account-actions';
+import { cn } from '@/lib/utils';
 
-export type AuthStatusUser = {
-	email: string;
-	image: string | null;
-	name: string;
-};
+// 'sidebar' sits on the dark navigation surface; 'inline' is a standalone control on the canvas
+export type AuthStatusPlacement = 'inline' | 'sidebar';
 
 type AuthStatusMenuProps = {
-	user: AuthStatusUser | null;
+	placement: AuthStatusPlacement;
+	user: Viewer | null;
 };
 
 const FALLBACK_INITIALS_LENGTH = 2;
 
-function getAvatarFallback(user: AuthStatusUser): string {
+// same height, inset and gap as a navigation item, so avatar and nav icons sit on one line
+const SIDEBAR_TRIGGER_CLASS =
+	'h-12 w-full min-w-0 justify-start gap-3 rounded-2xl px-3 text-left text-sidebar-primary-foreground/85 transition-colors hover:bg-sidebar-accent/15 hover:text-sidebar-primary-foreground focus-visible:ring-sidebar-ring/50 aria-expanded:bg-sidebar-accent/15 aria-expanded:text-sidebar-primary-foreground';
+const INLINE_TRIGGER_CLASS =
+	'h-12 max-w-[min(16rem,60vw)] gap-2.5 rounded-full border border-border bg-background p-2 shadow-sm shadow-foreground/10 transition-colors hover:bg-muted aria-expanded:bg-muted sm:pr-4';
+const MENU_ITEM_CLASS = 'h-10 gap-2 rounded-xl px-2 font-medium';
+
+function getAvatarFallback(user: Viewer): string {
 	const source = user.name.trim() || user.email;
 	const words = source.split(/[\s@._-]+/).filter(Boolean);
 	const initials = words
@@ -44,121 +48,109 @@ function getAvatarFallback(user: AuthStatusUser): string {
 	return initials.toUpperCase() || 'U';
 }
 
-export function AuthStatusMenu({ user }: AuthStatusMenuProps) {
-	const pathname = usePathname();
-	const router = useRouter();
-	const [isSigningOut, setIsSigningOut] = useState(false);
-	const isLoginPage = pathname === APP_ROUTES.LOGIN;
-
-	async function handleSignOut(): Promise<void> {
-		setIsSigningOut(true);
-
-		try {
-			await authClient.signOut();
-			toast.success('Du bist abgemeldet.');
-			router.push(APP_ROUTES.LANDING);
-			router.refresh();
-		} catch (error) {
-			toast.error(
-				authErrorHelper.getUserMessage(
-					error instanceof Error ? { message: error.message } : null,
-					'Abmelden ist fehlgeschlagen.'
-				)
-			);
-			setIsSigningOut(false);
-		}
-	}
+export function AuthStatusMenu({ placement, user }: AuthStatusMenuProps) {
+	const accountActions = useAccountActions();
+	const isSidebar = placement === 'sidebar';
+	// without a name the row falls back to the address, which is long enough to warrant the smaller size
+	const displayName = user?.name.trim() ?? '';
+	const isAddressLabel = !displayName;
 
 	if (!user) {
-		if (isLoginPage) {
-			return null;
-		}
-
 		return (
-			<div
-				className='fixed top-[max(0.75rem,env(safe-area-inset-top))] right-[max(0.75rem,env(safe-area-inset-right))] z-50'
-				data-testid='auth-status'
+			<Button
+				variant={isSidebar ? 'ghost' : 'outline'}
+				size={isSidebar ? 'default' : 'lg'}
+				className={cn(isSidebar ? SIDEBAR_TRIGGER_CLASS : 'rounded-full', 'shrink-0')}
+				nativeButton={false}
+				render={<Link href={APP_ROUTES.LOGIN} />}
+				data-testid='global-login-button'
 			>
-				<Button
-					render={<Link href={APP_ROUTES.LOGIN} />}
-					variant='outline'
-					size='lg'
-					className='rounded-full bg-background/92 shadow-lg shadow-foreground/10 backdrop-blur'
-					data-testid='global-login-button'
-				>
-					<LogIn data-icon='inline-start' aria-hidden='true' />
-					Anmelden
-				</Button>
-			</div>
+				<LogIn data-icon='inline-start' aria-hidden='true' />
+				Anmelden
+			</Button>
 		);
 	}
 
 	return (
-		<div
-			className='fixed top-[max(0.75rem,env(safe-area-inset-top))] right-[max(0.75rem,env(safe-area-inset-right))] z-50'
-			data-testid='auth-status'
-		>
-			<DropdownMenu>
-				<DropdownMenuTrigger
-					render={
-						<Button
-							type='button'
-							variant='outline'
-							size='lg'
-							className='h-11 rounded-full bg-background/92 px-1.5 shadow-lg shadow-foreground/10 backdrop-blur sm:px-2 sm:pr-3'
-							aria-label='Account-Menü öffnen'
-							data-testid='account-menu-trigger'
-						/>
-					}
+		<DropdownMenu>
+			<DropdownMenuTrigger
+				type='button'
+				className={isSidebar ? SIDEBAR_TRIGGER_CLASS : INLINE_TRIGGER_CLASS}
+				aria-label='Account-Menü öffnen'
+				data-testid='account-menu-trigger'
+			>
+				<Avatar className='shrink-0'>
+					{user.image ? <AvatarImage src={user.image} alt={user.name || user.email} /> : null}
+					<AvatarFallback
+						className={cn(
+							'text-xs font-bold',
+							isSidebar
+								? 'bg-sidebar-accent text-sidebar-accent-foreground'
+								: 'bg-action-strong text-action-strong-foreground'
+						)}
+					>
+						{getAvatarFallback(user)}
+					</AvatarFallback>
+				</Avatar>
+				<span
+					className={cn(
+						'min-w-0 flex-1 truncate font-bold',
+						isAddressLabel ? 'text-xs' : 'text-sm',
+						isSidebar ? null : 'hidden sm:block'
+					)}
 				>
-					<Avatar>
-						{user.image ? <AvatarImage src={user.image} alt={user.name || user.email} /> : null}
-						<AvatarFallback>{getAvatarFallback(user)}</AvatarFallback>
-					</Avatar>
-					<span className='hidden max-w-36 truncate text-sm font-bold sm:inline'>
-						{user.name || user.email}
-					</span>
-				</DropdownMenuTrigger>
-				<DropdownMenuContent align='end' sideOffset={8} className='min-w-60'>
-					<DropdownMenuGroup>
-						<DropdownMenuLabel>
-							<span className='block truncate font-bold text-foreground'>{user.name || 'Account'}</span>
-							<span className='block truncate text-xs font-medium text-muted-foreground'>
-								{user.email}
-							</span>
-						</DropdownMenuLabel>
-					</DropdownMenuGroup>
-					<DropdownMenuSeparator />
-					<DropdownMenuGroup>
-						<DropdownMenuItem
-							render={<Link href={APP_ROUTES.ACCOUNT} />}
-							data-testid='account-menu-account-link'
-						>
-							<UserRound data-icon='inline-start' aria-hidden='true' />
-							Account
-						</DropdownMenuItem>
-						<DropdownMenuItem
-							render={<Link href={APP_ROUTES.SETTINGS} />}
-							data-testid='account-menu-settings-link'
-						>
-							<Settings data-icon='inline-start' aria-hidden='true' />
-							Settings
-						</DropdownMenuItem>
-					</DropdownMenuGroup>
-					<DropdownMenuSeparator />
-					<DropdownMenuGroup>
-						<DropdownMenuItem
-							variant='destructive'
-							disabled={isSigningOut}
-							onClick={() => void handleSignOut()}
-							data-testid='account-menu-sign-out'
-						>
-							<LogOut data-icon='inline-start' aria-hidden='true' />
-							{isSigningOut ? 'Melde ab...' : 'Abmelden'}
-						</DropdownMenuItem>
-					</DropdownMenuGroup>
-				</DropdownMenuContent>
-			</DropdownMenu>
-		</div>
+					{displayName || user.email}
+				</span>
+				{isSidebar ? <ChevronsUpDown className='size-4 shrink-0 opacity-60' aria-hidden='true' /> : null}
+			</DropdownMenuTrigger>
+			<DropdownMenuContent
+				align={isSidebar ? 'start' : 'end'}
+				side={isSidebar ? 'top' : 'bottom'}
+				sideOffset={8}
+				// the sidebar popup takes the trigger's width, so it sits evenly inset in the navigation
+				className={cn('rounded-2xl p-1.5', isSidebar ? null : 'w-64')}
+			>
+				<DropdownMenuGroup>
+					<DropdownMenuLabel className='grid grid-cols-[minmax(0,1fr)] gap-0.5 px-2 py-2'>
+						<span className='truncate text-sm font-bold text-foreground'>{displayName || 'Account'}</span>
+						<span className='truncate text-[0.7rem] font-medium text-muted-foreground'>{user.email}</span>
+					</DropdownMenuLabel>
+				</DropdownMenuGroup>
+				<DropdownMenuSeparator />
+				<DropdownMenuGroup>
+					<DropdownMenuItem
+						className={MENU_ITEM_CLASS}
+						nativeButton={false}
+						render={<Link href={APP_ROUTES.ACCOUNT} />}
+						data-testid='account-menu-account-link'
+					>
+						<UserRound aria-hidden='true' />
+						Account
+					</DropdownMenuItem>
+					<DropdownMenuItem
+						className={MENU_ITEM_CLASS}
+						nativeButton={false}
+						render={<Link href={APP_ROUTES.SETTINGS} />}
+						data-testid='account-menu-settings-link'
+					>
+						<Settings aria-hidden='true' />
+						Settings
+					</DropdownMenuItem>
+				</DropdownMenuGroup>
+				<DropdownMenuSeparator />
+				<DropdownMenuGroup>
+					<DropdownMenuItem
+						className={MENU_ITEM_CLASS}
+						variant='destructive'
+						disabled={accountActions.isBusy}
+						onClick={() => void accountActions.signOut()}
+						data-testid='account-menu-sign-out'
+					>
+						<LogOut aria-hidden='true' />
+						{accountActions.isRunning('sign-out') ? 'Melde ab...' : 'Abmelden'}
+					</DropdownMenuItem>
+				</DropdownMenuGroup>
+			</DropdownMenuContent>
+		</DropdownMenu>
 	);
 }

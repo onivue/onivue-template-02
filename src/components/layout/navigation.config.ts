@@ -1,43 +1,19 @@
 import { Home, Settings, UserRound, type LucideIcon } from 'lucide-react';
 
-import { APP_ROUTES, type AppRoute } from '@/config/routes';
+import { NAVIGATION_ROUTES, type RouteName } from '@/config/routes';
 
-const PATH_SEPARATOR = '/';
+// icons stay out of the route registry so the proxy never pulls the icon library into its bundle
+const NAVIGATION_ICONS = {
+	ACCOUNT: UserRound,
+	HOME: Home,
+	SETTINGS: Settings,
+} as const satisfies Partial<Record<RouteName, LucideIcon>>;
 
-export { APP_ROUTES };
-
-export type NavigationLinkItem = {
-	href: AppRoute;
+export type NavigationLinkItem = (typeof NAVIGATION_ROUTES)[number] & {
 	icon: LucideIcon;
-	label: string;
-	testId: string;
 };
 
-export const PRIMARY_NAVIGATION_ITEMS = [
-	{
-		href: APP_ROUTES.HOME,
-		icon: Home,
-		label: 'Home',
-		testId: 'navigation-home-link',
-	},
-	{
-		href: APP_ROUTES.ACCOUNT,
-		icon: UserRound,
-		label: 'Account',
-		testId: 'navigation-account-link',
-	},
-	{
-		href: APP_ROUTES.SETTINGS,
-		icon: Settings,
-		label: 'Settings',
-		testId: 'navigation-settings-link',
-	},
-] as const satisfies readonly NavigationLinkItem[];
-
-export function isActiveNavigationPath(pathname: string, href: AppRoute): boolean {
-	if (href === APP_ROUTES.HOME) {
-		return pathname === href;
-	}
-
-	return pathname === href || pathname.startsWith(`${href}${PATH_SEPARATOR}`);
-}
+export const PRIMARY_NAVIGATION_ITEMS: readonly NavigationLinkItem[] = NAVIGATION_ROUTES.map((route) => ({
+	...route,
+	icon: NAVIGATION_ICONS[route.name],
+}));

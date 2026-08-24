@@ -4,16 +4,22 @@ import { betterAuth } from 'better-auth';
 import { nextCookies } from 'better-auth/next-js';
 import { magicLink } from 'better-auth/plugins/magic-link';
 
+import type { AuthEmail } from '@/lib/email/email-gateway';
+
 import { APP_CONFIG } from '@/config';
 import { db } from '@/db/client';
 import * as schema from '@/db/schema';
-import { AuthUrlHelper } from '@/lib/auth/auth-url-helper';
-import { EmailService } from '@/lib/email/email-service';
+import { createResendTransport, ResendGateway } from '@/lib/email/resend-gateway';
 
-const emailService = new EmailService();
-const authUrlHelper = new AuthUrlHelper();
+// the one wiring point where config meets the transport
+const emailGateway = new ResendGateway({
+	from: APP_CONFIG.mail.from,
+	transport: createResendTransport(APP_CONFIG.mail.resendApiKey),
+});
 
-async function assertEmailSent(result: Awaited<ReturnType<EmailService['sendMagicLink']>>): Promise<void> {
+async function sendAuthEmail(message: AuthEmail): Promise<void> {
+	const result = await emailGateway.send(message);
+
 	if (result.success) {
 		return;
 	}
@@ -35,13 +41,12 @@ export const auth = betterAuth({
 		window: 60,
 	},
 	secret: APP_CONFIG.auth.secret,
-	trustedOrigins: [authUrlHelper.getOrigin(APP_CONFIG.auth.baseUrl)],
+	trustedOrigins: [APP_CONFIG.auth.origin],
 	user: {
 		changeEmail: {
 			enabled: true,
 			sendChangeEmailConfirmation: async ({ user, url }) => {
-				const result = await emailService.sendChangeEmailConfirmation(user.email, url);
-				await assertEmailSent(result);
+				await sendAuthEmail({ kind: 'email-change', to: user.email, url });
 			},
 		},
 	},
@@ -49,14 +54,13 @@ export const auth = betterAuth({
 		magicLink({
 			expiresIn: APP_CONFIG.auth.magicLinkExpiresInSeconds,
 			sendMagicLink: async ({ email, url }) => {
-				const result = await emailService.sendMagicLink(email, url);
-				await assertEmailSent(result);
+				await sendAuthEmail({ kind: 'magic-link', to: email, url });
 			},
 			storeToken: 'hashed',
 		}),
 		passkey({
-			origin: authUrlHelper.getOrigin(APP_CONFIG.auth.baseUrl),
-			rpID: authUrlHelper.getPasskeyRpId(APP_CONFIG.auth.baseUrl),
+			origin: APP_CONFIG.auth.origin,
+			rpID: APP_CONFIG.auth.passkeyRpId,
 			rpName: APP_CONFIG.auth.passkeyRpName,
 		}),
 		nextCookies(),

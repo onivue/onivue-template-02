@@ -27,20 +27,21 @@ export function AuthCard({ children, className, description, footer, testId, tit
 	return (
 		<Card
 			className={cn(
-				'w-full max-w-[32rem] gap-4 border border-border bg-[var(--surface-elevated)] px-5 pt-5 pb-7 shadow-[0_16px_36px_oklch(0.16_0.012_260_/_7%),0_2px_0_oklch(0.16_0.012_260_/_4%)] [border-radius:clamp(1.5rem,4vw,2.25rem)] sm:gap-5 sm:px-7 sm:pt-7 sm:pb-9',
+				'w-full max-w-md gap-5 rounded-3xl border border-border bg-surface-elevated px-6 py-7 ring-0 has-data-[slot=card-footer]:pb-7 sm:px-8 sm:py-8 sm:has-data-[slot=card-footer]:pb-8',
+				'shadow-[0_18px_50px_color-mix(in_oklch,var(--foreground)_8%,transparent)]',
 				className
 			)}
 			data-testid={testId}
 		>
 			<CardHeader className='gap-2 px-0'>
-				<CardTitle className='font-heading text-[clamp(1.5rem,4vw,2rem)] leading-[1.08] font-bold tracking-normal text-[var(--ink)]'>
+				<CardTitle className='font-heading text-2xl leading-tight font-bold text-ink sm:text-3xl'>
 					{title}
 				</CardTitle>
-				<p className='design-auth-description'>{description}</p>
+				<p className='design-page-description'>{description}</p>
 			</CardHeader>
-			<CardContent className='grid gap-5 px-0'>{children}</CardContent>
+			<CardContent className='grid gap-4 px-0'>{children}</CardContent>
 			{footer ? (
-				<CardFooter className='justify-center border-0 bg-transparent px-0 pt-2 pb-3 sm:pt-3 sm:pb-4'>
+				<CardFooter className='justify-center border-t border-border bg-transparent px-0 pt-5 pb-0'>
 					{footer}
 				</CardFooter>
 			) : null}
@@ -50,10 +51,7 @@ export function AuthCard({ children, className, description, footer, testId, tit
 
 export function AuthDivider({ label }: AuthDividerProps) {
 	return (
-		<div
-			className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 text-[0.62rem] font-bold tracking-[0.2em] text-[oklch(0.72_0.01_260)] uppercase before:h-px before:bg-[oklch(0.88_0.006_106)] before:content-[''] after:h-px after:bg-[oklch(0.88_0.006_106)] after:content-['']"
-			data-testid='auth-divider'
-		>
+		<div className='design-divider' data-testid='auth-divider'>
 			<span>{label}</span>
 		</div>
 	);
@@ -62,19 +60,20 @@ export function AuthDivider({ label }: AuthDividerProps) {
 export function AuthEmailField({ error, id, label, placeholder, ...props }: AuthEmailFieldProps) {
 	return (
 		<label className='grid gap-2' htmlFor={id} data-testid={`${id}-field`} data-invalid={!!error}>
-			<span className='design-auth-label'>{label}</span>
+			<span className='design-label'>{label}</span>
 			<input
 				id={id}
 				type='email'
 				autoComplete='email'
 				placeholder={placeholder}
-				className='design-auth-input w-full'
+				className='design-input w-full'
 				aria-invalid={!!error}
+				aria-describedby={error ? `${id}-error` : undefined}
 				data-testid={id}
 				{...props}
 			/>
 			{error ? (
-				<span className='text-xs font-semibold text-destructive' data-testid={`${id}-error`}>
+				<span id={`${id}-error`} className='design-field-error px-1' data-testid={`${id}-error`}>
 					{error}
 				</span>
 			) : null}

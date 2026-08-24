@@ -1,28 +1,12 @@
-import { headers } from 'next/headers';
+import { AuthStatusMenu, type AuthStatusPlacement } from '@/components/auth/auth-status-menu';
+import { getViewer } from '@/lib/auth/viewer';
 
-import { AuthStatusMenu, type AuthStatusUser } from '@/components/auth/auth-status-menu';
-import { auth } from '@/lib/auth/auth';
+type AuthStatusProps = {
+	placement: AuthStatusPlacement;
+};
 
-export async function AuthStatus() {
-	const session = await getSession();
+export async function AuthStatus({ placement }: AuthStatusProps) {
+	const viewer = await getViewer();
 
-	const user: AuthStatusUser | null = session
-		? {
-				email: session.user.email,
-				image: session.user.image ?? null,
-				name: session.user.name,
-			}
-		: null;
-
-	return <AuthStatusMenu user={user} />;
-}
-
-async function getSession() {
-	try {
-		return await auth.api.getSession({
-			headers: await headers(),
-		});
-	} catch {
-		return null;
-	}
+	return <AuthStatusMenu placement={placement} user={viewer} />;
 }
