@@ -2,9 +2,9 @@
 
 import { LogIn, LogOut, Settings, UserRound } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { useState } from 'react';
-import { toast } from 'sonner';
+import { usePathname } from 'next/navigation';
+
+import type { Viewer } from '@/lib/auth/viewer';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -18,22 +18,15 @@ import {
 	DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { APP_ROUTES } from '@/config/routes';
-import { authClient } from '@/lib/auth/auth-client';
-import { authErrorHelper } from '@/lib/auth/auth-error-helper';
-
-export type AuthStatusUser = {
-	email: string;
-	image: string | null;
-	name: string;
-};
+import { useAccountActions } from '@/lib/auth/use-account-actions';
 
 type AuthStatusMenuProps = {
-	user: AuthStatusUser | null;
+	user: Viewer | null;
 };
 
 const FALLBACK_INITIALS_LENGTH = 2;
 
-function getAvatarFallback(user: AuthStatusUser): string {
+function getAvatarFallback(user: Viewer): string {
 	const source = user.name.trim() || user.email;
 	const words = source.split(/[\s@._-]+/).filter(Boolean);
 	const initials = words
@@ -46,28 +39,8 @@ function getAvatarFallback(user: AuthStatusUser): string {
 
 export function AuthStatusMenu({ user }: AuthStatusMenuProps) {
 	const pathname = usePathname();
-	const router = useRouter();
-	const [isSigningOut, setIsSigningOut] = useState(false);
+	const accountActions = useAccountActions();
 	const isLoginPage = pathname === APP_ROUTES.LOGIN;
-
-	async function handleSignOut(): Promise<void> {
-		setIsSigningOut(true);
-
-		try {
-			await authClient.signOut();
-			toast.success('Du bist abgemeldet.');
-			router.push(APP_ROUTES.LANDING);
-			router.refresh();
-		} catch (error) {
-			toast.error(
-				authErrorHelper.getUserMessage(
-					error instanceof Error ? { message: error.message } : null,
-					'Abmelden ist fehlgeschlagen.'
-				)
-			);
-			setIsSigningOut(false);
-		}
-	}
 
 	if (!user) {
 		if (isLoginPage) {
@@ -142,12 +115,12 @@ export function AuthStatusMenu({ user }: AuthStatusMenuProps) {
 					<DropdownMenuGroup>
 						<DropdownMenuItem
 							variant='destructive'
-							disabled={isSigningOut}
-							onClick={() => void handleSignOut()}
+							disabled={accountActions.isBusy}
+							onClick={() => void accountActions.signOut()}
 							data-testid='account-menu-sign-out'
 						>
 							<LogOut data-icon='inline-start' aria-hidden='true' />
-							{isSigningOut ? 'Melde ab...' : 'Abmelden'}
+							{accountActions.isRunning('sign-out') ? 'Melde ab...' : 'Abmelden'}
 						</DropdownMenuItem>
 					</DropdownMenuGroup>
 				</DropdownMenuContent>

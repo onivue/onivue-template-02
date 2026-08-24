@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
 import { APP_ROUTES } from '@/config/routes';
-import { auth } from '@/lib/auth/auth';
+import { getViewerFrom } from '@/lib/auth/viewer';
 
 const PUBLIC_PAGE_ROUTES = [APP_ROUTES.LANDING] as const;
 const AUTH_PAGE_ROUTES = [APP_ROUTES.LOGIN, APP_ROUTES.REGISTER] as const;
@@ -34,31 +34,21 @@ export async function proxy(request: NextRequest) {
 		return NextResponse.next();
 	}
 
-	const session = await getSession(request);
+	const viewer = await getViewerFrom(request.headers);
 
 	if (isAuthPage(pathname)) {
-		if (session) {
+		if (viewer) {
 			return NextResponse.redirect(new URL(APP_ROUTES.ACCOUNT, request.url));
 		}
 
 		return NextResponse.next();
 	}
 
-	if (!session) {
+	if (!viewer) {
 		return createLoginRedirect(request);
 	}
 
 	return NextResponse.next();
-}
-
-async function getSession(request: NextRequest) {
-	try {
-		return await auth.api.getSession({
-			headers: request.headers,
-		});
-	} catch {
-		return null;
-	}
 }
 
 export const config = {

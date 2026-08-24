@@ -1,10 +1,6 @@
-import { headers } from 'next/headers';
-import { redirect } from 'next/navigation';
-
 import { AccountSettings } from '@/components/account/account-settings';
 import { Layout } from '@/components/layout/layout';
-import { APP_ROUTES } from '@/components/layout/navigation.config';
-import { auth } from '@/lib/auth/auth';
+import { requireViewer } from '@/lib/auth/viewer';
 
 export const metadata = {
 	title: 'Account | onivue',
@@ -12,13 +8,7 @@ export const metadata = {
 };
 
 export default async function AccountPage() {
-	const session = await auth.api.getSession({
-		headers: await headers(),
-	});
-
-	if (!session) {
-		redirect(APP_ROUTES.LOGIN);
-	}
+	const viewer = await requireViewer();
 
 	return (
 		<Layout>
@@ -32,7 +22,7 @@ export default async function AccountPage() {
 						</p>
 					</div>
 				</header>
-				<AccountSettings currentEmail={session.user.email} />
+				<AccountSettings currentEmail={viewer.email} />
 			</div>
 		</Layout>
 	);

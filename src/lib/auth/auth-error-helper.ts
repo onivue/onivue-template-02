@@ -40,5 +40,3 @@ export class AuthErrorHelper {
 		return fallback;
 	}
 }
-
-export const authErrorHelper = new AuthErrorHelper();
