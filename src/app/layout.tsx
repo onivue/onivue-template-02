@@ -3,9 +3,6 @@ import type { Metadata, Viewport } from 'next';
 import { Geist_Mono, Space_Grotesk } from 'next/font/google';
 import { Toaster } from 'sonner';
 
-import { AuthStatus } from '@/components/auth/auth-status';
-import { Footer } from '@/components/layout/footer';
-
 import './globals.css';
 
 const spaceGrotesk = Space_Grotesk({
@@ -38,11 +35,8 @@ export default function RootLayout({
 	return (
 		<html lang='de' className={`${spaceGrotesk.variable} ${geistMono.variable} h-full`}>
 			<body className={`${spaceGrotesk.className} min-h-dvh antialiased`}>
-				<div className='flex min-h-dvh flex-col'>
-					<div className='min-h-0 flex-1'>{children}</div>
-					<Footer />
-				</div>
-				<AuthStatus />
+				{/* each shell places its own footer and account control, next to its own content */}
+				<div className='grid min-h-dvh grid-rows-[1fr]'>{children}</div>
 				<Toaster richColors position='top-center' />
 			</body>
 		</html>

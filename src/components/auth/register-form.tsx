@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 import { AuthEmailField } from '@/components/auth/auth-card';
+import { Button } from '@/components/ui/button';
 import { useAccountActions } from '@/lib/auth/use-account-actions';
 
 const registerSchema = z.object({
@@ -37,9 +38,11 @@ export function RegisterForm() {
 				disabled={accountActions.isBusy}
 				{...form.register('email')}
 			/>
-			<button
+			<Button
 				type='submit'
-				className='design-auth-button-dark inline-flex items-center justify-center gap-3 px-5 disabled:opacity-50'
+				variant='strong'
+				size='xl'
+				className='w-full'
 				disabled={accountActions.isBusy}
 				data-testid='register-submit-button'
 			>
@@ -47,7 +50,7 @@ export function RegisterForm() {
 				<span>
 					{accountActions.isRunning('register') ? 'Link wird gesendet...' : 'Bestätigungslink senden'}
 				</span>
-			</button>
+			</Button>
 		</form>
 	);
 }

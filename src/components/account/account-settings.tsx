@@ -62,9 +62,12 @@ export function AccountSettings({ currentEmail }: AccountSettingsProps) {
 
 	return (
 		<div className='grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,0.8fr)]' data-testid='account-settings'>
-			<section className='design-panel grid gap-5 p-5 sm:p-6' data-testid='account-passkeys-section'>
+			<section
+				className='design-panel grid content-start gap-5 p-5 sm:p-6'
+				data-testid='account-passkeys-section'
+			>
 				<div className='grid gap-2'>
-					<p className='design-section-label w-fit px-3 py-1'>Passkeys</p>
+					<p className='design-section-label w-fit px-3 py-1.5'>Passkeys</p>
 					<h2 className='text-xl font-bold text-foreground'>Anmeldung ohne Passwort</h2>
 					<p className='design-page-description max-w-2xl'>
 						Erstelle nach deinem ersten Login einen Passkey für dieses Gerät und melde dich künftig direkt
@@ -73,7 +76,7 @@ export function AccountSettings({ currentEmail }: AccountSettingsProps) {
 				</div>
 
 				<form
-					className='grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]'
+					className='grid items-end gap-3 sm:grid-cols-[minmax(0,1fr)_auto]'
 					onSubmit={passkeyForm.handleSubmit(handleAddPasskey)}
 				>
 					<label
@@ -81,65 +84,78 @@ export function AccountSettings({ currentEmail }: AccountSettingsProps) {
 						htmlFor='passkey-name'
 						data-invalid={!!passkeyForm.formState.errors.name}
 					>
-						<span className='design-auth-label'>Name</span>
+						<span className='design-label'>Name</span>
 						<input
 							id='passkey-name'
 							type='text'
 							autoComplete='webauthn'
-							className='design-auth-input w-full'
+							className='design-input w-full'
 							aria-invalid={!!passkeyForm.formState.errors.name}
+							aria-describedby={passkeyForm.formState.errors.name ? 'passkey-name-error' : undefined}
 							disabled={isBusy}
 							data-testid='passkey-name-input'
 							{...passkeyForm.register('name')}
 						/>
-						{passkeyForm.formState.errors.name?.message ? (
-							<span className='text-xs font-semibold text-destructive'>
-								{passkeyForm.formState.errors.name.message}
-							</span>
-						) : null}
 					</label>
-					<Button
-						type='submit'
-						size='lg'
-						className='justify-self-center rounded-full bg-foreground px-4 text-primary hover:bg-foreground/90 sm:mt-[1.36rem] sm:self-start'
-						disabled={isBusy}
-						data-testid='add-passkey-button'
-					>
+					<Button type='submit' variant='strong' size='xl' disabled={isBusy} data-testid='add-passkey-button'>
 						<Plus data-icon='inline-start' aria-hidden='true' />
 						{accountActions.isRunning('add-passkey') ? 'Erstelle...' : 'Passkey erstellen'}
 					</Button>
+					{passkeyForm.formState.errors.name?.message ? (
+						<span id='passkey-name-error' className='design-field-error px-1 sm:col-span-2'>
+							{passkeyForm.formState.errors.name.message}
+						</span>
+					) : null}
 				</form>
 
 				<div className='grid gap-3' data-testid='passkey-list'>
 					{passkeyQuery.isPending ? (
-						<div className='rounded-2xl border border-border bg-muted/40 p-4 text-sm font-medium text-muted-foreground'>
-							Passkeys werden geladen...
+						<div
+							className='grid gap-3 rounded-2xl border border-border bg-muted/50 p-4'
+							data-testid='passkey-list-loading'
+						>
+							<div className='flex items-center gap-3'>
+								<div className='size-10 shrink-0 animate-pulse rounded-full bg-foreground/10' />
+								<div className='grid w-full gap-2'>
+									<div className='h-3.5 w-2/5 animate-pulse rounded-full bg-foreground/10' />
+									<div className='h-3 w-1/4 animate-pulse rounded-full bg-foreground/10' />
+								</div>
+							</div>
+							<span className='sr-only'>Passkeys werden geladen...</span>
 						</div>
 					) : null}
 					{!passkeyQuery.isPending && passkeys.length === 0 ? (
-						<div className='rounded-2xl border border-border bg-muted/40 p-4 text-sm font-medium text-muted-foreground'>
+						<p
+							className='rounded-2xl border border-dashed border-border bg-muted/40 p-4 text-sm font-medium text-muted-foreground'
+							data-testid='passkey-list-empty'
+						>
 							Noch kein Passkey hinterlegt.
-						</div>
+						</p>
 					) : null}
 					{passkeys.map((passkey) => (
 						<div
 							key={passkey.id}
-							className='grid gap-3 rounded-2xl border border-border bg-background p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center'
+							className='flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-background p-3 sm:p-4'
 							data-testid='passkey-list-item'
 						>
-							<div className='flex min-w-0 items-center gap-3'>
-								<div className='flex size-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground'>
-									<Fingerprint aria-hidden='true' />
-								</div>
-								<div className='min-w-0'>
-									<p className='truncate font-bold text-foreground'>{passkey.name ?? 'Passkey'}</p>
-									<p className='text-xs font-semibold text-muted-foreground'>{passkey.deviceType}</p>
-								</div>
+							<div className='flex min-w-0 flex-1 items-center gap-3'>
+								<span className='flex size-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground'>
+									<Fingerprint className='size-5' aria-hidden='true' />
+								</span>
+								<span className='grid min-w-0'>
+									<span className='truncate font-bold text-foreground'>
+										{passkey.name ?? 'Passkey'}
+									</span>
+									<span className='truncate text-xs font-medium text-muted-foreground'>
+										{passkey.deviceType}
+									</span>
+								</span>
 							</div>
 							<Button
 								type='button'
 								variant='destructive'
-								size='sm'
+								size='lg'
+								className='rounded-full'
 								disabled={isBusy}
 								onClick={() => void accountActions.deletePasskey(passkey.id)}
 								data-testid='delete-passkey-button'
@@ -154,9 +170,11 @@ export function AccountSettings({ currentEmail }: AccountSettingsProps) {
 
 			<section className='design-panel grid content-start gap-5 p-5 sm:p-6' data-testid='account-email-section'>
 				<div className='grid gap-2'>
-					<p className='design-section-label w-fit px-3 py-1'>E-Mail</p>
+					<p className='design-section-label w-fit px-3 py-1.5'>E-Mail</p>
 					<h2 className='text-xl font-bold text-foreground'>Adresse ändern</h2>
-					<p className='design-page-description'>Aktuelle E-Mail: {currentEmail}</p>
+					<p className='design-page-description'>
+						Aktuelle E-Mail: <span className='font-semibold break-all text-foreground'>{currentEmail}</span>
+					</p>
 				</div>
 
 				<form className='grid gap-3' onSubmit={emailForm.handleSubmit(handleChangeEmail)}>
@@ -165,27 +183,28 @@ export function AccountSettings({ currentEmail }: AccountSettingsProps) {
 						htmlFor='account-email'
 						data-invalid={!!emailForm.formState.errors.email}
 					>
-						<span className='design-auth-label'>Neue E-Mail</span>
+						<span className='design-label'>Neue E-Mail</span>
 						<input
 							id='account-email'
 							type='email'
 							autoComplete='email'
-							className='design-auth-input w-full'
+							className='design-input w-full'
 							aria-invalid={!!emailForm.formState.errors.email}
+							aria-describedby={emailForm.formState.errors.email ? 'account-email-error' : undefined}
 							disabled={isBusy}
 							data-testid='account-email-input'
 							{...emailForm.register('email')}
 						/>
 						{emailForm.formState.errors.email?.message ? (
-							<span className='text-xs font-semibold text-destructive'>
+							<span id='account-email-error' className='design-field-error px-1'>
 								{emailForm.formState.errors.email.message}
 							</span>
 						) : null}
 					</label>
 					<Button
 						type='submit'
-						size='lg'
-						className='rounded-full bg-foreground text-primary hover:bg-foreground/90'
+						variant='strong'
+						size='xl'
 						disabled={isBusy}
 						data-testid='change-email-button'
 					>
@@ -197,8 +216,8 @@ export function AccountSettings({ currentEmail }: AccountSettingsProps) {
 				<Button
 					type='button'
 					variant='outline'
-					size='lg'
-					className='rounded-full'
+					size='xl'
+					className='mt-auto'
 					disabled={isBusy}
 					onClick={() => void accountActions.signOut()}
 					data-testid='sign-out-button'

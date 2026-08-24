@@ -3,6 +3,7 @@
 import { Ellipsis, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import Link from 'next/link';
+import { type ReactNode } from 'react';
 
 import { Navigation } from '@/components/layout/navigation.desktop';
 import { useNavigationItems } from '@/components/layout/navigation.items';
@@ -10,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 type MobileNavigationProps = {
+	account: ReactNode;
 	isSidebarOpen: boolean;
 	onCloseSidebar: () => void;
 	onOpenSidebar: () => void;
@@ -27,13 +29,18 @@ const BACKDROP_TRANSITION = {
 	ease: 'easeOut',
 } as const;
 
-export function MobileNavigation({ isSidebarOpen, onCloseSidebar, onOpenSidebar }: MobileNavigationProps) {
+// every slot in the bar shares one shape, so the "more" trigger cannot drift from the links
+const MOBILE_ITEM_CLASS =
+	'flex h-12 flex-col items-center justify-center gap-1 rounded-full px-1 text-xs leading-none font-semibold outline-none transition-colors focus-visible:ring-3 focus-visible:ring-sidebar-ring/50';
+const MOBILE_ITEM_MUTED_CLASS = 'text-sidebar-primary-foreground/75 hover:text-sidebar-primary-foreground';
+
+export function MobileNavigation({ account, isSidebarOpen, onCloseSidebar, onOpenSidebar }: MobileNavigationProps) {
 	const items = useNavigationItems();
 
 	return (
 		<>
 			<nav
-				className='fixed inset-x-2 bottom-[calc(env(safe-area-inset-bottom)+0.5rem)] z-40 mx-auto grid max-w-sm gap-1 rounded-full border border-white/10 bg-[var(--ink)] p-1.5 shadow-[0_18px_48px_oklch(0.16_0.012_260_/_22%),0_0_0_1px_oklch(0.16_0.012_260_/_45%)] md:hidden'
+				className='fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+0.5rem)] z-40 mx-auto grid max-w-sm gap-1 rounded-full border border-sidebar-border bg-sidebar-primary p-1.5 text-sidebar-primary-foreground shadow-xl shadow-foreground/25 md:hidden'
 				// one column per item plus the "more" trigger, so the count cannot drift from the registry
 				style={{ gridTemplateColumns: `repeat(${items.length + 1}, minmax(0, 1fr))` }}
 				aria-label='Mobile Navigation'
@@ -44,30 +51,32 @@ export function MobileNavigation({ isSidebarOpen, onCloseSidebar, onOpenSidebar 
 						key={href}
 						href={href}
 						className={cn(
-							'flex min-h-12 flex-col items-center justify-center gap-1 rounded-full px-2 py-2 text-[0.62rem] font-bold leading-none outline-none transition-colors focus-visible:ring-3 focus-visible:ring-ring/50',
-							isActive
-								? 'text-[var(--lime-glow)]'
-								: 'text-[oklch(0.69_0.01_260)] hover:text-sidebar-primary-foreground'
+							MOBILE_ITEM_CLASS,
+							isActive ? 'bg-sidebar-accent/15 text-sidebar-accent' : MOBILE_ITEM_MUTED_CLASS
 						)}
 						aria-current={isActive ? 'page' : undefined}
 						data-testid={`mobile-${testId}`}
 					>
-						<Icon className='size-4' aria-hidden='true' />
-						<span>{label}</span>
+						<Icon className='size-5' aria-hidden='true' />
+						<span className='max-w-full truncate'>{label}</span>
 					</Link>
 				))}
 
 				<Button
 					type='button'
 					variant='ghost'
-					className='min-h-12 flex-col gap-1 rounded-full px-2 py-2 text-[0.62rem] font-bold leading-none text-sidebar-primary-foreground/70 hover:text-sidebar-primary-foreground'
+					className={cn(
+						MOBILE_ITEM_CLASS,
+						MOBILE_ITEM_MUTED_CLASS,
+						'hover:bg-sidebar-accent/15 aria-expanded:bg-sidebar-accent/15 aria-expanded:text-sidebar-primary-foreground'
+					)}
 					aria-label='Mehr Navigation öffnen'
 					aria-controls='mobile-sidebar-panel'
 					aria-expanded={isSidebarOpen}
 					onClick={onOpenSidebar}
 					data-testid='mobile-more-button'
 				>
-					<Ellipsis aria-hidden='true' data-icon='inline-start' />
+					<Ellipsis className='size-5' aria-hidden='true' />
 					<span>More</span>
 				</Button>
 			</nav>
@@ -105,19 +114,20 @@ export function MobileNavigation({ isSidebarOpen, onCloseSidebar, onOpenSidebar 
 							data-testid='mobile-sidebar-panel'
 						>
 							<Navigation
-								className='min-h-0 rounded-b-none rounded-t-[2rem] p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] shadow-2xl shadow-foreground/20'
+								account={account}
+								className='min-h-0 rounded-b-none rounded-t-3xl p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] shadow-2xl shadow-foreground/20'
 								onNavigate={onCloseSidebar}
 								action={
 									<Button
 										type='button'
 										variant='ghost'
-										size='icon-sm'
-										className='text-sidebar-accent hover:bg-sidebar-accent/12 hover:text-sidebar-accent'
+										size='icon-lg'
+										className='rounded-full text-sidebar-accent hover:bg-sidebar-accent/15 hover:text-sidebar-accent focus-visible:ring-sidebar-ring/50'
 										aria-label='Navigation schließen'
 										onClick={onCloseSidebar}
 										data-testid='mobile-sidebar-close'
 									>
-										<X aria-hidden='true' data-icon='inline-start' />
+										<X className='size-5' aria-hidden='true' />
 									</Button>
 								}
 							/>

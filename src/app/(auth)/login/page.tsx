@@ -17,11 +17,11 @@ export default function LoginPage() {
 			description='Melde dich mit Passkey oder per E-Mail-Link an.'
 			testId='login-page'
 			footer={
-				<p className='design-auth-description text-center text-xs sm:text-sm' data-testid='login-register-link'>
+				<p className='text-center text-sm font-medium text-ink-soft' data-testid='login-register-link'>
 					Neu hier?{' '}
 					<Link
 						href={APP_ROUTES.REGISTER}
-						className='font-bold text-foreground outline-none transition-colors hover:text-primary focus-visible:ring-3 focus-visible:ring-ring/50'
+						className='rounded-sm font-bold text-foreground underline underline-offset-4 outline-none transition-colors hover:text-accent-strong focus-visible:ring-3 focus-visible:ring-ring/50'
 					>
 						Registrieren
 					</Link>

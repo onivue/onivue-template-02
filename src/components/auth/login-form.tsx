@@ -7,6 +7,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 import { AuthDivider, AuthEmailField } from '@/components/auth/auth-card';
+import { Button } from '@/components/ui/button';
 import { useAccountActions } from '@/lib/auth/use-account-actions';
 
 const loginSchema = z.object({
@@ -31,9 +32,11 @@ export function LoginForm() {
 
 	return (
 		<>
-			<button
+			<Button
 				type='button'
-				className='design-auth-button-dark inline-flex items-center justify-center gap-3 px-5 disabled:opacity-50'
+				variant='strong'
+				size='xl'
+				className='w-full'
 				disabled={accountActions.isBusy}
 				onClick={() => void accountActions.signInWithPasskey()}
 				data-testid='login-passkey-button'
@@ -42,7 +45,7 @@ export function LoginForm() {
 				<span>
 					{accountActions.isRunning('sign-in-passkey') ? 'Passkey prüfen...' : 'Mit Passkey anmelden'}
 				</span>
-			</button>
+			</Button>
 			<AuthDivider label='oder' />
 			<form
 				className='grid gap-4'
@@ -57,9 +60,11 @@ export function LoginForm() {
 					disabled={accountActions.isBusy}
 					{...form.register('email')}
 				/>
-				<button
+				<Button
 					type='submit'
-					className='inline-flex min-h-[3.05rem] items-center justify-center gap-3 rounded-full border border-[oklch(0.82_0.006_106)] bg-[var(--surface-elevated)] px-5 text-[clamp(0.86rem,1.6vw,0.95rem)] font-bold text-[var(--ink)] disabled:opacity-50'
+					variant='outline'
+					size='xl'
+					className='w-full'
 					disabled={accountActions.isBusy}
 					data-testid='login-magic-link-button'
 				>
@@ -67,7 +72,7 @@ export function LoginForm() {
 					<span>
 						{accountActions.isRunning('send-login-link') ? 'Link wird gesendet...' : 'Login-Link senden'}
 					</span>
-				</button>
+				</Button>
 			</form>
 		</>
 	);
