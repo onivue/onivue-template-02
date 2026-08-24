@@ -1,0 +1,22 @@
+'use client';
+
+import { usePathname } from 'next/navigation';
+
+import { PRIMARY_NAVIGATION_ITEMS, type NavigationLinkItem } from '@/components/layout/navigation.config';
+import { matchesRoute } from '@/config/routes';
+
+export type ResolvedNavigationItem = NavigationLinkItem & {
+	isActive: boolean;
+};
+
+// the active-state rule, resolved once for every navigation surface
+export function resolveNavigationItems(pathname: string): ResolvedNavigationItem[] {
+	return PRIMARY_NAVIGATION_ITEMS.map((item) => ({
+		...item,
+		isActive: matchesRoute(pathname, item.href),
+	}));
+}
+
+export function useNavigationItems(): ResolvedNavigationItem[] {
+	return resolveNavigationItems(usePathname());
+}

@@ -3,12 +3,10 @@
 import { Ellipsis, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 
-import { PRIMARY_NAVIGATION_ITEMS } from '@/components/layout/navigation.config';
 import { Navigation } from '@/components/layout/navigation.desktop';
+import { useNavigationItems } from '@/components/layout/navigation.items';
 import { Button } from '@/components/ui/button';
-import { matchesRoute } from '@/config/routes';
 import { cn } from '@/lib/utils';
 
 type MobileNavigationProps = {
@@ -30,37 +28,34 @@ const BACKDROP_TRANSITION = {
 } as const;
 
 export function MobileNavigation({ isSidebarOpen, onCloseSidebar, onOpenSidebar }: MobileNavigationProps) {
-	const pathname = usePathname();
+	const items = useNavigationItems();
 
 	return (
 		<>
 			<nav
-				className='fixed inset-x-2 bottom-[calc(env(safe-area-inset-bottom)+0.5rem)] z-40 mx-auto grid max-w-sm grid-cols-4 gap-1 rounded-full border border-white/10 bg-[var(--ink)] p-1.5 shadow-[0_18px_48px_oklch(0.16_0.012_260_/_22%),0_0_0_1px_oklch(0.16_0.012_260_/_45%)] md:hidden'
+				className='fixed inset-x-2 bottom-[calc(env(safe-area-inset-bottom)+0.5rem)] z-40 mx-auto grid max-w-sm gap-1 rounded-full border border-white/10 bg-[var(--ink)] p-1.5 shadow-[0_18px_48px_oklch(0.16_0.012_260_/_22%),0_0_0_1px_oklch(0.16_0.012_260_/_45%)] md:hidden'
+				// one column per item plus the "more" trigger, so the count cannot drift from the registry
+				style={{ gridTemplateColumns: `repeat(${items.length + 1}, minmax(0, 1fr))` }}
 				aria-label='Mobile Navigation'
 				data-testid='mobile-bottom-navigation'
 			>
-				{PRIMARY_NAVIGATION_ITEMS.map((item) => {
-					const Icon = item.icon;
-					const isActive = matchesRoute(pathname, item.href);
-
-					return (
-						<Link
-							key={item.href}
-							href={item.href}
-							className={cn(
-								'flex min-h-12 flex-col items-center justify-center gap-1 rounded-full px-2 py-2 text-[0.62rem] font-bold leading-none outline-none transition-colors focus-visible:ring-3 focus-visible:ring-ring/50',
-								isActive
-									? 'text-[var(--lime-glow)]'
-									: 'text-[oklch(0.69_0.01_260)] hover:text-sidebar-primary-foreground'
-							)}
-							aria-current={isActive ? 'page' : undefined}
-							data-testid={`mobile-${item.testId}`}
-						>
-							<Icon className='size-4' aria-hidden='true' />
-							<span>{item.label}</span>
-						</Link>
-					);
-				})}
+				{items.map(({ href, icon: Icon, isActive, label, testId }) => (
+					<Link
+						key={href}
+						href={href}
+						className={cn(
+							'flex min-h-12 flex-col items-center justify-center gap-1 rounded-full px-2 py-2 text-[0.62rem] font-bold leading-none outline-none transition-colors focus-visible:ring-3 focus-visible:ring-ring/50',
+							isActive
+								? 'text-[var(--lime-glow)]'
+								: 'text-[oklch(0.69_0.01_260)] hover:text-sidebar-primary-foreground'
+						)}
+						aria-current={isActive ? 'page' : undefined}
+						data-testid={`mobile-${testId}`}
+					>
+						<Icon className='size-4' aria-hidden='true' />
+						<span>{label}</span>
+					</Link>
+				))}
 
 				<Button
 					type='button'

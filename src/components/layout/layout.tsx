@@ -2,8 +2,8 @@
 
 import { type ReactNode } from 'react';
 
-import { MobileNavigation } from '@/components/layout/naviagtion.mobile';
 import { Navigation } from '@/components/layout/navigation.desktop';
+import { MobileNavigation } from '@/components/layout/navigation.mobile';
 import { useUiStore } from '@/stores/ui-store';
 
 type LayoutProps = {
