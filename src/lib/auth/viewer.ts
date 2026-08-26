@@ -7,16 +7,22 @@ import { auth } from '@/lib/auth/auth';
 
 export type Viewer = {
 	email: string;
+	firstName: string | null;
 	id: string;
 	image: string | null;
+	lastName: string | null;
 	name: string;
+	username: string | null;
 };
 
 type SessionUser = {
 	email: string;
+	firstName?: string | null;
 	id: string;
 	image?: string | null;
+	lastName?: string | null;
 	name: string;
+	username?: string | null;
 };
 
 // narrow port over better-auth's server api, so the resolution policy can be driven by a fake
@@ -27,9 +33,12 @@ export type SessionGateway = {
 function toViewer(user: SessionUser): Viewer {
 	return {
 		email: user.email,
+		firstName: user.firstName ?? null,
 		id: user.id,
 		image: user.image ?? null,
+		lastName: user.lastName ?? null,
 		name: user.name,
+		username: user.username ?? null,
 	};
 }
 

@@ -25,7 +25,7 @@ Lives in [`src/lib/auth/viewer.ts`](src/lib/auth/viewer.ts).
 ## Account Action
 
 Something a Viewer does to their own account: send a login link, sign in with a passkey, register,
-add or delete a passkey, change email, sign out.
+add or delete a passkey, change email, update profile info, sign out.
 
 Every Account Action follows one ritual — call the gateway, normalise whichever error channel
 fired, tell the person what happened, then apply its success effect. The ritual is not repeated
@@ -37,6 +37,25 @@ form; it is not how the work gets done.
 
 Lives in [`src/lib/auth/account-actions.ts`](src/lib/auth/account-actions.ts), with
 `useAccountActions` binding it to React state.
+
+## Profile
+
+A Viewer's optional self-description: **username** (unique, case-insensitive), **first name** and
+**last name**. All three are validated on both sides of the wire from one shared source, and both
+reject words on a blocked list — profanity, slurs and similar terms.
+
+- `src/lib/profile/profile-schema.ts` — the shared Zod schemas (length, character pattern, blocked
+  words) and the `additionalFields` config, used by both `auth.ts` and `auth-client.ts` so the two
+  never drift apart.
+- `src/lib/profile/profanity-filter.ts` — `ProfanityFilter`, a small word-list matcher that folds
+  case, diacritics, the German eszett and common leetspeak substitutions before comparing, so
+  simple obfuscation does not slip through.
+
+The username itself is handled by better-auth's own `username` plugin (uniqueness, normalisation,
+format), configured with the shared pattern and the profanity filter as its validator. First and
+last name have no equivalent plugin, so they are validated in a `databaseHooks.user.update.before`
+hook in `auth.ts`, which throws a `better-auth` `APIError` the client already knows how to surface
+(see Account Action's `AuthErrorHelper`).
 
 ## Auth Gateway
 

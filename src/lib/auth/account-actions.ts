@@ -21,6 +21,12 @@ export type SendMagicLinkParams = {
 	newUserCallbackURL: string;
 };
 
+export type UpdateProfileParams = {
+	firstName: string;
+	lastName: string;
+	username: string;
+};
+
 export type AuthGateway = {
 	addPasskey(params: { name: string }): Promise<AuthGatewayResult>;
 	changeEmail(params: { callbackURL: string; newEmail: string }): Promise<AuthGatewayResult>;
@@ -28,6 +34,7 @@ export type AuthGateway = {
 	sendMagicLink(params: SendMagicLinkParams): Promise<AuthGatewayResult>;
 	signInPasskey(): Promise<AuthGatewayResult>;
 	signOut(): Promise<AuthGatewayResult>;
+	updateProfile(params: UpdateProfileParams): Promise<AuthGatewayResult>;
 };
 
 export type AccountActionName =
@@ -37,7 +44,8 @@ export type AccountActionName =
 	| 'register'
 	| 'send-login-link'
 	| 'sign-in-passkey'
-	| 'sign-out';
+	| 'sign-out'
+	| 'update-profile';
 
 export type ActionOutcome = { ok: true } | { ok: false; message: string };
 
@@ -67,6 +75,7 @@ type ActionMessages = {
 type SuccessEffect = {
 	invalidate?: boolean;
 	redirect?: AppRoute;
+	refresh?: boolean;
 };
 
 const EMAIL_NAME_SEPARATOR = '@';
@@ -103,6 +112,10 @@ const ACTION_MESSAGES: Record<AccountActionName, ActionMessages> = {
 		failure: 'Abmelden ist fehlgeschlagen.',
 		success: 'Du bist abgemeldet.',
 	},
+	'update-profile': {
+		failure: 'Die Profilinformationen konnten nicht gespeichert werden.',
+		success: 'Profil wurde aktualisiert.',
+	},
 };
 
 const ACTION_EFFECTS: Record<AccountActionName, SuccessEffect> = {
@@ -113,6 +126,7 @@ const ACTION_EFFECTS: Record<AccountActionName, SuccessEffect> = {
 	'send-login-link': {},
 	'sign-in-passkey': { redirect: APP_ROUTES.ACCOUNT },
 	'sign-out': { redirect: APP_ROUTES.LANDING },
+	'update-profile': { refresh: true },
 };
 
 function toGatewayError(error: unknown): AuthGatewayError | null {
@@ -185,6 +199,10 @@ export class AccountActions {
 		return await this.execute('sign-out', async () => await this.gateway.signOut());
 	}
 
+	public async updateProfile(params: UpdateProfileParams): Promise<ActionOutcome> {
+		return await this.execute('update-profile', async () => await this.gateway.updateProfile(params));
+	}
+
 	// the single ritual: both error channels normalise here, and success effects are declarative
 	private async execute(
 		action: AccountActionName,
@@ -220,6 +238,10 @@ export class AccountActions {
 
 		if (effect.invalidate) {
 			await this.ports.invalidate();
+		}
+
+		if (effect.refresh) {
+			this.ports.navigate.refresh();
 		}
 
 		if (!effect.redirect) {

@@ -43,6 +43,7 @@ function createHarness(outcomes: Partial<Record<GatewayName, GatewayOutcome>> = 
 		sendMagicLink: respond('sendMagicLink'),
 		signInPasskey: respond('signInPasskey'),
 		signOut: respond('signOut'),
+		updateProfile: respond('updateProfile'),
 	};
 
 	const actions = new AccountActions(gateway, {
@@ -200,6 +201,39 @@ describe('callback urls cannot leave the app', () => {
 		await harness.actions.sendLoginLink('du@example.com', APP_ROUTES.SETTINGS);
 
 		expect(harness.magicLinkParams().callbackURL).toBe(APP_ROUTES.SETTINGS);
+	});
+});
+
+describe('profile updates', () => {
+	test('a successful update notifies success and refreshes', async () => {
+		const harness = createHarness();
+
+		const outcome = await harness.actions.updateProfile({
+			firstName: 'Albin',
+			lastName: 'Hoti',
+			username: 'albinh',
+		});
+
+		expect(outcome).toEqual({ ok: true });
+		expect(harness.notifications).toEqual([{ kind: 'success', message: 'Profil wurde aktualisiert.' }]);
+		expect(harness.refreshCount).toBe(1);
+		expect(harness.navigations).toEqual([]);
+		expect(harness.invalidateCount).toBe(0);
+	});
+
+	test('a taken username is reported with the action fallback', async () => {
+		const harness = createHarness({ updateProfile: { error: {} } });
+
+		const outcome = await harness.actions.updateProfile({
+			firstName: 'Albin',
+			lastName: 'Hoti',
+			username: 'albinh',
+		});
+
+		expect(outcome).toEqual({
+			ok: false,
+			message: 'Die Profilinformationen konnten nicht gespeichert werden.',
+		});
 	});
 });
 

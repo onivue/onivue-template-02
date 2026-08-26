@@ -1,6 +1,11 @@
 'use client';
 
-import type { AuthGateway, AuthGatewayResult, SendMagicLinkParams } from '@/lib/auth/account-actions';
+import type {
+	AuthGateway,
+	AuthGatewayResult,
+	SendMagicLinkParams,
+	UpdateProfileParams,
+} from '@/lib/auth/account-actions';
 
 import { authClient } from '@/lib/auth/auth-client';
 
@@ -16,4 +21,6 @@ export const authGateway: AuthGateway = {
 		await authClient.signIn.magicLink(params),
 	signInPasskey: async (): Promise<AuthGatewayResult> => await authClient.signIn.passkey(),
 	signOut: async (): Promise<AuthGatewayResult> => await authClient.signOut(),
+	updateProfile: async (params: UpdateProfileParams): Promise<AuthGatewayResult> =>
+		await authClient.updateUser(params),
 };

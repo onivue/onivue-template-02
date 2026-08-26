@@ -7,6 +7,9 @@ export const user = pgTable('user', {
 	email: text('email').notNull().unique(),
 	emailVerified: boolean('email_verified').default(false).notNull(),
 	image: text('image'),
+	username: text('username').unique(),
+	firstName: text('first_name'),
+	lastName: text('last_name'),
 	createdAt: timestamp('created_at').notNull(),
 	updatedAt: timestamp('updated_at')
 		.$onUpdate(() => new Date())

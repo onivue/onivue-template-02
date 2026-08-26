@@ -9,6 +9,7 @@ import {
 	type AccountActionName,
 	type ActionOutcome,
 	type AuthGateway,
+	type UpdateProfileParams,
 } from '@/lib/auth/account-actions';
 import { authGateway } from '@/lib/auth/auth-gateway';
 
@@ -76,5 +77,7 @@ export function useAccountActions(options: UseAccountActionsOptions = {}) {
 		signInWithPasskey: async () =>
 			await run('sign-in-passkey', undefined, async () => await actions.signInWithPasskey()),
 		signOut: async () => await run('sign-out', undefined, async () => await actions.signOut()),
+		updateProfile: async (params: UpdateProfileParams) =>
+			await run('update-profile', undefined, async () => await actions.updateProfile(params)),
 	};
 }
