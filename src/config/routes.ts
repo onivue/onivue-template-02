@@ -4,7 +4,15 @@ const PATH_SEPARATOR = '/';
 // public: no session needed · guest: only without a session · viewer: session required
 export type RouteAccess = 'guest' | 'public' | 'viewer';
 
-export type RouteName = 'ACCOUNT' | 'HOME' | 'LANDING' | 'LOGIN' | 'REGISTER' | 'SETTINGS';
+export type RouteName =
+	| 'ACCOUNT'
+	| 'FORGOT_PASSWORD'
+	| 'HOME'
+	| 'LANDING'
+	| 'LOGIN'
+	| 'REGISTER'
+	| 'RESET_PASSWORD'
+	| 'SETTINGS';
 
 type RouteDefinition = {
 	access: RouteAccess;
@@ -21,6 +29,10 @@ export const ROUTES = {
 		access: 'viewer',
 		nav: { label: 'Account', testId: 'navigation-account-link' },
 		path: '/account',
+	},
+	FORGOT_PASSWORD: {
+		access: 'guest',
+		path: '/forgot-password',
 	},
 	HOME: {
 		access: 'viewer',
@@ -39,6 +51,11 @@ export const ROUTES = {
 		access: 'guest',
 		path: '/register',
 	},
+	// no session required: a signed-in viewer may still hold a valid reset link in another tab
+	RESET_PASSWORD: {
+		access: 'public',
+		path: '/reset-password',
+	},
 	SETTINGS: {
 		access: 'viewer',
 		nav: { label: 'Settings', testId: 'navigation-settings-link' },
@@ -53,6 +70,8 @@ export const APP_ROUTES = {
 	SETTINGS: ROUTES.SETTINGS.path,
 	LOGIN: ROUTES.LOGIN.path,
 	REGISTER: ROUTES.REGISTER.path,
+	FORGOT_PASSWORD: ROUTES.FORGOT_PASSWORD.path,
+	RESET_PASSWORD: ROUTES.RESET_PASSWORD.path,
 } as const;
 
 export type AppRoute = (typeof APP_ROUTES)[keyof typeof APP_ROUTES];

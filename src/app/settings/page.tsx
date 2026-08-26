@@ -1,6 +1,11 @@
 import { Layout } from '@/components/layout/layout';
 import { PagePlaceholder } from '@/components/layout/page-placeholder';
 
+export const metadata = {
+	title: 'Settings | onivue',
+	description: 'Einstellungen der App.',
+};
+
 export default function SettingsPage() {
 	return (
 		<Layout>

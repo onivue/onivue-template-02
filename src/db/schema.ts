@@ -1,5 +1,5 @@
 import { relations } from 'drizzle-orm';
-import { pgTable, text, bigint, timestamp, boolean, integer, index } from 'drizzle-orm/pg-core';
+import { pgTable, text, bigint, timestamp, boolean, integer, index, uniqueIndex } from 'drizzle-orm/pg-core';
 
 export const user = pgTable('user', {
 	id: text('id').primaryKey(),
@@ -7,6 +7,9 @@ export const user = pgTable('user', {
 	email: text('email').notNull().unique(),
 	emailVerified: boolean('email_verified').default(false).notNull(),
 	image: text('image'),
+	username: text('username').unique(),
+	firstName: text('first_name'),
+	lastName: text('last_name'),
 	createdAt: timestamp('created_at').notNull(),
 	updatedAt: timestamp('updated_at')
 		.$onUpdate(() => new Date())
@@ -36,6 +39,8 @@ export const account = pgTable(
 	'account',
 	{
 		id: text('id').primaryKey(),
+		// scopes account identity per better-auth 1.7+ (e.g. 'local:credential', 'local:oauth:<provider>')
+		issuer: text('issuer').notNull(),
 		accountId: text('account_id').notNull(),
 		providerId: text('provider_id').notNull(),
 		userId: text('user_id')
@@ -53,7 +58,10 @@ export const account = pgTable(
 			.$onUpdate(() => new Date())
 			.notNull(),
 	},
-	(table) => [index('account_userId_idx').on(table.userId)]
+	(table) => [
+		index('account_userId_idx').on(table.userId),
+		uniqueIndex('account_issuer_accountId_idx').on(table.issuer, table.accountId),
+	]
 );
 
 export const verification = pgTable(

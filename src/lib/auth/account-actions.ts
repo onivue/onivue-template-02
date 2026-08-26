@@ -21,23 +21,75 @@ export type SendMagicLinkParams = {
 	newUserCallbackURL: string;
 };
 
+// partial by design: username and name are saved through separate forms
+export type UpdateProfileParams = {
+	firstName?: string;
+	lastName?: string;
+	username?: string;
+};
+
+export type UpdateNameParams = {
+	firstName: string;
+	lastName: string;
+};
+
+export type SignInEmailParams = {
+	email: string;
+	password: string;
+};
+
+export type SignUpEmailParams = {
+	callbackURL: string;
+	email: string;
+	name: string;
+	password: string;
+};
+
+export type ChangePasswordParams = {
+	currentPassword: string;
+	newPassword: string;
+};
+
+export type RequestPasswordResetParams = {
+	email: string;
+	redirectTo: string;
+};
+
+export type ResetPasswordParams = {
+	newPassword: string;
+	token: string;
+};
+
 export type AuthGateway = {
 	addPasskey(params: { name: string }): Promise<AuthGatewayResult>;
 	changeEmail(params: { callbackURL: string; newEmail: string }): Promise<AuthGatewayResult>;
+	changePassword(params: ChangePasswordParams): Promise<AuthGatewayResult>;
 	deletePasskey(params: { id: string }): Promise<AuthGatewayResult>;
+	requestPasswordReset(params: RequestPasswordResetParams): Promise<AuthGatewayResult>;
+	resetPassword(params: ResetPasswordParams): Promise<AuthGatewayResult>;
 	sendMagicLink(params: SendMagicLinkParams): Promise<AuthGatewayResult>;
+	signInEmail(params: SignInEmailParams): Promise<AuthGatewayResult>;
 	signInPasskey(): Promise<AuthGatewayResult>;
 	signOut(): Promise<AuthGatewayResult>;
+	signUpEmail(params: SignUpEmailParams): Promise<AuthGatewayResult>;
+	updateProfile(params: UpdateProfileParams): Promise<AuthGatewayResult>;
 };
 
 export type AccountActionName =
 	| 'add-passkey'
 	| 'change-email'
+	| 'change-password'
 	| 'delete-passkey'
 	| 'register'
+	| 'request-password-reset'
+	| 'reset-password'
 	| 'send-login-link'
 	| 'sign-in-passkey'
-	| 'sign-out';
+	| 'sign-in-password'
+	| 'sign-out'
+	| 'sign-up-password'
+	| 'update-name'
+	| 'update-username';
 
 export type ActionOutcome = { ok: true } | { ok: false; message: string };
 
@@ -67,6 +119,7 @@ type ActionMessages = {
 type SuccessEffect = {
 	invalidate?: boolean;
 	redirect?: AppRoute;
+	refresh?: boolean;
 };
 
 const EMAIL_NAME_SEPARATOR = '@';
@@ -83,6 +136,10 @@ const ACTION_MESSAGES: Record<AccountActionName, ActionMessages> = {
 		failure: 'Die E-Mail-Änderung konnte nicht gestartet werden.',
 		success: 'Bestätigungslink gesendet. Bitte prüfe deine aktuelle E-Mail-Adresse.',
 	},
+	'change-password': {
+		failure: 'Das Passwort konnte nicht geändert werden.',
+		success: 'Passwort wurde geändert.',
+	},
 	'delete-passkey': {
 		failure: 'Der Passkey konnte nicht entfernt werden.',
 		success: 'Passkey wurde entfernt.',
@@ -90,6 +147,14 @@ const ACTION_MESSAGES: Record<AccountActionName, ActionMessages> = {
 	register: {
 		failure: 'Der Registrierungslink konnte nicht gesendet werden. Bitte versuche es erneut.',
 		success: 'Registrierungslink gesendet. Bitte öffne deine E-Mail und bestätige den Link.',
+	},
+	'request-password-reset': {
+		failure: 'Der Link zum Zurücksetzen konnte nicht gesendet werden. Bitte versuche es erneut.',
+		success: 'Falls diese E-Mail-Adresse existiert, wurde ein Link zum Zurücksetzen gesendet.',
+	},
+	'reset-password': {
+		failure: 'Das Passwort konnte nicht gesetzt werden. Der Link ist möglicherweise abgelaufen.',
+		success: 'Passwort wurde gesetzt. Du kannst dich jetzt anmelden.',
 	},
 	'send-login-link': {
 		failure: 'Der Login-Link konnte nicht gesendet werden. Bitte versuche es erneut.',
@@ -99,20 +164,43 @@ const ACTION_MESSAGES: Record<AccountActionName, ActionMessages> = {
 		failure: 'Die Passkey-Anmeldung ist fehlgeschlagen.',
 		success: 'Erfolgreich angemeldet.',
 	},
+	'sign-in-password': {
+		failure: 'Die Anmeldung ist fehlgeschlagen.',
+		success: 'Erfolgreich angemeldet.',
+	},
 	'sign-out': {
 		failure: 'Abmelden ist fehlgeschlagen.',
 		success: 'Du bist abgemeldet.',
+	},
+	'sign-up-password': {
+		failure: 'Die Registrierung konnte nicht abgeschlossen werden.',
+		success: 'Konto erstellt. Bitte bestätige deine E-Mail-Adresse, um dich anzumelden.',
+	},
+	'update-name': {
+		failure: 'Der Name konnte nicht gespeichert werden.',
+		success: 'Name wurde aktualisiert.',
+	},
+	'update-username': {
+		failure: 'Der Benutzername konnte nicht gespeichert werden.',
+		success: 'Benutzername wurde aktualisiert.',
 	},
 };
 
 const ACTION_EFFECTS: Record<AccountActionName, SuccessEffect> = {
 	'add-passkey': { invalidate: true },
 	'change-email': {},
+	'change-password': {},
 	'delete-passkey': { invalidate: true },
 	register: {},
+	'request-password-reset': {},
+	'reset-password': { redirect: APP_ROUTES.LOGIN },
 	'send-login-link': {},
 	'sign-in-passkey': { redirect: APP_ROUTES.ACCOUNT },
+	'sign-in-password': { redirect: APP_ROUTES.ACCOUNT },
 	'sign-out': { redirect: APP_ROUTES.LANDING },
+	'sign-up-password': {},
+	'update-name': { refresh: true },
+	'update-username': { refresh: true },
 };
 
 function toGatewayError(error: unknown): AuthGatewayError | null {
@@ -185,6 +273,56 @@ export class AccountActions {
 		return await this.execute('sign-out', async () => await this.gateway.signOut());
 	}
 
+	public async signInWithPassword(email: string, password: string): Promise<ActionOutcome> {
+		return await this.execute('sign-in-password', async () => await this.gateway.signInEmail({ email, password }));
+	}
+
+	public async signUpWithPassword(email: string, password: string): Promise<ActionOutcome> {
+		return await this.execute(
+			'sign-up-password',
+			async () =>
+				await this.gateway.signUpEmail({
+					callbackURL: APP_ROUTES.LOGIN,
+					email,
+					name: this.deriveDefaultName(email),
+					password,
+				})
+		);
+	}
+
+	public async changePassword(currentPassword: string, newPassword: string): Promise<ActionOutcome> {
+		return await this.execute(
+			'change-password',
+			async () => await this.gateway.changePassword({ currentPassword, newPassword })
+		);
+	}
+
+	public async requestPasswordReset(email: string): Promise<ActionOutcome> {
+		return await this.execute(
+			'request-password-reset',
+			async () =>
+				await this.gateway.requestPasswordReset({
+					email,
+					redirectTo: APP_ROUTES.RESET_PASSWORD,
+				})
+		);
+	}
+
+	public async resetPassword(newPassword: string, token: string): Promise<ActionOutcome> {
+		return await this.execute(
+			'reset-password',
+			async () => await this.gateway.resetPassword({ newPassword, token })
+		);
+	}
+
+	public async updateUsername(username: string): Promise<ActionOutcome> {
+		return await this.execute('update-username', async () => await this.gateway.updateProfile({ username }));
+	}
+
+	public async updateName(params: UpdateNameParams): Promise<ActionOutcome> {
+		return await this.execute('update-name', async () => await this.gateway.updateProfile(params));
+	}
+
 	// the single ritual: both error channels normalise here, and success effects are declarative
 	private async execute(
 		action: AccountActionName,
@@ -220,6 +358,10 @@ export class AccountActions {
 
 		if (effect.invalidate) {
 			await this.ports.invalidate();
+		}
+
+		if (effect.refresh) {
+			this.ports.navigate.refresh();
 		}
 
 		if (!effect.redirect) {

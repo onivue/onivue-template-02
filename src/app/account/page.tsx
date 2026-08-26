@@ -1,14 +1,18 @@
 import { AccountSettings } from '@/components/account/account-settings';
+import { PasswordSettings } from '@/components/account/password-settings';
+import { ProfileSettings } from '@/components/account/profile-settings';
 import { Layout } from '@/components/layout/layout';
+import { hasCredentialPassword } from '@/lib/auth/password-status';
 import { requireViewer } from '@/lib/auth/viewer';
 
 export const metadata = {
 	title: 'Account | onivue',
-	description: 'Passkeys und E-Mail-Adresse verwalten.',
+	description: 'Profil, Passkeys und E-Mail-Adresse verwalten.',
 };
 
 export default async function AccountPage() {
 	const viewer = await requireViewer();
+	const hasPassword = await hasCredentialPassword(viewer.id);
 
 	return (
 		<Layout>
@@ -18,11 +22,17 @@ export default async function AccountPage() {
 					<div className='grid gap-2'>
 						<h1 className='design-page-title text-[clamp(2rem,5vw,3.5rem)]'>Account</h1>
 						<p className='design-page-description'>
-							Verwalte deine Anmeldemethoden und halte deine E-Mail-Adresse aktuell.
+							Pflege dein Profil, verwalte deine Anmeldemethoden und halte deine E-Mail-Adresse aktuell.
 						</p>
 					</div>
 				</header>
+				<ProfileSettings
+					currentUsername={viewer.username}
+					currentFirstName={viewer.firstName}
+					currentLastName={viewer.lastName}
+				/>
 				<AccountSettings currentEmail={viewer.email} />
+				<PasswordSettings currentEmail={viewer.email} hasPassword={hasPassword} />
 			</div>
 		</Layout>
 	);

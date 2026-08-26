@@ -6,9 +6,12 @@ const REQUEST_HEADERS = new Headers({ cookie: 'session=token' });
 
 type SessionUserFixture = {
 	email: string;
+	firstName?: string | null;
 	id: string;
 	image?: string | null;
+	lastName?: string | null;
 	name: string;
+	username?: string | null;
 };
 
 const SESSION_USER: SessionUserFixture = {
@@ -32,9 +35,12 @@ describe('viewer resolution', () => {
 
 		expect(viewer).toEqual({
 			email: 'du@example.com',
+			firstName: null,
 			id: 'user-1',
 			image: 'https://example.com/avatar.png',
+			lastName: null,
 			name: 'Albin',
+			username: null,
 		});
 	});
 
@@ -44,6 +50,28 @@ describe('viewer resolution', () => {
 		const viewer = await resolveViewer(gateway, REQUEST_HEADERS);
 
 		expect(viewer?.image).toBeNull();
+	});
+
+	test('profile fields are normalised to null when absent', async () => {
+		const gateway = createGateway(async () => ({ user: SESSION_USER }));
+
+		const viewer = await resolveViewer(gateway, REQUEST_HEADERS);
+
+		expect(viewer?.username).toBeNull();
+		expect(viewer?.firstName).toBeNull();
+		expect(viewer?.lastName).toBeNull();
+	});
+
+	test('profile fields are carried through when present', async () => {
+		const gateway = createGateway(async () => ({
+			user: { ...SESSION_USER, firstName: 'Albin', lastName: 'Hoti', username: 'albinh' },
+		}));
+
+		const viewer = await resolveViewer(gateway, REQUEST_HEADERS);
+
+		expect(viewer?.username).toBe('albinh');
+		expect(viewer?.firstName).toBe('Albin');
+		expect(viewer?.lastName).toBe('Hoti');
 	});
 
 	test('no session means no viewer', async () => {

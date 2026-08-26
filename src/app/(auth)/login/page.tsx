@@ -7,14 +7,14 @@ import { APP_ROUTES } from '@/config/routes';
 
 export const metadata = {
 	title: 'Login | onivue',
-	description: 'Mit Passkey oder Magic Link anmelden.',
+	description: 'Mit Passkey, Passwort oder Magic Link anmelden.',
 };
 
 export default function LoginPage() {
 	return (
 		<AuthCard
 			title='Willkommen zurück'
-			description='Melde dich mit Passkey oder per E-Mail-Link an.'
+			description='Melde dich mit Passkey, Passwort oder per E-Mail-Link an.'
 			testId='login-page'
 			footer={
 				<p className='text-center text-sm font-medium text-ink-soft' data-testid='login-register-link'>
