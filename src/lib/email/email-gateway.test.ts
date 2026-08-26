@@ -7,22 +7,22 @@ import { ResendGateway } from '@/lib/email/resend-gateway';
 const MAGIC_LINK_URL = 'https://onivue.app/api/auth/magic-link/verify?token=abc123';
 
 describe('rendering by message kind', () => {
-	test('a magic link renders its own subject and preview', () => {
-		const rendered = renderAuthEmail({ kind: 'magic-link', to: 'du@example.com', url: MAGIC_LINK_URL });
+	test('a magic link renders its own subject and preview', async () => {
+		const rendered = await renderAuthEmail({ kind: 'magic-link', to: 'du@example.com', url: MAGIC_LINK_URL });
 
 		expect(rendered.subject).toBe('Dein Login-Link für onivue');
 		expect(rendered.text).toContain(MAGIC_LINK_URL);
 		expect(rendered.html).toContain(MAGIC_LINK_URL.replaceAll('&', '&amp;'));
 	});
 
-	test('an email change renders a different subject', () => {
-		const rendered = renderAuthEmail({ kind: 'email-change', to: 'du@example.com', url: MAGIC_LINK_URL });
+	test('an email change renders a different subject', async () => {
+		const rendered = await renderAuthEmail({ kind: 'email-change', to: 'du@example.com', url: MAGIC_LINK_URL });
 
 		expect(rendered.subject).toBe('E-Mail-Adresse für onivue ändern');
 	});
 
-	test('the url is escaped before it reaches the href', () => {
-		const rendered = renderAuthEmail({
+	test('the url is escaped before it reaches the href', async () => {
+		const rendered = await renderAuthEmail({
 			kind: 'magic-link',
 			to: 'du@example.com',
 			url: 'https://onivue.app/verify?a=1&b="><script>alert(1)</script>',

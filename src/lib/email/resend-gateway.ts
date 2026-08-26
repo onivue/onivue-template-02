@@ -30,7 +30,7 @@ export class ResendGateway implements EmailGateway {
 	}
 
 	public async send(message: AuthEmail): Promise<EmailResult> {
-		const { html, subject, text } = renderAuthEmail(message);
+		const { html, subject, text } = await renderAuthEmail(message);
 
 		try {
 			const { error } = await this.transport.emails.send({
