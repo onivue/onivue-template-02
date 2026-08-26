@@ -15,6 +15,8 @@ import { profanityFilter } from '@/lib/profile/profanity-filter';
 import {
 	firstNameSchema,
 	lastNameSchema,
+	PASSWORD_MAX_LENGTH,
+	PASSWORD_MIN_LENGTH,
 	PROFILE_ADDITIONAL_FIELDS,
 	USERNAME_MAX_LENGTH,
 	USERNAME_MIN_LENGTH,
@@ -77,6 +79,23 @@ export const auth = betterAuth({
 	},
 	secret: APP_CONFIG.auth.secret,
 	trustedOrigins: [APP_CONFIG.auth.origin],
+	emailAndPassword: {
+		enabled: true,
+		maxPasswordLength: PASSWORD_MAX_LENGTH,
+		minPasswordLength: PASSWORD_MIN_LENGTH,
+		requireEmailVerification: true,
+		resetPasswordTokenExpiresIn: APP_CONFIG.auth.resetPasswordExpiresInSeconds,
+		revokeSessionsOnPasswordReset: true,
+		sendResetPassword: async ({ user, url }) => {
+			await sendAuthEmail({ kind: 'password-reset', to: user.email, url });
+		},
+	},
+	emailVerification: {
+		autoSignInAfterVerification: true,
+		sendVerificationEmail: async ({ user, url }) => {
+			await sendAuthEmail({ kind: 'email-verification', to: user.email, url });
+		},
+	},
 	databaseHooks: {
 		user: {
 			update: {

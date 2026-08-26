@@ -45,6 +45,7 @@ export const APP_CONFIG = {
 		origin: authUrls.origin,
 		passkeyRpId: authUrls.passkeyRpId,
 		passkeyRpName: 'onivue',
+		resetPasswordExpiresInSeconds: 1800,
 		secret: serverEnv.data.BETTER_AUTH_SECRET,
 	},
 	env: {

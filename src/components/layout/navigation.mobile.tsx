@@ -115,7 +115,7 @@ export function MobileNavigation({ account, isSidebarOpen, onCloseSidebar, onOpe
 						>
 							<Navigation
 								account={account}
-								className='min-h-0 rounded-b-none rounded-t-3xl p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] shadow-2xl shadow-foreground/20'
+								className='max-h-[85dvh] min-h-0 rounded-b-none rounded-t-3xl p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] shadow-2xl shadow-foreground/20'
 								onNavigate={onCloseSidebar}
 								action={
 									<Button

@@ -39,10 +39,15 @@ function createHarness(outcomes: Partial<Record<GatewayName, GatewayOutcome>> = 
 	const gateway: AuthGateway = {
 		addPasskey: respond('addPasskey'),
 		changeEmail: respond('changeEmail'),
+		changePassword: respond('changePassword'),
 		deletePasskey: respond('deletePasskey'),
+		requestPasswordReset: respond('requestPasswordReset'),
+		resetPassword: respond('resetPassword'),
 		sendMagicLink: respond('sendMagicLink'),
+		signInEmail: respond('signInEmail'),
 		signInPasskey: respond('signInPasskey'),
 		signOut: respond('signOut'),
+		signUpEmail: respond('signUpEmail'),
 		updateProfile: respond('updateProfile'),
 	};
 
@@ -205,34 +210,55 @@ describe('callback urls cannot leave the app', () => {
 });
 
 describe('profile updates', () => {
-	test('a successful update notifies success and refreshes', async () => {
+	test('a successful username update notifies success and refreshes', async () => {
 		const harness = createHarness();
 
-		const outcome = await harness.actions.updateProfile({
-			firstName: 'Albin',
-			lastName: 'Hoti',
-			username: 'albinh',
-		});
+		const outcome = await harness.actions.updateUsername('albinh');
 
 		expect(outcome).toEqual({ ok: true });
-		expect(harness.notifications).toEqual([{ kind: 'success', message: 'Profil wurde aktualisiert.' }]);
+		expect(harness.notifications).toEqual([{ kind: 'success', message: 'Benutzername wurde aktualisiert.' }]);
 		expect(harness.refreshCount).toBe(1);
 		expect(harness.navigations).toEqual([]);
 		expect(harness.invalidateCount).toBe(0);
 	});
 
+	test('a successful name update notifies success and refreshes', async () => {
+		const harness = createHarness();
+
+		const outcome = await harness.actions.updateName({ firstName: 'Albin', lastName: 'Hoti' });
+
+		expect(outcome).toEqual({ ok: true });
+		expect(harness.notifications).toEqual([{ kind: 'success', message: 'Name wurde aktualisiert.' }]);
+		expect(harness.refreshCount).toBe(1);
+	});
+
+	test('the username is sent without touching the name fields', async () => {
+		const harness = createHarness();
+
+		await harness.actions.updateUsername('albinh');
+
+		expect(harness.calls.find((call) => call.name === 'updateProfile')?.params).toEqual({ username: 'albinh' });
+	});
+
+	test('the name is sent without touching the username', async () => {
+		const harness = createHarness();
+
+		await harness.actions.updateName({ firstName: 'Albin', lastName: 'Hoti' });
+
+		expect(harness.calls.find((call) => call.name === 'updateProfile')?.params).toEqual({
+			firstName: 'Albin',
+			lastName: 'Hoti',
+		});
+	});
+
 	test('a taken username is reported with the action fallback', async () => {
 		const harness = createHarness({ updateProfile: { error: {} } });
 
-		const outcome = await harness.actions.updateProfile({
-			firstName: 'Albin',
-			lastName: 'Hoti',
-			username: 'albinh',
-		});
+		const outcome = await harness.actions.updateUsername('albinh');
 
 		expect(outcome).toEqual({
 			ok: false,
-			message: 'Die Profilinformationen konnten nicht gespeichert werden.',
+			message: 'Der Benutzername konnte nicht gespeichert werden.',
 		});
 	});
 });
@@ -252,5 +278,97 @@ describe('registration derives a default name', () => {
 		await harness.actions.register('@example.com');
 
 		expect(harness.magicLinkParams().name).toBe('@example.com');
+	});
+});
+
+describe('password authentication', () => {
+	test('a successful sign-in redirects to account and refreshes', async () => {
+		const harness = createHarness();
+
+		const outcome = await harness.actions.signInWithPassword('du@example.com', 'correct-horse-battery');
+
+		expect(outcome).toEqual({ ok: true });
+		expect(harness.calls.find((call) => call.name === 'signInEmail')?.params).toEqual({
+			email: 'du@example.com',
+			password: 'correct-horse-battery',
+		});
+		expect(harness.navigations).toEqual([APP_ROUTES.ACCOUNT]);
+		expect(harness.refreshCount).toBe(1);
+	});
+
+	test('an invalid password is reported with a known error code', async () => {
+		const harness = createHarness({ signInEmail: { error: { code: 'INVALID_EMAIL_OR_PASSWORD' } } });
+
+		const outcome = await harness.actions.signInWithPassword('du@example.com', 'wrong-password');
+
+		expect(outcome).toEqual({ ok: false, message: 'E-Mail-Adresse oder Passwort ist falsch.' });
+	});
+
+	test('sign-up derives a default name and does not navigate', async () => {
+		const harness = createHarness();
+
+		const outcome = await harness.actions.signUpWithPassword('albin@example.com', 'correct-horse-battery');
+
+		expect(outcome).toEqual({ ok: true });
+		expect(harness.calls.find((call) => call.name === 'signUpEmail')?.params).toEqual({
+			callbackURL: APP_ROUTES.LOGIN,
+			email: 'albin@example.com',
+			name: 'albin',
+			password: 'correct-horse-battery',
+		});
+		expect(harness.navigations).toEqual([]);
+	});
+
+	test('a duplicate sign-up is reported with a known error code', async () => {
+		const harness = createHarness({ signUpEmail: { error: { code: 'USER_ALREADY_EXISTS' } } });
+
+		const outcome = await harness.actions.signUpWithPassword('du@example.com', 'correct-horse-battery');
+
+		expect(outcome).toEqual({ ok: false, message: 'Für diese E-Mail-Adresse existiert bereits ein Konto.' });
+	});
+
+	test('changing the password neither navigates nor invalidates', async () => {
+		const harness = createHarness();
+
+		await harness.actions.changePassword('old-password', 'new-password');
+
+		expect(harness.calls.find((call) => call.name === 'changePassword')?.params).toEqual({
+			currentPassword: 'old-password',
+			newPassword: 'new-password',
+		});
+		expect(harness.navigations).toEqual([]);
+		expect(harness.invalidateCount).toBe(0);
+	});
+
+	test('requesting a reset link targets the reset-password route', async () => {
+		const harness = createHarness();
+
+		await harness.actions.requestPasswordReset('du@example.com');
+
+		expect(harness.calls.find((call) => call.name === 'requestPasswordReset')?.params).toEqual({
+			email: 'du@example.com',
+			redirectTo: APP_ROUTES.RESET_PASSWORD,
+		});
+	});
+
+	test('resetting the password redirects to login', async () => {
+		const harness = createHarness();
+
+		const outcome = await harness.actions.resetPassword('new-password', 'a-token');
+
+		expect(outcome).toEqual({ ok: true });
+		expect(harness.calls.find((call) => call.name === 'resetPassword')?.params).toEqual({
+			newPassword: 'new-password',
+			token: 'a-token',
+		});
+		expect(harness.navigations).toEqual([APP_ROUTES.LOGIN]);
+	});
+
+	test('an expired reset token is reported with a known error code', async () => {
+		const harness = createHarness({ resetPassword: { error: { code: 'INVALID_TOKEN' } } });
+
+		const outcome = await harness.actions.resetPassword('new-password', 'a-token');
+
+		expect(outcome).toEqual({ ok: false, message: 'Der Link ist ungültig oder wurde bereits verwendet.' });
 	});
 });

@@ -1,4 +1,9 @@
-import { USERNAME_MAX_LENGTH, USERNAME_MIN_LENGTH } from '@/lib/profile/profile-schema';
+import {
+	PASSWORD_MAX_LENGTH,
+	PASSWORD_MIN_LENGTH,
+	USERNAME_MAX_LENGTH,
+	USERNAME_MIN_LENGTH,
+} from '@/lib/profile/profile-schema';
 
 type AuthClientError = {
 	code?: string;
@@ -19,6 +24,18 @@ const AUTH_ERROR_MESSAGES: Record<string, string> = {
 	USERNAME_TOO_SHORT: `Der Benutzername muss mindestens ${USERNAME_MIN_LENGTH} Zeichen lang sein.`,
 	USERNAME_TOO_LONG: `Der Benutzername darf höchstens ${USERNAME_MAX_LENGTH} Zeichen lang sein.`,
 	INVALID_USERNAME: 'Der Benutzername enthält ungültige Zeichen oder ein unangemessenes Wort.',
+	INVALID_EMAIL_OR_PASSWORD: 'E-Mail-Adresse oder Passwort ist falsch.',
+	INVALID_PASSWORD: 'Das aktuelle Passwort ist falsch.',
+	EMAIL_NOT_VERIFIED: 'Bitte bestätige zuerst deine E-Mail-Adresse, bevor du dich anmeldest.',
+	PASSWORD_TOO_SHORT: `Das Passwort muss mindestens ${PASSWORD_MIN_LENGTH} Zeichen lang sein.`,
+	PASSWORD_TOO_LONG: `Das Passwort darf höchstens ${PASSWORD_MAX_LENGTH} Zeichen lang sein.`,
+	USER_ALREADY_EXISTS: 'Für diese E-Mail-Adresse existiert bereits ein Konto.',
+	USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL:
+		'Für diese E-Mail-Adresse existiert bereits ein Konto. Bitte nutze eine andere Adresse.',
+	CREDENTIAL_ACCOUNT_NOT_FOUND: 'Für dieses Konto ist noch kein Passwort hinterlegt.',
+	INVALID_TOKEN: 'Der Link ist ungültig oder wurde bereits verwendet.',
+	TOKEN_EXPIRED: 'Der Link ist abgelaufen. Bitte fordere einen neuen an.',
+	SESSION_NOT_FRESH: 'Bitte melde dich erneut an, um diese Änderung vorzunehmen.',
 };
 
 // codes whose message we authored ourselves (profile-schema.ts), so it is already safe to show

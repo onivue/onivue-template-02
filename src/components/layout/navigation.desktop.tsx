@@ -26,11 +26,12 @@ export function Navigation({ account, action, className, onNavigate }: Navigatio
 			data-testid='sidebar'
 		>
 			{action ? (
-				<div className='mb-2 flex items-center justify-end px-1' data-testid='sidebar-action'>
+				<div className='mb-2 flex shrink-0 items-center justify-end px-1' data-testid='sidebar-action'>
 					{action}
 				</div>
 			) : null}
-			<nav className='grid gap-1.5'>
+			{/* shrinks and scrolls on its own instead of pushing the account block out of the fixed-height sidebar */}
+			<nav className='-mx-1 grid min-h-0 gap-1.5 overflow-y-auto overscroll-contain px-1'>
 				{items.map(({ href, icon: Icon, isActive, label, testId }) => (
 					<Link
 						key={href}
@@ -59,7 +60,7 @@ export function Navigation({ account, action, className, onNavigate }: Navigatio
 			</nav>
 			{account ? (
 				<div
-					className='mt-auto grid min-w-0 grid-cols-[minmax(0,1fr)] gap-1.5 border-t border-sidebar-border pt-3'
+					className='mt-auto grid min-w-0 shrink-0 grid-cols-[minmax(0,1fr)] gap-1.5 border-t border-sidebar-border pt-3'
 					data-testid='sidebar-account'
 				>
 					{account}

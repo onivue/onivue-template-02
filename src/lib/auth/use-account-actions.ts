@@ -9,7 +9,7 @@ import {
 	type AccountActionName,
 	type ActionOutcome,
 	type AuthGateway,
-	type UpdateProfileParams,
+	type UpdateNameParams,
 } from '@/lib/auth/account-actions';
 import { authGateway } from '@/lib/auth/auth-gateway';
 
@@ -65,9 +65,19 @@ export function useAccountActions(options: UseAccountActionsOptions = {}) {
 			await run('add-passkey', undefined, async () => await actions.addPasskey(name)),
 		changeEmail: async (newEmail: string) =>
 			await run('change-email', undefined, async () => await actions.changeEmail(newEmail)),
+		changePassword: async (currentPassword: string, newPassword: string) =>
+			await run(
+				'change-password',
+				undefined,
+				async () => await actions.changePassword(currentPassword, newPassword)
+			),
 		deletePasskey: async (id: string) =>
 			await run('delete-passkey', id, async () => await actions.deletePasskey(id)),
 		register: async (email: string) => await run('register', undefined, async () => await actions.register(email)),
+		requestPasswordReset: async (email: string) =>
+			await run('request-password-reset', undefined, async () => await actions.requestPasswordReset(email)),
+		resetPassword: async (newPassword: string, token: string) =>
+			await run('reset-password', undefined, async () => await actions.resetPassword(newPassword, token)),
 		sendLoginLink: async (email: string, requestedCallbackUrl: string | null) =>
 			await run(
 				'send-login-link',
@@ -76,8 +86,14 @@ export function useAccountActions(options: UseAccountActionsOptions = {}) {
 			),
 		signInWithPasskey: async () =>
 			await run('sign-in-passkey', undefined, async () => await actions.signInWithPasskey()),
+		signInWithPassword: async (email: string, password: string) =>
+			await run('sign-in-password', undefined, async () => await actions.signInWithPassword(email, password)),
 		signOut: async () => await run('sign-out', undefined, async () => await actions.signOut()),
-		updateProfile: async (params: UpdateProfileParams) =>
-			await run('update-profile', undefined, async () => await actions.updateProfile(params)),
+		signUpWithPassword: async (email: string, password: string) =>
+			await run('sign-up-password', undefined, async () => await actions.signUpWithPassword(email, password)),
+		updateName: async (params: UpdateNameParams) =>
+			await run('update-name', undefined, async () => await actions.updateName(params)),
+		updateUsername: async (username: string) =>
+			await run('update-username', undefined, async () => await actions.updateUsername(username)),
 	};
 }

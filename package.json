@@ -18,6 +18,7 @@
 		"updates": "npx npm-check-updates --interactive --format group"
 	},
 	"dependencies": {
+		"@2toad/profanity": "3.3.0",
 		"@base-ui/react": "1.7.0",
 		"@better-auth/drizzle-adapter": "1.7.1",
 		"@better-auth/passkey": "1.7.1",

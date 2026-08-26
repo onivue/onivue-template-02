@@ -1,4 +1,4 @@
-export type AuthEmailKind = 'email-change' | 'magic-link';
+export type AuthEmailKind = 'email-change' | 'email-verification' | 'magic-link' | 'password-reset';
 
 export type AuthEmail = {
 	kind: AuthEmailKind;
@@ -23,9 +23,17 @@ const EMAIL_TEMPLATES: Record<AuthEmailKind, EmailTemplate> = {
 		previewText: 'Bestätige die Änderung deiner E-Mail-Adresse.',
 		subject: 'E-Mail-Adresse für onivue ändern',
 	},
+	'email-verification': {
+		previewText: 'Bitte bestätige deine E-Mail-Adresse, um dein Konto zu aktivieren.',
+		subject: 'Bestätige deine E-Mail-Adresse für onivue',
+	},
 	'magic-link': {
 		previewText: 'Dein Login-Link ist 15 Minuten gültig.',
 		subject: 'Dein Login-Link für onivue',
+	},
+	'password-reset': {
+		previewText: 'Setze dein Passwort für onivue zurück. Der Link ist 30 Minuten gültig.',
+		subject: 'Passwort zurücksetzen für onivue',
 	},
 };
 

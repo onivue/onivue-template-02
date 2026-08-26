@@ -21,7 +21,11 @@ export function AppShell({ account, children }: AppShellProps) {
 			data-testid='layout'
 		>
 			<div className='grid flex-1 grid-rows-[1fr] gap-4 md:grid-cols-[16rem_minmax(0,1fr)]'>
-				<Navigation account={account} className='hidden min-h-0 md:flex' />
+				{/* the sidebar is pinned to the viewport: 100dvh minus the shell's own p-3, so it never outgrows the screen */}
+				<Navigation
+					account={account}
+					className='hidden min-h-0 md:sticky md:top-3 md:flex md:h-[calc(100dvh-1.5rem)]'
+				/>
 				{/* the content column owns the credit, so the sidebar runs down past both */}
 				<div className='grid min-w-0 grid-rows-[1fr_auto]'>
 					<main

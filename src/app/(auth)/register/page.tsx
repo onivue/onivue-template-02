@@ -6,19 +6,19 @@ import { APP_ROUTES } from '@/config/routes';
 
 export const metadata = {
 	title: 'Registrieren | onivue',
-	description: 'Konto per E-Mail-Link erstellen.',
+	description: 'Konto mit Passwort oder per E-Mail-Link erstellen.',
 };
 
 export default function RegisterPage() {
 	return (
 		<AuthCard
 			title='Konto erstellen'
-			description='Nur E-Mail - kein Passwort nötig.'
+			description='Mit Passwort registrieren oder nur per E-Mail-Link - ganz ohne Passwort.'
 			testId='register-page'
 			footer={
 				<div className='grid gap-3 text-center'>
 					<p className='text-sm font-medium text-ink-soft'>
-						Nach Bestätigung kannst du einen Passkey einrichten (optional).
+						Nach der Registrierung kannst du zusätzlich einen Passkey einrichten (optional).
 					</p>
 					<p className='text-sm font-medium text-ink-soft' data-testid='register-login-link'>
 						Schon Kunde?{' '}
