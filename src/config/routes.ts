@@ -6,6 +6,7 @@ export type RouteAccess = 'guest' | 'public' | 'viewer';
 
 export type RouteName =
 	| 'ACCOUNT'
+	| 'CONSENT'
 	| 'FORGOT_PASSWORD'
 	| 'HOME'
 	| 'LANDING'
@@ -29,6 +30,11 @@ export const ROUTES = {
 		access: 'viewer',
 		nav: { label: 'Account', testId: 'navigation-account-link' },
 		path: '/account',
+	},
+	// oauth consent screen; the provider redirects here with client_id/scope/code
+	CONSENT: {
+		access: 'viewer',
+		path: '/consent',
 	},
 	FORGOT_PASSWORD: {
 		access: 'guest',
@@ -72,6 +78,7 @@ export const APP_ROUTES = {
 	REGISTER: ROUTES.REGISTER.path,
 	FORGOT_PASSWORD: ROUTES.FORGOT_PASSWORD.path,
 	RESET_PASSWORD: ROUTES.RESET_PASSWORD.path,
+	CONSENT: ROUTES.CONSENT.path,
 } as const;
 
 export type AppRoute = (typeof APP_ROUTES)[keyof typeof APP_ROUTES];

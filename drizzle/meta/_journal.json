@@ -22,6 +22,27 @@
       "when": 1787765074401,
       "tag": "0002_amusing_colossus",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1787824059708,
+      "tag": "0003_silky_dracula",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1787855374701,
+      "tag": "0004_chemical_mindworm",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1787857750904,
+      "tag": "0005_careless_lily_hollister",
+      "breakpoints": true
     }
   ]
 }

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 
-import { deriveAuthUrls } from '@/config';
+import { deriveAuthUrls } from '@/config/auth-urls';
 
 describe('auth url derivation', () => {
 	test('the origin drops the path', () => {

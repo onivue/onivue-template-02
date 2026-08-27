@@ -32,10 +32,11 @@ describe('access classification', () => {
 		expect(getAccessFor(APP_ROUTES.REGISTER)).toBe('guest');
 	});
 
-	test('home, account and settings need a viewer', () => {
+	test('home, account, settings and consent need a viewer', () => {
 		expect(getAccessFor(APP_ROUTES.HOME)).toBe('viewer');
 		expect(getAccessFor(APP_ROUTES.ACCOUNT)).toBe('viewer');
 		expect(getAccessFor(APP_ROUTES.SETTINGS)).toBe('viewer');
+		expect(getAccessFor(APP_ROUTES.CONSENT)).toBe('viewer');
 	});
 
 	test('a nested path inherits its route access', () => {

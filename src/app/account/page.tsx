@@ -2,8 +2,10 @@ import { AccountSettings } from '@/components/account/account-settings';
 import { PasswordSettings } from '@/components/account/password-settings';
 import { ProfileSettings } from '@/components/account/profile-settings';
 import { Layout } from '@/components/layout/layout';
+import { ConnectedClients } from '@/components/mcp/connected-clients';
 import { hasCredentialPassword } from '@/lib/auth/password-status';
 import { requireViewer } from '@/lib/auth/viewer';
+import { listMcpConnections } from '@/lib/mcp/mcp-connection-service';
 
 export const metadata = {
 	title: 'Account | onivue',
@@ -13,6 +15,7 @@ export const metadata = {
 export default async function AccountPage() {
 	const viewer = await requireViewer();
 	const hasPassword = await hasCredentialPassword(viewer.id);
+	const mcpConnections = await listMcpConnections(viewer.id);
 
 	return (
 		<Layout>
@@ -33,6 +36,7 @@ export default async function AccountPage() {
 				/>
 				<AccountSettings currentEmail={viewer.email} />
 				<PasswordSettings currentEmail={viewer.email} hasPassword={hasPassword} />
+				<ConnectedClients connections={mcpConnections} />
 			</div>
 		</Layout>
 	);

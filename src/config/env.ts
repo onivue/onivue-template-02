@@ -1,4 +1,8 @@
+// server-only: importing this from a client component fails the build instead of throwing at runtime
+import 'server-only';
 import { z } from 'zod';
+
+import { deriveAuthUrls } from '@/config/auth-urls';
 
 const serverEnvSchema = z.object({
 	DATABASE_URL: z.string().min(1),
@@ -7,24 +11,6 @@ const serverEnvSchema = z.object({
 	RESEND_API_KEY: z.string().min(1),
 	RESEND_FROM_EMAIL: z.string().min(1),
 });
-
-const LOOPBACK_HOSTNAME = '127.0.0.1';
-const LOOPBACK_RP_ID = 'localhost';
-
-export type AuthUrls = {
-	origin: string;
-	passkeyRpId: string;
-};
-
-// derived once from the validated base url, rather than recomputed per call site
-export function deriveAuthUrls(baseUrl: string): AuthUrls {
-	const { hostname, origin } = new URL(baseUrl);
-
-	return {
-		origin,
-		passkeyRpId: hostname === LOOPBACK_HOSTNAME ? LOOPBACK_RP_ID : hostname,
-	};
-}
 
 const serverEnv = serverEnvSchema.safeParse(process.env);
 
@@ -35,21 +21,15 @@ if (!serverEnv.success) {
 
 const authUrls = deriveAuthUrls(serverEnv.data.BETTER_AUTH_URL);
 
-export const APP_CONFIG = {
-	app: {
-		name: 'onivue',
-	},
+export const SERVER_CONFIG = {
 	auth: {
 		baseUrl: serverEnv.data.BETTER_AUTH_URL,
-		magicLinkExpiresInSeconds: 900,
 		origin: authUrls.origin,
 		passkeyRpId: authUrls.passkeyRpId,
-		passkeyRpName: 'onivue',
-		resetPasswordExpiresInSeconds: 1800,
 		secret: serverEnv.data.BETTER_AUTH_SECRET,
 	},
-	env: {
-		DATABASE_URL: serverEnv.data.DATABASE_URL,
+	database: {
+		url: serverEnv.data.DATABASE_URL,
 	},
 	mail: {
 		from: serverEnv.data.RESEND_FROM_EMAIL,
