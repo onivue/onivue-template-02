@@ -5,6 +5,7 @@ import { AtSign, UserRound } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 
 import { Button } from '@/components/ui/button';
+import { FormField } from '@/components/ui/form-field';
 import { useAccountActions } from '@/lib/auth/use-account-actions';
 import {
 	nameFormSchema,
@@ -21,8 +22,7 @@ type ProfileSettingsProps = {
 
 export function ProfileSettings({ currentFirstName, currentLastName, currentUsername }: ProfileSettingsProps) {
 	// one hook for both forms: the two writes hit the same user record, so they never run at once
-	const accountActions = useAccountActions();
-	const isBusy = accountActions.isBusy;
+	const { actions, isBusy, isRunning } = useAccountActions();
 	const usernameForm = useForm<UsernameFormValues>({
 		defaultValues: {
 			username: currentUsername ?? '',
@@ -38,11 +38,11 @@ export function ProfileSettings({ currentFirstName, currentLastName, currentUser
 	});
 
 	async function handleSaveUsername(values: UsernameFormValues): Promise<void> {
-		await accountActions.updateUsername(values.username);
+		await actions.updateUsername(values.username);
 	}
 
 	async function handleSaveName(values: NameFormValues): Promise<void> {
-		await accountActions.updateName(values);
+		await actions.updateName(values);
 	}
 
 	return (
@@ -61,31 +61,15 @@ export function ProfileSettings({ currentFirstName, currentLastName, currentUser
 				</div>
 
 				<form className='grid gap-4' onSubmit={usernameForm.handleSubmit(handleSaveUsername)}>
-					<label
-						className='grid gap-2'
-						htmlFor='profile-username'
-						data-invalid={!!usernameForm.formState.errors.username}
-					>
-						<span className='design-label'>Benutzername</span>
-						<input
-							id='profile-username'
-							type='text'
-							autoComplete='username'
-							className='design-input w-full'
-							aria-invalid={!!usernameForm.formState.errors.username}
-							aria-describedby={
-								usernameForm.formState.errors.username ? 'profile-username-error' : undefined
-							}
-							disabled={isBusy}
-							data-testid='profile-username-input'
-							{...usernameForm.register('username')}
-						/>
-						{usernameForm.formState.errors.username?.message ? (
-							<span id='profile-username-error' className='design-field-error px-1'>
-								{usernameForm.formState.errors.username.message}
-							</span>
-						) : null}
-					</label>
+					<FormField
+						id='profile-username'
+						label='Benutzername'
+						type='text'
+						autoComplete='username'
+						error={usernameForm.formState.errors.username?.message}
+						disabled={isBusy}
+						{...usernameForm.register('username')}
+					/>
 
 					<Button
 						type='submit'
@@ -95,7 +79,7 @@ export function ProfileSettings({ currentFirstName, currentLastName, currentUser
 						data-testid='save-username-button'
 					>
 						<AtSign data-icon='inline-start' aria-hidden='true' />
-						{accountActions.isRunning('update-username') ? 'Speichere...' : 'Benutzername speichern'}
+						{isRunning('update-username') ? 'Speichere...' : 'Benutzername speichern'}
 					</Button>
 				</form>
 			</section>
@@ -108,65 +92,29 @@ export function ProfileSettings({ currentFirstName, currentLastName, currentUser
 				</div>
 
 				<form className='grid gap-4' onSubmit={nameForm.handleSubmit(handleSaveName)}>
-					<label
-						className='grid gap-2'
-						htmlFor='profile-first-name'
-						data-invalid={!!nameForm.formState.errors.firstName}
-					>
-						<span className='design-label'>Vorname</span>
-						{/* eslint-disable jsx-a11y/autocomplete-valid -- oxlint doesn't recognise this valid html autocomplete token */}
-						<input
-							id='profile-first-name'
-							type='text'
-							autoComplete='given-name'
-							className='design-input w-full'
-							aria-invalid={!!nameForm.formState.errors.firstName}
-							aria-describedby={
-								nameForm.formState.errors.firstName ? 'profile-first-name-error' : undefined
-							}
-							disabled={isBusy}
-							data-testid='profile-first-name-input'
-							{...nameForm.register('firstName')}
-						/>
-						{/* eslint-enable jsx-a11y/autocomplete-valid */}
-						{nameForm.formState.errors.firstName?.message ? (
-							<span id='profile-first-name-error' className='design-field-error px-1'>
-								{nameForm.formState.errors.firstName.message}
-							</span>
-						) : null}
-					</label>
+					<FormField
+						id='profile-first-name'
+						label='Vorname'
+						type='text'
+						autoComplete='given-name'
+						error={nameForm.formState.errors.firstName?.message}
+						disabled={isBusy}
+						{...nameForm.register('firstName')}
+					/>
 
-					<label
-						className='grid gap-2'
-						htmlFor='profile-last-name'
-						data-invalid={!!nameForm.formState.errors.lastName}
-					>
-						<span className='design-label'>Nachname</span>
-						{/* eslint-disable jsx-a11y/autocomplete-valid -- oxlint doesn't recognise this valid html autocomplete token */}
-						<input
-							id='profile-last-name'
-							type='text'
-							autoComplete='family-name'
-							className='design-input w-full'
-							aria-invalid={!!nameForm.formState.errors.lastName}
-							aria-describedby={
-								nameForm.formState.errors.lastName ? 'profile-last-name-error' : undefined
-							}
-							disabled={isBusy}
-							data-testid='profile-last-name-input'
-							{...nameForm.register('lastName')}
-						/>
-						{/* eslint-enable jsx-a11y/autocomplete-valid */}
-						{nameForm.formState.errors.lastName?.message ? (
-							<span id='profile-last-name-error' className='design-field-error px-1'>
-								{nameForm.formState.errors.lastName.message}
-							</span>
-						) : null}
-					</label>
+					<FormField
+						id='profile-last-name'
+						label='Nachname'
+						type='text'
+						autoComplete='family-name'
+						error={nameForm.formState.errors.lastName?.message}
+						disabled={isBusy}
+						{...nameForm.register('lastName')}
+					/>
 
 					<Button type='submit' variant='strong' size='xl' disabled={isBusy} data-testid='save-name-button'>
 						<UserRound data-icon='inline-start' aria-hidden='true' />
-						{accountActions.isRunning('update-name') ? 'Speichere...' : 'Name speichern'}
+						{isRunning('update-name') ? 'Speichere...' : 'Name speichern'}
 					</Button>
 				</form>
 			</section>

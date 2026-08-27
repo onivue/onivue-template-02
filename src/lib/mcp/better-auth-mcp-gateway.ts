@@ -6,7 +6,7 @@ import type {
 	McpProfile,
 	McpProfileGateway,
 	UpdateMcpProfileParams,
-} from '@/lib/mcp/mcp-profile-service';
+} from '@/lib/mcp/agent-session';
 
 import { auth } from '@/lib/auth/auth';
 

@@ -176,24 +176,26 @@ OAuth-Flow selbstständig.
 | Datei                        | Zweck                                                                     |
 | ---------------------------- | ------------------------------------------------------------------------- |
 | `mcp-config.ts`              | Servername/-version, Tool-Namen, Scopes und deren Beschreibungen, URLs.   |
+| `mcp-scopes.ts`              | Scope-Ids, Beschreibungen und `parseScopes` — die eine Parse-Regel.       |
 | `mcp-tool-schema.ts`         | Zod-4-Schemas der Tool-Ein-/Ausgaben; validiert mit `profile-schema.ts`.  |
-| `mcp-profile-service.ts`     | Reine Business-Logik (welche Felder wurden geändert), keine better-auth.  |
-| `better-auth-mcp-gateway.ts` | Produktions-Adapter: übersetzt den Service-Port auf den internen Adapter. |
-| `mcp-tools.ts`               | Registriert die Tools, prüft Scopes pro Tool, übersetzt Ergebnisse.       |
-| `mcp-handler.ts`             | `requireMcpAuth` → pro Request ein `McpServer` → Tools.                   |
+| `agent-session.ts`           | Eine authentifizierte Anfrage: Identität, Scope-Prüfung, Profil-Zugriff.  |
+| `better-auth-mcp-gateway.ts` | Produktions-Adapter: übersetzt den Session-Port auf den internen Adapter. |
+| `mcp-tools.ts`               | Registriert die Tools gegen eine `AgentSession`, übersetzt Ergebnisse.    |
+| `mcp-handler.ts`             | `requireMcpAuth` → pro Request eine `AgentSession` → Tools.               |
+| `mcp-connection.ts`          | Reine Formen und Mapping für verbundene Clients, ohne Datenbank.          |
 | `mcp-client-lookup.ts`       | Liest Name/URI eines registrierten Clients für die Consent-Seite.         |
-| `mcp-connection-service.ts`  | Liest die Zustimmungen des Nutzers für die Account-Seite.                 |
 | `mcp-connection-actions.ts`  | Server Action: trennt einen Client und widerruft seine Tokens.            |
 
 Dazu, außerhalb dieses Ordners:
 
-| Datei                                      | Zweck                                        |
-| ------------------------------------------ | -------------------------------------------- |
-| `src/app/api/mcp/route.ts`                 | Route-Handler des MCP-Endpoints.             |
-| `src/app/(mcp)/consent/page.tsx`           | Zustimmungsseite (Server-Teil).              |
-| `src/app/.well-known/…`                    | Discovery-Weiterleitungen auf den Root-Pfad. |
-| `src/components/mcp/consent-form.tsx`      | Zustimmungsformular.                         |
-| `src/components/mcp/connected-clients.tsx` | Verbundene Clients auf der Account-Seite.    |
+| Datei                                      | Zweck                                         |
+| ------------------------------------------ | --------------------------------------------- |
+| `src/app/api/mcp/route.ts`                 | Route-Handler des MCP-Endpoints.              |
+| `src/app/(mcp)/consent/page.tsx`           | Zustimmungsseite (Server-Teil).               |
+| `src/app/.well-known/…`                    | Discovery-Weiterleitungen auf den Root-Pfad.  |
+| `src/components/mcp/consent-form.tsx`      | Zustimmungsformular.                          |
+| `src/components/mcp/connected-clients.tsx` | Verbundene Clients auf der Account-Seite.     |
+| `src/lib/account/account-overview.ts`      | Liest die Zustimmungen für die Account-Seite. |
 
 Die UI-Komponenten liegen gebündelt unter `src/components/mcp/`, die Seiten in der Route-Gruppe
 `src/app/(mcp)/` — beides spiegelbildlich zu diesem `src/lib/mcp/`-Ordner. Route-Gruppen ändern die

@@ -21,3 +21,15 @@ export const MCP_SCOPE_DESCRIPTIONS: Record<string, string> = {
 export function describeScope(scope: string): string {
 	return MCP_SCOPE_DESCRIPTIONS[scope] ?? scope;
 }
+
+// oauth writes granted scopes as a single space-delimited string (RFC 6749 §3.3), both in the
+// `scope` token claim and in the authorize request the consent screen reads. one rule, one place.
+const SCOPE_SEPARATOR = ' ';
+
+export function parseScopes(value: unknown): string[] {
+	if (typeof value !== 'string') {
+		return [];
+	}
+
+	return value.split(SCOPE_SEPARATOR).filter(Boolean);
+}

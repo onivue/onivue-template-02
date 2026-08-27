@@ -2,13 +2,12 @@ import { Layout } from '@/components/layout/layout';
 import { ConsentForm } from '@/components/mcp/consent-form';
 import { requireViewer } from '@/lib/auth/viewer';
 import { findOAuthClient } from '@/lib/mcp/mcp-client-lookup';
+import { parseScopes } from '@/lib/mcp/mcp-scopes';
 
 export const metadata = {
 	title: 'Zugriff bestätigen | onivue',
 	description: 'Bestätige, worauf ein verbundener Client zugreifen darf.',
 };
-
-const SCOPE_SEPARATOR = ' ';
 
 type ConsentPageProps = {
 	searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -25,7 +24,7 @@ export default async function ConsentPage({ searchParams }: ConsentPageProps) {
 
 	const params = await searchParams;
 	const clientId = readParam(params, 'client_id');
-	const scopes = readParam(params, 'scope').split(SCOPE_SEPARATOR).filter(Boolean);
+	const scopes = parseScopes(readParam(params, 'scope'));
 	const client = clientId ? await findOAuthClient(clientId) : null;
 
 	return (

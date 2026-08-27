@@ -49,7 +49,7 @@ function getAvatarFallback(user: Viewer): string {
 }
 
 export function AuthStatusMenu({ placement, user }: AuthStatusMenuProps) {
-	const accountActions = useAccountActions();
+	const { actions, isBusy, isRunning } = useAccountActions();
 	const isSidebar = placement === 'sidebar';
 	// without a name the row falls back to the address, which is long enough to warrant the smaller size
 	const displayName = user?.name.trim() ?? '';
@@ -142,12 +142,12 @@ export function AuthStatusMenu({ placement, user }: AuthStatusMenuProps) {
 					<DropdownMenuItem
 						className={MENU_ITEM_CLASS}
 						variant='destructive'
-						disabled={accountActions.isBusy}
-						onClick={() => void accountActions.signOut()}
+						disabled={isBusy}
+						onClick={() => void actions.signOut()}
 						data-testid='account-menu-sign-out'
 					>
 						<LogOut aria-hidden='true' />
-						{accountActions.isRunning('sign-out') ? 'Melde ab...' : 'Abmelden'}
+						{isRunning('sign-out') ? 'Melde ab...' : 'Abmelden'}
 					</DropdownMenuItem>
 				</DropdownMenuGroup>
 			</DropdownMenuContent>

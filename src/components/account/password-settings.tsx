@@ -5,6 +5,7 @@ import { KeyRound, Mail } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 
 import { Button } from '@/components/ui/button';
+import { FormField } from '@/components/ui/form-field';
 import { useAccountActions } from '@/lib/auth/use-account-actions';
 import { changePasswordFormSchema, type ChangePasswordFormValues } from '@/lib/profile/profile-schema';
 
@@ -20,15 +21,14 @@ type PasswordSettingsProps = {
 };
 
 export function PasswordSettings({ currentEmail, hasPassword }: PasswordSettingsProps) {
-	const accountActions = useAccountActions();
-	const isBusy = accountActions.isBusy;
+	const { actions, isBusy, isRunning } = useAccountActions();
 	const form = useForm<ChangePasswordFormValues>({
 		defaultValues: RESET_DEFAULT_VALUES,
 		resolver: zodResolver(changePasswordFormSchema),
 	});
 
 	async function handleChangePassword(values: ChangePasswordFormValues): Promise<void> {
-		const outcome = await accountActions.changePassword(values.currentPassword, values.newPassword);
+		const outcome = await actions.changePassword(values.currentPassword, values.newPassword);
 
 		if (outcome.ok) {
 			form.reset(RESET_DEFAULT_VALUES);
@@ -36,7 +36,7 @@ export function PasswordSettings({ currentEmail, hasPassword }: PasswordSettings
 	}
 
 	async function handleRequestReset(): Promise<void> {
-		await accountActions.requestPasswordReset(currentEmail);
+		await actions.requestPasswordReset(currentEmail);
 	}
 
 	return (
@@ -58,94 +58,33 @@ export function PasswordSettings({ currentEmail, hasPassword }: PasswordSettings
 
 			{hasPassword ? (
 				<form className='grid gap-4' onSubmit={form.handleSubmit(handleChangePassword)}>
-					<label
-						className='grid gap-2'
-						htmlFor='current-password'
-						data-invalid={!!form.formState.errors.currentPassword}
-					>
-						<span className='design-label'>Aktuelles Passwort</span>
-						<input
-							id='current-password'
-							type='password'
-							autoComplete='current-password'
-							className='design-input w-full'
-							aria-invalid={!!form.formState.errors.currentPassword}
-							aria-describedby={
-								form.formState.errors.currentPassword ? 'current-password-error' : undefined
-							}
-							disabled={isBusy}
-							data-testid='current-password-input'
-							{...form.register('currentPassword')}
-						/>
-						{form.formState.errors.currentPassword?.message ? (
-							<span
-								id='current-password-error'
-								className='design-field-error px-1'
-								data-testid='current-password-error'
-							>
-								{form.formState.errors.currentPassword.message}
-							</span>
-						) : null}
-					</label>
-
-					<label
-						className='grid gap-2'
-						htmlFor='new-password'
-						data-invalid={!!form.formState.errors.newPassword}
-					>
-						<span className='design-label'>Neues Passwort</span>
-						<input
-							id='new-password'
-							type='password'
-							autoComplete='new-password'
-							className='design-input w-full'
-							aria-invalid={!!form.formState.errors.newPassword}
-							aria-describedby={form.formState.errors.newPassword ? 'new-password-error' : undefined}
-							disabled={isBusy}
-							data-testid='new-password-input'
-							{...form.register('newPassword')}
-						/>
-						{form.formState.errors.newPassword?.message ? (
-							<span
-								id='new-password-error'
-								className='design-field-error px-1'
-								data-testid='new-password-error'
-							>
-								{form.formState.errors.newPassword.message}
-							</span>
-						) : null}
-					</label>
-
-					<label
-						className='grid gap-2'
-						htmlFor='confirm-new-password'
-						data-invalid={!!form.formState.errors.confirmNewPassword}
-					>
-						<span className='design-label'>Neues Passwort bestätigen</span>
-						<input
-							id='confirm-new-password'
-							type='password'
-							autoComplete='new-password'
-							className='design-input w-full'
-							aria-invalid={!!form.formState.errors.confirmNewPassword}
-							aria-describedby={
-								form.formState.errors.confirmNewPassword ? 'confirm-new-password-error' : undefined
-							}
-							disabled={isBusy}
-							data-testid='confirm-new-password-input'
-							{...form.register('confirmNewPassword')}
-						/>
-						{form.formState.errors.confirmNewPassword?.message ? (
-							<span
-								id='confirm-new-password-error'
-								className='design-field-error px-1'
-								data-testid='confirm-new-password-error'
-							>
-								{form.formState.errors.confirmNewPassword.message}
-							</span>
-						) : null}
-					</label>
-
+					<FormField
+						id='current-password'
+						label='Aktuelles Passwort'
+						type='password'
+						autoComplete='current-password'
+						error={form.formState.errors.currentPassword?.message}
+						disabled={isBusy}
+						{...form.register('currentPassword')}
+					/>
+					<FormField
+						id='new-password'
+						label='Neues Passwort'
+						type='password'
+						autoComplete='new-password'
+						error={form.formState.errors.newPassword?.message}
+						disabled={isBusy}
+						{...form.register('newPassword')}
+					/>
+					<FormField
+						id='confirm-new-password'
+						label='Neues Passwort bestätigen'
+						type='password'
+						autoComplete='new-password'
+						error={form.formState.errors.confirmNewPassword?.message}
+						disabled={isBusy}
+						{...form.register('confirmNewPassword')}
+					/>
 					<Button
 						type='submit'
 						variant='strong'
@@ -154,7 +93,7 @@ export function PasswordSettings({ currentEmail, hasPassword }: PasswordSettings
 						data-testid='change-password-button'
 					>
 						<KeyRound data-icon='inline-start' aria-hidden='true' />
-						{accountActions.isRunning('change-password') ? 'Speichere...' : 'Passwort ändern'}
+						{isRunning('change-password') ? 'Speichere...' : 'Passwort ändern'}
 					</Button>
 				</form>
 			) : (
@@ -167,7 +106,7 @@ export function PasswordSettings({ currentEmail, hasPassword }: PasswordSettings
 					data-testid='request-set-password-button'
 				>
 					<Mail data-icon='inline-start' aria-hidden='true' />
-					{accountActions.isRunning('request-password-reset') ? 'Sende...' : 'Passwort per E-Mail festlegen'}
+					{isRunning('request-password-reset') ? 'Sende...' : 'Passwort per E-Mail festlegen'}
 				</Button>
 			)}
 		</section>

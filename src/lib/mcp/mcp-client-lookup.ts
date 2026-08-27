@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm';
 
 import { db } from '@/db/client';
 import { oauthClient } from '@/db/schema';
+import { toClientName } from '@/lib/mcp/mcp-connection';
 
 export type McpClientInfo = {
 	clientId: string;
@@ -9,7 +10,6 @@ export type McpClientInfo = {
 	uri: string | null;
 };
 
-// dynamically registered clients pick their own name, so fall back to the raw id when they omit it
 export async function findOAuthClient(clientId: string): Promise<McpClientInfo | null> {
 	const [row] = await db
 		.select({ clientId: oauthClient.clientId, name: oauthClient.name, uri: oauthClient.uri })
@@ -21,5 +21,5 @@ export async function findOAuthClient(clientId: string): Promise<McpClientInfo |
 		return null;
 	}
 
-	return { clientId: row.clientId, name: row.name ?? row.clientId, uri: row.uri };
+	return { clientId: row.clientId, name: toClientName(row.name, row.clientId), uri: row.uri };
 }
