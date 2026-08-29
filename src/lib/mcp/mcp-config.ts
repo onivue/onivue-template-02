@@ -12,7 +12,13 @@ export const MCP_CONFIG = {
 	// oauth scopes the authorization server issues for this resource
 	scopes: MCP_SCOPE_IDS,
 	tools: {
+		addInvitations: 'add_invitations',
+		createEvent: 'create_event',
+		getEvent: 'get_event',
 		getProfile: 'get_profile',
+		listEvents: 'list_events',
+		markInvitationSent: 'mark_invitation_sent',
+		updateEvent: 'update_event',
 		updateProfile: 'update_profile',
 	},
 } as const;

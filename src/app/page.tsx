@@ -1,10 +1,8 @@
-import { Layout } from '@/components/layout/layout';
-import { PagePlaceholder } from '@/components/layout/page-placeholder';
+import { redirect } from 'next/navigation';
 
+import { APP_ROUTES } from '@/config/routes';
+
+// the app has one purpose; a placeholder home in front of it would only cost a click
 export default function Home() {
-	return (
-		<Layout>
-			<PagePlaceholder label='home' title='Home' description='lorem ipsum' testId='home-page' />
-		</Layout>
-	);
+	redirect(APP_ROUTES.EVENTS);
 }

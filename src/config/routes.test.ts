@@ -32,8 +32,15 @@ describe('access classification', () => {
 		expect(getAccessFor(APP_ROUTES.REGISTER)).toBe('guest');
 	});
 
-	test('home, account, settings and consent need a viewer', () => {
+	test('the guest link is public, so a guest needs no account', () => {
+		expect(getAccessFor(APP_ROUTES.INVITATION)).toBe('public');
+		expect(getAccessFor('/i/abc123')).toBe('public');
+	});
+
+	test('home, events, account, settings and consent need a viewer', () => {
 		expect(getAccessFor(APP_ROUTES.HOME)).toBe('viewer');
+		expect(getAccessFor(APP_ROUTES.EVENTS)).toBe('viewer');
+		expect(getAccessFor('/events/ev-1/guests')).toBe('viewer');
 		expect(getAccessFor(APP_ROUTES.ACCOUNT)).toBe('viewer');
 		expect(getAccessFor(APP_ROUTES.SETTINGS)).toBe('viewer');
 		expect(getAccessFor(APP_ROUTES.CONSENT)).toBe('viewer');
@@ -50,8 +57,8 @@ describe('access classification', () => {
 });
 
 describe('navigation routes', () => {
-	test('order is home, account, settings', () => {
-		expect(NAVIGATION_ROUTES.map((route) => route.name)).toEqual(['HOME', 'ACCOUNT', 'SETTINGS']);
+	test('order is events, account, settings', () => {
+		expect(NAVIGATION_ROUTES.map((route) => route.name)).toEqual(['EVENTS', 'ACCOUNT', 'SETTINGS']);
 	});
 
 	test('every navigation route carries a label and a test id', () => {

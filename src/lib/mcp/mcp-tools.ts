@@ -4,6 +4,7 @@ import type { AgentSession, McpGatewayResult } from '@/lib/mcp/agent-session';
 
 import { AuthErrorHelper } from '@/lib/auth/auth-error-helper';
 import { MCP_CONFIG } from '@/lib/mcp/mcp-config';
+import { toolError, toolSuccess } from '@/lib/mcp/mcp-result';
 import {
 	getProfileInputSchema,
 	getProfileOutputSchema,
@@ -19,15 +20,10 @@ function toCallToolResult<T extends Record<string, unknown>>(
 	fallbackErrorMessage: string
 ): CallToolResult {
 	if (!result.success) {
-		const message = authErrorHelper.getUserMessage(result.error, fallbackErrorMessage);
-
-		return { content: [{ text: message, type: 'text' }], isError: true };
+		return toolError(authErrorHelper.getUserMessage(result.error, fallbackErrorMessage));
 	}
 
-	return {
-		content: [{ text: JSON.stringify(result.data), type: 'text' }],
-		structuredContent: result.data,
-	};
+	return toolSuccess(result.data);
 }
 
 // registers the profile tools against one AgentSession. the caller's identity and granted scopes
