@@ -1,6 +1,6 @@
 import type { CallToolResult, McpServer } from '@modelcontextprotocol/server';
 
-import type { McpGatewayResult, McpProfileService } from '@/lib/mcp/mcp-profile-service';
+import type { AgentSession, McpGatewayResult } from '@/lib/mcp/agent-session';
 
 import { AuthErrorHelper } from '@/lib/auth/auth-error-helper';
 import { MCP_CONFIG } from '@/lib/mcp/mcp-config';
@@ -13,7 +13,7 @@ import {
 
 const authErrorHelper = new AuthErrorHelper();
 
-// translates the service's discriminated-union result into an MCP CallToolResult
+// translates the session's discriminated-union result into an MCP CallToolResult
 function toCallToolResult<T extends Record<string, unknown>>(
 	result: McpGatewayResult<T>,
 	fallbackErrorMessage: string
@@ -30,23 +30,9 @@ function toCallToolResult<T extends Record<string, unknown>>(
 	};
 }
 
-function missingScopeResult(scope: string): CallToolResult {
-	return {
-		content: [{ text: `Diesem Client fehlt der Scope "${scope}".`, type: 'text' }],
-		isError: true,
-	};
-}
-
-// registers the profile tools for one authenticated request. userId and scopes both come from the
-// access token claims that requireMcpAuth already verified against the authorization server's JWKS.
-// the scopes are checked per tool rather than per route because reading and writing need different
-// ones, and a route-level gate would force a client to hold both for either call
-export function registerProfileTools(
-	server: McpServer,
-	service: McpProfileService,
-	userId: string,
-	scopes: string[]
-): void {
+// registers the profile tools against one AgentSession. the caller's identity and granted scopes
+// are already inside it, so the handlers are pure MCP glue: call, translate, return.
+export function registerProfileTools(server: McpServer, session: AgentSession): void {
 	server.registerTool(
 		MCP_CONFIG.tools.getProfile,
 		{
@@ -56,15 +42,7 @@ export function registerProfileTools(
 			outputSchema: getProfileOutputSchema,
 			title: 'Profil lesen',
 		},
-		async () => {
-			if (!scopes.includes(MCP_CONFIG.scopes.read)) {
-				return missingScopeResult(MCP_CONFIG.scopes.read);
-			}
-
-			const result = await service.getProfile(userId);
-
-			return toCallToolResult(result, 'Das Profil konnte nicht gelesen werden.');
-		}
+		async () => toCallToolResult(await session.getProfile(), 'Das Profil konnte nicht gelesen werden.')
 	);
 
 	server.registerTool(
@@ -77,14 +55,7 @@ export function registerProfileTools(
 			outputSchema: updateProfileOutputSchema,
 			title: 'Profil aktualisieren',
 		},
-		async (args) => {
-			if (!scopes.includes(MCP_CONFIG.scopes.write)) {
-				return missingScopeResult(MCP_CONFIG.scopes.write);
-			}
-
-			const result = await service.updateProfile(userId, args);
-
-			return toCallToolResult(result, 'Das Profil konnte nicht aktualisiert werden.');
-		}
+		async (args) =>
+			toCallToolResult(await session.updateProfile(args), 'Das Profil konnte nicht aktualisiert werden.')
 	);
 }

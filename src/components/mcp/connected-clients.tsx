@@ -1,14 +1,11 @@
 'use client';
 
 import { Bot, Unplug } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
-import { toast } from 'sonner';
 
-import type { McpConnectionSummary } from '@/lib/mcp/mcp-connection-service';
+import type { McpConnectionSummary } from '@/lib/mcp/mcp-connection';
 
 import { Button } from '@/components/ui/button';
-import { revokeMcpConnection } from '@/lib/mcp/mcp-connection-actions';
+import { useAccountActions } from '@/lib/auth/use-account-actions';
 import { describeScope } from '@/lib/mcp/mcp-scopes';
 
 type ConnectedClientsProps = {
@@ -18,24 +15,7 @@ type ConnectedClientsProps = {
 const DATE_FORMAT: Intl.DateTimeFormatOptions = { day: '2-digit', month: '2-digit', year: 'numeric' };
 
 export function ConnectedClients({ connections }: ConnectedClientsProps) {
-	const router = useRouter();
-	const [revokingId, setRevokingId] = useState<string | null>(null);
-
-	async function handleRevoke(connection: McpConnectionSummary): Promise<void> {
-		setRevokingId(connection.id);
-
-		const result = await revokeMcpConnection(connection.id, connection.clientId);
-
-		if (!result.success) {
-			toast.error(result.error);
-			setRevokingId(null);
-
-			return;
-		}
-
-		toast.success('Client wurde getrennt.');
-		router.refresh();
-	}
+	const { actions, isBusy, isRunning } = useAccountActions();
 
 	return (
 		<section className='design-panel grid content-start gap-5 p-5 sm:p-6' data-testid='connected-clients-section'>
@@ -84,12 +64,12 @@ export function ConnectedClients({ connections }: ConnectedClientsProps) {
 							variant='destructive'
 							size='lg'
 							className='rounded-full'
-							disabled={revokingId === connection.id}
-							onClick={() => void handleRevoke(connection)}
+							disabled={isBusy}
+							onClick={() => void actions.revokeConnection(connection.id, connection.clientId)}
 							data-testid='revoke-connection-button'
 						>
 							<Unplug data-icon='inline-start' aria-hidden='true' />
-							{revokingId === connection.id ? 'Trenne...' : 'Trennen'}
+							{isRunning('revoke-connection', connection.id) ? 'Trenne...' : 'Trennen'}
 						</Button>
 					</div>
 				))}

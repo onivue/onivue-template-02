@@ -1,3 +1,4 @@
+import { MISSING_SCOPE_CODE } from '@/lib/mcp/agent-session';
 import {
 	PASSWORD_MAX_LENGTH,
 	PASSWORD_MIN_LENGTH,
@@ -38,8 +39,9 @@ const AUTH_ERROR_MESSAGES: Record<string, string> = {
 	SESSION_NOT_FRESH: 'Bitte melde dich erneut an, um diese Änderung vorzunehmen.',
 };
 
-// codes whose message we authored ourselves (profile-schema.ts), so it is already safe to show
-const PASSTHROUGH_ERROR_CODES = new Set(['INVALID_FIRST_NAME', 'INVALID_LAST_NAME']);
+// codes whose message we authored ourselves (profile-schema.ts, agent-session.ts), so it is
+// already safe to show
+const PASSTHROUGH_ERROR_CODES = new Set(['INVALID_FIRST_NAME', 'INVALID_LAST_NAME', MISSING_SCOPE_CODE]);
 
 export class AuthErrorHelper {
 	public getUserMessage(error: AuthClientError | null | undefined, fallback: string): string {

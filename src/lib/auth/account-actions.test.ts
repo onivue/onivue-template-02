@@ -3,28 +3,36 @@ import { describe, expect, test } from 'bun:test';
 import { APP_ROUTES, type AppRoute } from '@/config/routes';
 import {
 	AccountActions,
+	type AccountActionName,
 	type AuthGateway,
 	type AuthGatewayResult,
+	type ConsentDecisionData,
 	type SendMagicLinkParams,
 } from '@/lib/auth/account-actions';
 
 type GatewayName = keyof AuthGateway;
-type GatewayOutcome = AuthGatewayResult | Error;
+// the widest payload any port member carries, so one fake responder covers them all
+type GatewayResult = AuthGatewayResult<ConsentDecisionData>;
+type GatewayOutcome = GatewayResult | Error;
 
 type Notification = {
 	kind: 'error' | 'success';
 	message: string;
 };
 
+type BusyEvent = { kind: 'finish' } | { kind: 'start'; action: AccountActionName; targetId?: string };
+
 function createHarness(outcomes: Partial<Record<GatewayName, GatewayOutcome>> = {}) {
 	const calls: { name: GatewayName; params?: unknown }[] = [];
 	const notifications: Notification[] = [];
 	const navigations: AppRoute[] = [];
+	const externalNavigations: string[] = [];
+	const busyEvents: BusyEvent[] = [];
 	let refreshCount = 0;
 	let invalidateCount = 0;
 
 	function respond(name: GatewayName) {
-		return async (params?: unknown): Promise<AuthGatewayResult> => {
+		return async (params?: unknown): Promise<GatewayResult> => {
 			calls.push({ name, params });
 			const outcome = outcomes[name];
 
@@ -40,7 +48,9 @@ function createHarness(outcomes: Partial<Record<GatewayName, GatewayOutcome>> = 
 		addPasskey: respond('addPasskey'),
 		changeEmail: respond('changeEmail'),
 		changePassword: respond('changePassword'),
+		decideConsent: respond('decideConsent'),
 		deletePasskey: respond('deletePasskey'),
+		revokeConnection: respond('revokeConnection'),
 		requestPasswordReset: respond('requestPasswordReset'),
 		resetPassword: respond('resetPassword'),
 		sendMagicLink: respond('sendMagicLink'),
@@ -52,10 +62,15 @@ function createHarness(outcomes: Partial<Record<GatewayName, GatewayOutcome>> = 
 	};
 
 	const actions = new AccountActions(gateway, {
+		busy: {
+			finish: () => busyEvents.push({ kind: 'finish' }),
+			start: (action, targetId) => busyEvents.push({ kind: 'start', action, targetId }),
+		},
 		invalidate: async () => {
 			invalidateCount += 1;
 		},
 		navigate: {
+			external: (url) => externalNavigations.push(url),
 			push: (route) => navigations.push(route),
 			refresh: () => {
 				refreshCount += 1;
@@ -69,9 +84,11 @@ function createHarness(outcomes: Partial<Record<GatewayName, GatewayOutcome>> = 
 
 	return {
 		actions,
+		busyEvents,
 		calls,
 		notifications,
 		navigations,
+		externalNavigations,
 		get refreshCount() {
 			return refreshCount;
 		},
@@ -370,5 +387,144 @@ describe('password authentication', () => {
 		const outcome = await harness.actions.resetPassword('new-password', 'a-token');
 
 		expect(outcome).toEqual({ ok: false, message: 'Der Link ist ungültig oder wurde bereits verwendet.' });
+	});
+});
+
+describe('busy state is raised and cleared by the module', () => {
+	test('a successful action starts busy and finishes it', async () => {
+		const harness = createHarness();
+
+		await harness.actions.signOut();
+
+		expect(harness.busyEvents).toEqual([
+			{ kind: 'start', action: 'sign-out', targetId: undefined },
+			{ kind: 'finish' },
+		]);
+	});
+
+	test('a failing action still clears busy', async () => {
+		const harness = createHarness({ signOut: new Error('offline') });
+
+		await harness.actions.signOut();
+
+		expect(harness.busyEvents.at(-1)).toEqual({ kind: 'finish' });
+	});
+
+	test('busy is cleared only after the success effects have run', async () => {
+		const harness = createHarness();
+
+		await harness.actions.signOut();
+
+		// the redirect is fired while still busy, so nothing can be clicked in between
+		expect(harness.navigations).toEqual([APP_ROUTES.LANDING]);
+		expect(harness.busyEvents.at(-1)).toEqual({ kind: 'finish' });
+	});
+
+	test('per-row actions carry the id they are running against', async () => {
+		const harness = createHarness();
+
+		await harness.actions.deletePasskey('passkey-1');
+
+		expect(harness.busyEvents[0]).toEqual({ kind: 'start', action: 'delete-passkey', targetId: 'passkey-1' });
+	});
+});
+
+describe('disconnecting an mcp client', () => {
+	test('a successful revocation notifies and refreshes', async () => {
+		const harness = createHarness();
+
+		const outcome = await harness.actions.revokeConnection('consent-1', 'client-abc');
+
+		expect(outcome).toEqual({ ok: true });
+		expect(harness.notifications).toEqual([{ kind: 'success', message: 'Client wurde getrennt.' }]);
+		expect(harness.refreshCount).toBe(1);
+		expect(harness.navigations).toEqual([]);
+	});
+
+	test('both ids reach the gateway', async () => {
+		const harness = createHarness();
+
+		await harness.actions.revokeConnection('consent-1', 'client-abc');
+
+		expect(harness.calls.find((call) => call.name === 'revokeConnection')?.params).toEqual({
+			clientId: 'client-abc',
+			consentId: 'consent-1',
+		});
+	});
+
+	test('the consent id is the busy target, so one row spins at a time', async () => {
+		const harness = createHarness();
+
+		await harness.actions.revokeConnection('consent-1', 'client-abc');
+
+		expect(harness.busyEvents[0]).toEqual({
+			kind: 'start',
+			action: 'revoke-connection',
+			targetId: 'consent-1',
+		});
+	});
+
+	test('a failed revocation is reported and nothing refreshes', async () => {
+		const harness = createHarness({ revokeConnection: { error: {} } });
+
+		const outcome = await harness.actions.revokeConnection('consent-1', 'client-abc');
+
+		expect(outcome).toEqual({ ok: false, message: 'Die Verbindung konnte nicht getrennt werden.' });
+		expect(harness.refreshCount).toBe(0);
+	});
+});
+
+describe('deciding on a consent request', () => {
+	const OAUTH_QUERY = 'client_id=abc&scope=profile%3Aread&ba_param=one&ba_param=two';
+
+	test('accepting sends the query back byte-for-byte', async () => {
+		const harness = createHarness();
+
+		await harness.actions.decideConsent(true, OAUTH_QUERY);
+
+		expect(harness.calls.find((call) => call.name === 'decideConsent')?.params).toEqual({
+			accept: true,
+			oauthQuery: OAUTH_QUERY,
+		});
+	});
+
+	test('accepting and denying report different copy', async () => {
+		const accepted = createHarness();
+		await accepted.actions.decideConsent(true, OAUTH_QUERY);
+
+		const denied = createHarness();
+		await denied.actions.decideConsent(false, OAUTH_QUERY);
+
+		expect(accepted.notifications).toEqual([{ kind: 'success', message: 'Zugriff erlaubt.' }]);
+		expect(denied.notifications).toEqual([{ kind: 'success', message: 'Zugriff abgelehnt.' }]);
+	});
+
+	test('the provider’s redirect target is followed out of the app', async () => {
+		const harness = createHarness({
+			decideConsent: { data: { url: 'https://client.example/callback?code=xyz' } },
+		});
+
+		await harness.actions.decideConsent(true, OAUTH_QUERY);
+
+		expect(harness.externalNavigations).toEqual(['https://client.example/callback?code=xyz']);
+		expect(harness.navigations).toEqual([]);
+	});
+
+	test('no redirect target means no navigation', async () => {
+		const harness = createHarness();
+
+		const outcome = await harness.actions.decideConsent(true, OAUTH_QUERY);
+
+		expect(outcome).toEqual({ ok: true });
+		expect(harness.externalNavigations).toEqual([]);
+	});
+
+	test('a failed decision navigates nowhere', async () => {
+		const harness = createHarness({ decideConsent: { error: { message: 'signature mismatch' } } });
+
+		const outcome = await harness.actions.decideConsent(true, OAUTH_QUERY);
+
+		expect(outcome).toEqual({ ok: false, message: 'Die Entscheidung konnte nicht gespeichert werden.' });
+		expect(harness.externalNavigations).toEqual([]);
 	});
 });

@@ -1,10 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
-import { authClient } from '@/lib/auth/auth-client';
+import { useAccountActions } from '@/lib/auth/use-account-actions';
 import { describeScope } from '@/lib/mcp/mcp-scopes';
 
 type ConsentFormProps = {
@@ -15,39 +14,24 @@ type ConsentFormProps = {
 
 type Decision = 'accepted' | 'denied' | null;
 
+const QUERY_PREFIX = /^\?/;
+
 export function ConsentForm({ clientName, clientUri, scopes }: ConsentFormProps) {
-	const [error, setError] = useState<string | null>(null);
+	const { actions, isBusy } = useAccountActions();
 	const [decision, setDecision] = useState<Decision>(null);
-	const [isBusy, setIsBusy] = useState(false);
 
 	async function handleDecision(accept: boolean): Promise<void> {
-		setIsBusy(true);
-		setError(null);
-
 		// the query has to go back byte-for-byte: it is signed, and `ba_param` repeats one entry per
 		// signed parameter. rebuilding it from parsed searchParams silently drops those duplicates and
 		// the signature no longer verifies — so it is read straight from the address bar instead.
-		const oauthQuery = window.location.search.replace(/^\?/, '');
-		const result = await authClient.oauth2.consent({ accept, oauth_query: oauthQuery });
+		const oauthQuery = window.location.search.replace(QUERY_PREFIX, '');
+		const outcome = await actions.decideConsent(accept, oauthQuery);
 
-		if (result.error) {
-			const message = result.error.message ?? 'Die Entscheidung konnte nicht gespeichert werden.';
-			setError(message);
-			toast.error(message);
-			setIsBusy(false);
-
-			return;
+		// on success the provider usually redirects the client away; this panel is what remains when
+		// it has nowhere to send them back to
+		if (outcome.ok) {
+			setDecision(accept ? 'accepted' : 'denied');
 		}
-
-		// the provider answers with where to send the client back to, code or error attached
-		if (result.data?.url) {
-			window.location.href = result.data.url;
-
-			return;
-		}
-
-		setDecision(accept ? 'accepted' : 'denied');
-		setIsBusy(false);
 	}
 
 	if (decision) {
@@ -83,8 +67,6 @@ export function ConsentForm({ clientName, clientUri, scopes }: ConsentFormProps)
 					))}
 				</ul>
 			</div>
-
-			{error ? <p className='design-field-error px-1'>{error}</p> : null}
 
 			<div className='flex gap-3'>
 				<Button

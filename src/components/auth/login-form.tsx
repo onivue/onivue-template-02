@@ -7,8 +7,9 @@ import { useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-import { AuthDivider, AuthEmailField } from '@/components/auth/auth-card';
+import { AuthDivider } from '@/components/auth/auth-card';
 import { Button } from '@/components/ui/button';
+import { FormField } from '@/components/ui/form-field';
 import { APP_ROUTES } from '@/config/routes';
 import { useAccountActions } from '@/lib/auth/use-account-actions';
 import { signInWithPasswordFormSchema, type SignInWithPasswordFormValues } from '@/lib/profile/profile-schema';
@@ -21,7 +22,7 @@ type MagicLinkFormValues = z.infer<typeof magicLinkSchema>;
 
 export function LoginForm() {
 	const searchParams = useSearchParams();
-	const accountActions = useAccountActions();
+	const { actions, isBusy, isRunning } = useAccountActions();
 	const passwordForm = useForm<SignInWithPasswordFormValues>({
 		defaultValues: {
 			email: '',
@@ -37,11 +38,11 @@ export function LoginForm() {
 	});
 
 	async function handlePasswordSignIn(values: SignInWithPasswordFormValues): Promise<void> {
-		await accountActions.signInWithPassword(values.email, values.password);
+		await actions.signInWithPassword(values.email, values.password);
 	}
 
 	async function handleMagicLink(values: MagicLinkFormValues): Promise<void> {
-		await accountActions.sendLoginLink(values.email, searchParams.get('callbackURL'));
+		await actions.sendLoginLink(values.email, searchParams.get('callbackURL'));
 	}
 
 	return (
@@ -51,14 +52,12 @@ export function LoginForm() {
 				variant='strong'
 				size='xl'
 				className='w-full'
-				disabled={accountActions.isBusy}
-				onClick={() => void accountActions.signInWithPasskey()}
+				disabled={isBusy}
+				onClick={() => void actions.signInWithPasskey()}
 				data-testid='login-passkey-button'
 			>
 				<Fingerprint data-icon='inline-start' aria-hidden='true' />
-				<span>
-					{accountActions.isRunning('sign-in-passkey') ? 'Passkey prüfen...' : 'Mit Passkey anmelden'}
-				</span>
+				<span>{isRunning('sign-in-passkey') ? 'Passkey prüfen...' : 'Mit Passkey anmelden'}</span>
 			</Button>
 
 			<AuthDivider label='oder' />
@@ -68,21 +67,24 @@ export function LoginForm() {
 				onSubmit={passwordForm.handleSubmit(handlePasswordSignIn)}
 				data-testid='login-password-form'
 			>
-				<AuthEmailField
+				<FormField
 					id='login-password-email'
 					label='E-Mail'
+					type='email'
+					autoComplete='email'
 					placeholder='du@example.com'
 					error={passwordForm.formState.errors.email?.message}
-					disabled={accountActions.isBusy}
+					disabled={isBusy}
 					{...passwordForm.register('email')}
 				/>
-				<label
-					className='grid gap-2'
-					htmlFor='login-password'
-					data-invalid={!!passwordForm.formState.errors.password}
-				>
-					<div className='flex items-center justify-between gap-2'>
-						<span className='design-label'>Passwort</span>
+				<FormField
+					id='login-password'
+					label='Passwort'
+					type='password'
+					autoComplete='current-password'
+					error={passwordForm.formState.errors.password?.message}
+					disabled={isBusy}
+					labelSuffix={
 						<Link
 							href={APP_ROUTES.FORGOT_PASSWORD}
 							className='rounded-sm text-xs font-bold text-ink-soft underline underline-offset-4 outline-none transition-colors hover:text-accent-strong focus-visible:ring-3 focus-visible:ring-ring/50'
@@ -90,38 +92,19 @@ export function LoginForm() {
 						>
 							Passwort vergessen?
 						</Link>
-					</div>
-					<input
-						id='login-password'
-						type='password'
-						autoComplete='current-password'
-						className='design-input w-full'
-						aria-invalid={!!passwordForm.formState.errors.password}
-						aria-describedby={passwordForm.formState.errors.password ? 'login-password-error' : undefined}
-						disabled={accountActions.isBusy}
-						data-testid='login-password-input'
-						{...passwordForm.register('password')}
-					/>
-					{passwordForm.formState.errors.password?.message ? (
-						<span
-							id='login-password-error'
-							className='design-field-error px-1'
-							data-testid='login-password-error'
-						>
-							{passwordForm.formState.errors.password.message}
-						</span>
-					) : null}
-				</label>
+					}
+					{...passwordForm.register('password')}
+				/>
 				<Button
 					type='submit'
 					variant='strong'
 					size='xl'
 					className='w-full'
-					disabled={accountActions.isBusy}
+					disabled={isBusy}
 					data-testid='login-password-button'
 				>
 					<KeyRound data-icon='inline-start' aria-hidden='true' />
-					<span>{accountActions.isRunning('sign-in-password') ? 'Melde an...' : 'Anmelden'}</span>
+					<span>{isRunning('sign-in-password') ? 'Melde an...' : 'Anmelden'}</span>
 				</Button>
 			</form>
 
@@ -132,12 +115,14 @@ export function LoginForm() {
 				onSubmit={magicLinkForm.handleSubmit(handleMagicLink)}
 				data-testid='login-magic-link-form'
 			>
-				<AuthEmailField
+				<FormField
 					id='login-email'
 					label='E-Mail'
+					type='email'
+					autoComplete='email'
 					placeholder='du@example.com'
 					error={magicLinkForm.formState.errors.email?.message}
-					disabled={accountActions.isBusy}
+					disabled={isBusy}
 					{...magicLinkForm.register('email')}
 				/>
 				<Button
@@ -145,13 +130,11 @@ export function LoginForm() {
 					variant='outline'
 					size='xl'
 					className='w-full'
-					disabled={accountActions.isBusy}
+					disabled={isBusy}
 					data-testid='login-magic-link-button'
 				>
 					<Mail data-icon='inline-start' aria-hidden='true' />
-					<span>
-						{accountActions.isRunning('send-login-link') ? 'Link wird gesendet...' : 'Login-Link senden'}
-					</span>
+					<span>{isRunning('send-login-link') ? 'Link wird gesendet...' : 'Login-Link senden'}</span>
 				</Button>
 			</form>
 		</>

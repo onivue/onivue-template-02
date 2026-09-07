@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 import { Button } from '@/components/ui/button';
+import { FormField } from '@/components/ui/form-field';
 import { authClient } from '@/lib/auth/auth-client';
 import { useAccountActions } from '@/lib/auth/use-account-actions';
 
@@ -28,13 +29,12 @@ type EmailChangeFormValues = z.infer<typeof emailChangeSchema>;
 
 export function AccountSettings({ currentEmail }: AccountSettingsProps) {
 	const passkeyQuery = authClient.useListPasskeys();
-	const accountActions = useAccountActions({
+	const { actions, isBusy, isRunning } = useAccountActions({
 		onDataChanged: async () => {
 			await passkeyQuery.refetch();
 		},
 	});
 	const passkeys = passkeyQuery.data ?? [];
-	const isBusy = accountActions.isBusy;
 	const passkeyForm = useForm<PasskeyFormValues>({
 		defaultValues: {
 			name: DEFAULT_PASSKEY_NAME,
@@ -49,7 +49,7 @@ export function AccountSettings({ currentEmail }: AccountSettingsProps) {
 	});
 
 	async function handleAddPasskey(values: PasskeyFormValues): Promise<void> {
-		const outcome = await accountActions.addPasskey(values.name);
+		const outcome = await actions.addPasskey(values.name);
 
 		if (outcome.ok) {
 			passkeyForm.reset({ name: DEFAULT_PASSKEY_NAME });
@@ -57,7 +57,7 @@ export function AccountSettings({ currentEmail }: AccountSettingsProps) {
 	}
 
 	async function handleChangeEmail(values: EmailChangeFormValues): Promise<void> {
-		await accountActions.changeEmail(values.email);
+		await actions.changeEmail(values.email);
 	}
 
 	return (
@@ -79,33 +79,19 @@ export function AccountSettings({ currentEmail }: AccountSettingsProps) {
 					className='grid items-end gap-3 sm:grid-cols-[minmax(0,1fr)_auto]'
 					onSubmit={passkeyForm.handleSubmit(handleAddPasskey)}
 				>
-					<label
-						className='grid gap-2'
-						htmlFor='passkey-name'
-						data-invalid={!!passkeyForm.formState.errors.name}
-					>
-						<span className='design-label'>Name</span>
-						<input
-							id='passkey-name'
-							type='text'
-							autoComplete='webauthn'
-							className='design-input w-full'
-							aria-invalid={!!passkeyForm.formState.errors.name}
-							aria-describedby={passkeyForm.formState.errors.name ? 'passkey-name-error' : undefined}
-							disabled={isBusy}
-							data-testid='passkey-name-input'
-							{...passkeyForm.register('name')}
-						/>
-					</label>
+					<FormField
+						id='passkey-name'
+						label='Name'
+						type='text'
+						autoComplete='webauthn'
+						error={passkeyForm.formState.errors.name?.message}
+						disabled={isBusy}
+						{...passkeyForm.register('name')}
+					/>
 					<Button type='submit' variant='strong' size='xl' disabled={isBusy} data-testid='add-passkey-button'>
 						<Plus data-icon='inline-start' aria-hidden='true' />
-						{accountActions.isRunning('add-passkey') ? 'Erstelle...' : 'Passkey erstellen'}
+						{isRunning('add-passkey') ? 'Erstelle...' : 'Passkey erstellen'}
 					</Button>
-					{passkeyForm.formState.errors.name?.message ? (
-						<span id='passkey-name-error' className='design-field-error px-1 sm:col-span-2'>
-							{passkeyForm.formState.errors.name.message}
-						</span>
-					) : null}
 				</form>
 
 				<div className='grid gap-3' data-testid='passkey-list'>
@@ -157,11 +143,11 @@ export function AccountSettings({ currentEmail }: AccountSettingsProps) {
 								size='lg'
 								className='rounded-full'
 								disabled={isBusy}
-								onClick={() => void accountActions.deletePasskey(passkey.id)}
+								onClick={() => void actions.deletePasskey(passkey.id)}
 								data-testid='delete-passkey-button'
 							>
 								<Trash2 data-icon='inline-start' aria-hidden='true' />
-								{accountActions.isRunning('delete-passkey', passkey.id) ? 'Entferne...' : 'Entfernen'}
+								{isRunning('delete-passkey', passkey.id) ? 'Entferne...' : 'Entfernen'}
 							</Button>
 						</div>
 					))}
@@ -178,29 +164,15 @@ export function AccountSettings({ currentEmail }: AccountSettingsProps) {
 				</div>
 
 				<form className='grid gap-3' onSubmit={emailForm.handleSubmit(handleChangeEmail)}>
-					<label
-						className='grid gap-2'
-						htmlFor='account-email'
-						data-invalid={!!emailForm.formState.errors.email}
-					>
-						<span className='design-label'>Neue E-Mail</span>
-						<input
-							id='account-email'
-							type='email'
-							autoComplete='email'
-							className='design-input w-full'
-							aria-invalid={!!emailForm.formState.errors.email}
-							aria-describedby={emailForm.formState.errors.email ? 'account-email-error' : undefined}
-							disabled={isBusy}
-							data-testid='account-email-input'
-							{...emailForm.register('email')}
-						/>
-						{emailForm.formState.errors.email?.message ? (
-							<span id='account-email-error' className='design-field-error px-1'>
-								{emailForm.formState.errors.email.message}
-							</span>
-						) : null}
-					</label>
+					<FormField
+						id='account-email'
+						label='Neue E-Mail'
+						type='email'
+						autoComplete='email'
+						error={emailForm.formState.errors.email?.message}
+						disabled={isBusy}
+						{...emailForm.register('email')}
+					/>
 					<Button
 						type='submit'
 						variant='strong'
@@ -209,7 +181,7 @@ export function AccountSettings({ currentEmail }: AccountSettingsProps) {
 						data-testid='change-email-button'
 					>
 						<Mail data-icon='inline-start' aria-hidden='true' />
-						{accountActions.isRunning('change-email') ? 'Sende...' : 'Änderung bestätigen'}
+						{isRunning('change-email') ? 'Sende...' : 'Änderung bestätigen'}
 					</Button>
 				</form>
 
@@ -219,11 +191,11 @@ export function AccountSettings({ currentEmail }: AccountSettingsProps) {
 					size='xl'
 					className='mt-auto'
 					disabled={isBusy}
-					onClick={() => void accountActions.signOut()}
+					onClick={() => void actions.signOut()}
 					data-testid='sign-out-button'
 				>
 					<LogOut data-icon='inline-start' aria-hidden='true' />
-					{accountActions.isRunning('sign-out') ? 'Melde ab...' : 'Abmelden'}
+					{isRunning('sign-out') ? 'Melde ab...' : 'Abmelden'}
 				</Button>
 			</section>
 		</div>

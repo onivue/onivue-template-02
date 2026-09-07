@@ -9,8 +9,27 @@ export type AuthGatewayError = {
 	statusText?: string;
 };
 
-export type AuthGatewayResult = {
+// some operations answer with a payload the action has to act on, e.g. where to send an oauth
+// client back to. most actions ignore it, so TData defaults to unknown.
+export type AuthGatewayResult<TData = unknown> = {
+	data?: TData | null;
 	error?: AuthGatewayError | null;
+};
+
+// the oauth provider decides where the client goes next; there is no url when it has nothing
+// left to redirect to
+export type ConsentDecisionData = {
+	url?: string | null;
+};
+
+export type DecideConsentParams = {
+	accept: boolean;
+	oauthQuery: string;
+};
+
+export type RevokeConnectionParams = {
+	clientId: string;
+	consentId: string;
 };
 
 export type SendMagicLinkParams = {
@@ -64,9 +83,11 @@ export type AuthGateway = {
 	addPasskey(params: { name: string }): Promise<AuthGatewayResult>;
 	changeEmail(params: { callbackURL: string; newEmail: string }): Promise<AuthGatewayResult>;
 	changePassword(params: ChangePasswordParams): Promise<AuthGatewayResult>;
+	decideConsent(params: DecideConsentParams): Promise<AuthGatewayResult<ConsentDecisionData>>;
 	deletePasskey(params: { id: string }): Promise<AuthGatewayResult>;
 	requestPasswordReset(params: RequestPasswordResetParams): Promise<AuthGatewayResult>;
 	resetPassword(params: ResetPasswordParams): Promise<AuthGatewayResult>;
+	revokeConnection(params: RevokeConnectionParams): Promise<AuthGatewayResult>;
 	sendMagicLink(params: SendMagicLinkParams): Promise<AuthGatewayResult>;
 	signInEmail(params: SignInEmailParams): Promise<AuthGatewayResult>;
 	signInPasskey(): Promise<AuthGatewayResult>;
@@ -80,9 +101,12 @@ export type AccountActionName =
 	| 'change-email'
 	| 'change-password'
 	| 'delete-passkey'
+	| 'deny-consent'
+	| 'grant-consent'
 	| 'register'
 	| 'request-password-reset'
 	| 'reset-password'
+	| 'revoke-connection'
 	| 'send-login-link'
 	| 'sign-in-passkey'
 	| 'sign-in-password'
@@ -99,16 +123,31 @@ export type NotifyPort = {
 };
 
 export type NavigatePort = {
+	// leaves the app entirely, e.g. back to the oauth client that asked for consent
+	external(url: string): void;
 	push(route: AppRoute): void;
 	refresh(): void;
+};
+
+// busy is an effect like any other, so it is injected rather than wrapped around the module
+export type BusyPort = {
+	finish(): void;
+	start(action: AccountActionName, targetId?: string): void;
 };
 
 export type InvalidatePort = () => Promise<void>;
 
 export type AccountActionPorts = {
+	busy: BusyPort;
 	invalidate: InvalidatePort;
 	navigate: NavigatePort;
 	notify: NotifyPort;
+};
+
+type ExecuteOptions<TData> = {
+	// the one effect that cannot be declared up front, because it depends on the response
+	onSuccess?: (data: TData | null | undefined) => void;
+	targetId?: string;
 };
 
 type ActionMessages = {
@@ -144,6 +183,14 @@ const ACTION_MESSAGES: Record<AccountActionName, ActionMessages> = {
 		failure: 'Der Passkey konnte nicht entfernt werden.',
 		success: 'Passkey wurde entfernt.',
 	},
+	'deny-consent': {
+		failure: 'Die Entscheidung konnte nicht gespeichert werden.',
+		success: 'Zugriff abgelehnt.',
+	},
+	'grant-consent': {
+		failure: 'Die Entscheidung konnte nicht gespeichert werden.',
+		success: 'Zugriff erlaubt.',
+	},
 	register: {
 		failure: 'Der Registrierungslink konnte nicht gesendet werden. Bitte versuche es erneut.',
 		success: 'Registrierungslink gesendet. Bitte öffne deine E-Mail und bestätige den Link.',
@@ -155,6 +202,10 @@ const ACTION_MESSAGES: Record<AccountActionName, ActionMessages> = {
 	'reset-password': {
 		failure: 'Das Passwort konnte nicht gesetzt werden. Der Link ist möglicherweise abgelaufen.',
 		success: 'Passwort wurde gesetzt. Du kannst dich jetzt anmelden.',
+	},
+	'revoke-connection': {
+		failure: 'Die Verbindung konnte nicht getrennt werden.',
+		success: 'Client wurde getrennt.',
 	},
 	'send-login-link': {
 		failure: 'Der Login-Link konnte nicht gesendet werden. Bitte versuche es erneut.',
@@ -191,9 +242,12 @@ const ACTION_EFFECTS: Record<AccountActionName, SuccessEffect> = {
 	'change-email': {},
 	'change-password': {},
 	'delete-passkey': { invalidate: true },
+	'deny-consent': {},
+	'grant-consent': {},
 	register: {},
 	'request-password-reset': {},
 	'reset-password': { redirect: APP_ROUTES.LOGIN },
+	'revoke-connection': { refresh: true },
 	'send-login-link': {},
 	'sign-in-passkey': { redirect: APP_ROUTES.ACCOUNT },
 	'sign-in-password': { redirect: APP_ROUTES.ACCOUNT },
@@ -255,7 +309,9 @@ export class AccountActions {
 	}
 
 	public async deletePasskey(id: string): Promise<ActionOutcome> {
-		return await this.execute('delete-passkey', async () => await this.gateway.deletePasskey({ id }));
+		return await this.execute('delete-passkey', async () => await this.gateway.deletePasskey({ id }), {
+			targetId: id,
+		});
 	}
 
 	public async changeEmail(newEmail: string): Promise<ActionOutcome> {
@@ -323,27 +379,63 @@ export class AccountActions {
 		return await this.execute('update-name', async () => await this.gateway.updateProfile(params));
 	}
 
-	// the single ritual: both error channels normalise here, and success effects are declarative
-	private async execute(
+	public async revokeConnection(consentId: string, clientId: string): Promise<ActionOutcome> {
+		return await this.execute(
+			'revoke-connection',
+			async () => await this.gateway.revokeConnection({ clientId, consentId }),
+			{ targetId: consentId }
+		);
+	}
+
+	// the query string is passed in rather than read here: it has to go back byte-for-byte, and
+	// only the browser holds the original
+	public async decideConsent(accept: boolean, oauthQuery: string): Promise<ActionOutcome> {
+		return await this.execute(
+			accept ? 'grant-consent' : 'deny-consent',
+			async () => await this.gateway.decideConsent({ accept, oauthQuery }),
+			{
+				onSuccess: (data) => {
+					if (data?.url) {
+						this.ports.navigate.external(data.url);
+					}
+				},
+			}
+		);
+	}
+
+	// the single ritual: busy bookends it, both error channels normalise here, and success effects
+	// are declarative
+	private async execute<TData>(
 		action: AccountActionName,
-		operation: () => Promise<AuthGatewayResult>
+		operation: () => Promise<AuthGatewayResult<TData>>,
+		options: ExecuteOptions<TData> = {}
 	): Promise<ActionOutcome> {
 		const { failure, success } = ACTION_MESSAGES[action];
+		this.ports.busy.start(action, options.targetId);
 
 		try {
-			const { error } = await operation();
+			let data: TData | null | undefined;
 
-			if (error) {
-				return this.fail(failure, error);
+			try {
+				const result = await operation();
+
+				if (result.error) {
+					return this.fail(failure, result.error);
+				}
+
+				data = result.data;
+			} catch (error) {
+				return this.fail(failure, toGatewayError(error));
 			}
-		} catch (error) {
-			return this.fail(failure, toGatewayError(error));
+
+			this.ports.notify.success(success);
+			await this.applySuccessEffect(action);
+			options.onSuccess?.(data);
+
+			return { ok: true };
+		} finally {
+			this.ports.busy.finish();
 		}
-
-		this.ports.notify.success(success);
-		await this.applySuccessEffect(action);
-
-		return { ok: true };
 	}
 
 	private fail(fallback: string, error: AuthGatewayError | null): ActionOutcome {

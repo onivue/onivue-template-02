@@ -1,4 +1,4 @@
-import { type ComponentProps, type ReactNode } from 'react';
+import { type ReactNode } from 'react';
 
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -15,13 +15,6 @@ type AuthCardProps = {
 type AuthDividerProps = {
 	label: string;
 };
-
-type AuthEmailFieldProps = {
-	error?: string;
-	id: string;
-	label: string;
-	placeholder: string;
-} & ComponentProps<'input'>;
 
 export function AuthCard({ children, className, description, footer, testId, title }: AuthCardProps) {
 	return (
@@ -54,29 +47,5 @@ export function AuthDivider({ label }: AuthDividerProps) {
 		<div className='design-divider' data-testid='auth-divider'>
 			<span>{label}</span>
 		</div>
-	);
-}
-
-export function AuthEmailField({ error, id, label, placeholder, ...props }: AuthEmailFieldProps) {
-	return (
-		<label className='grid gap-2' htmlFor={id} data-testid={`${id}-field`} data-invalid={!!error}>
-			<span className='design-label'>{label}</span>
-			<input
-				id={id}
-				type='email'
-				autoComplete='email'
-				placeholder={placeholder}
-				className='design-input w-full'
-				aria-invalid={!!error}
-				aria-describedby={error ? `${id}-error` : undefined}
-				data-testid={id}
-				{...props}
-			/>
-			{error ? (
-				<span id={`${id}-error`} className='design-field-error px-1' data-testid={`${id}-error`}>
-					{error}
-				</span>
-			) : null}
-		</label>
 	);
 }

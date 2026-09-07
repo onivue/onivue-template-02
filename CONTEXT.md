@@ -25,18 +25,23 @@ Lives in [`src/lib/auth/viewer.ts`](src/lib/auth/viewer.ts).
 ## Account Action
 
 Something a Viewer does to their own account: send a login link, sign in with a passkey, register,
-add or delete a passkey, change email, update profile info, sign out.
+add or delete a passkey, change email, update profile info, sign out, disconnect an MCP Connection,
+decide on a consent request.
 
-Every Account Action follows one ritual — call the gateway, normalise whichever error channel
-fired, tell the person what happened, then apply its success effect. The ritual is not repeated
-per action; the actions differ only in their message copy and their declared effect.
+Every Account Action follows one ritual — raise busy, call the gateway, normalise whichever error
+channel fired, tell the person what happened, apply its success effect, clear busy. The ritual is
+not repeated per action; the actions differ only in their message copy and their declared effect.
 
 An Account Action reports through an outcome (`{ ok: true } | { ok: false; message }`) *and* fires
 its effects. The outcome is a convenience for callers that need to branch, such as resetting a
 form; it is not how the work gets done.
 
-Lives in [`src/lib/auth/account-actions.ts`](src/lib/auth/account-actions.ts), with
-`useAccountActions` binding it to React state.
+Every effect is a port: `notify`, `navigate`, `invalidate`, `busy`. Busy carries the action name and,
+where a list has rows, the id of the row it is running against, so one row can spin without
+disabling the rest (see ADR-0003).
+
+Lives in [`src/lib/auth/account-actions.ts`](src/lib/auth/account-actions.ts). `useAccountActions`
+builds the four adapters and hands the module back — it does not re-declare the actions.
 
 ## Profile
 
@@ -59,10 +64,15 @@ hook in `auth.ts`, which throws a `better-auth` `APIError` the client already kn
 
 ## Auth Gateway
 
-The narrow port over the Better Auth client: the six operations Account Actions actually invoke.
+The narrow port over everything an Account Action invokes. Mostly the Better Auth client, but not
+only: `revokeConnection` is backed by a server action, and the port is what makes that
+indistinguishable to the action calling it.
 
 It exists so Better Auth's types stop at one file and so tests can drive the actions against a
 fake. `authGateway` is the production adapter; tests supply their own.
+
+Members answer with `{ data?, error? }`. Most actions ignore the payload; the one that does not is
+the consent decision, which needs the redirect target the provider chose.
 
 ## Email Gateway
 
@@ -105,6 +115,57 @@ replaced with the account route.
 A WebAuthn credential bound to one device, created *after* a first Magic Link sign-in. A Viewer may
 hold several. The **relying party id** is derived from the base URL, with the loopback address
 mapped to `localhost` because WebAuthn rejects bare IPs.
+
+## Agent Session
+
+One authenticated MCP request: which Viewer an agent is acting for, and which Scopes they granted
+it. Built once from the access token's verified claims — `sub` becomes the identity, `scope` becomes
+the grant — and handed to the tools.
+
+There is no session without a verified `sub`; an agent that reaches the endpoint without one gets a
+server with no tools registered at all.
+
+Tools receive a Session, never a user id and a scope list. That is deliberate: a tool cannot be
+called for the wrong Viewer, and cannot forget the Scope check, because neither is a parameter it
+could get wrong. The check runs before the gateway is touched.
+
+Lives in [`src/lib/mcp/agent-session.ts`](src/lib/mcp/agent-session.ts).
+
+## Scope
+
+What an Agent Session is allowed to do: `profile:read` and `profile:write`. Read and write are
+separate so a client that only needs to read never has to hold write.
+
+OAuth carries granted scopes as one space-delimited string, both in the token claim and in the
+authorize request the consent screen reads. `parseScopes` is the single parse rule for both, and it
+returns nothing for anything that is not a string — an unparseable claim grants nothing rather than
+throwing.
+
+Lives in [`src/lib/mcp/mcp-scopes.ts`](src/lib/mcp/mcp-scopes.ts), which stays free of server config
+so client components can import it.
+
+## MCP Connection
+
+An agent a Viewer has let act on their behalf. The durable record is the **consent** row, not any
+token: it outlives every access token, so it is what the account page lists and what disconnecting
+removes. Disconnecting also revokes the tokens already issued — an access token in flight stays
+valid until it expires, the refresh token is what gets cut off.
+
+A client that registered without a name is shown by its raw client id, so a connection is never
+nameless.
+
+Shapes and mapping live in [`src/lib/mcp/mcp-connection.ts`](src/lib/mcp/mcp-connection.ts);
+disconnecting is an Account Action.
+
+## Account Overview
+
+Everything the account page needs about a Viewer beyond the Viewer itself: whether they have a
+password, and their MCP Connections. One call, one shape, two independent reads that run together.
+
+The reads sit behind `AccountRecordGateway`, which returns rows rather than answers — the shaping
+rules stay in the module so the in-memory adapter can drive them.
+
+Lives in [`src/lib/account/account-overview.ts`](src/lib/account/account-overview.ts).
 
 ## Conventions this model assumes
 

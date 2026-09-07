@@ -41,6 +41,8 @@ Global design utilities live in `src/app/globals.css`:
 - `design-field-error`: inline validation message under a field.
 - `design-divider`: uppercase divider with a rule on each side.
 
+Every labelled input is a `FormField` (`src/components/ui/form-field.tsx`) rather than a hand-assembled label/input/error block. It owns the whole accessibility contract — label association, `aria-invalid`, `aria-describedby`, the error slot — and the test ids derived from its `id`: `{id}-field` on the label, `{id}-input` on the control, `{id}-error` on the message. Pass `type` and `autoComplete` as props; pass `labelSuffix` for anything that sits beside the label, like a "forgot password?" link. Never re-derive that wiring at a call site.
+
 Anything interactive is a `Button` (`src/components/ui/button.tsx`) rather than a hand-styled element, so focus rings, disabled states, and touch targets stay identical everywhere:
 
 - `variant='strong'` + `size='xl'`: the primary action (dark pill, lime label).
