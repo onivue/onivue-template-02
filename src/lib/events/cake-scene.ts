@@ -37,6 +37,33 @@ const POKE_DECAY = 2.6;
 const POKE_SPIN = 9;
 const POKE_LIFT = 0.25;
 const MAX_FRAME_SECONDS = 0.1;
+// how far the cake wanders from the centre on its way around the frame
+const DRIFT_X = 0.42;
+const DRIFT_Y = 0.22;
+
+// the camera frames the model rather than sitting at a fixed distance, so the ornament fills its
+// canvas at any size or aspect: a taller block shows a bigger cake, a narrow one still shows it whole
+const FOV = 32;
+// 1 would have the cake graze the edge at the top of its hop, so leave it some air
+const FRAME_FILL = 0.94;
+// worst case reach from the origin: half the model, plus the drift, plus the hop of a poke
+const REACH_X = TARGET_SIZE / 2 + DRIFT_X;
+const REACH_Y = TARGET_SIZE / 2 + DRIFT_Y + POKE_LIFT;
+// the camera rides a little above the cake; as a share of the distance the angle stays put
+const CAMERA_LIFT = 0.08;
+
+// pull the camera back just far enough that both reaches fit — the tighter axis decides
+function placeCamera(camera: PerspectiveCamera, aspect: number): void {
+	// half the frame, per unit of distance, after the air FRAME_FILL leaves around the model
+	const halfHeight = Math.tan(((FOV / 2) * Math.PI) / 180) * FRAME_FILL;
+	const safeAspect = Math.max(aspect, 0.0001);
+	const distance = Math.max(REACH_Y / halfHeight, REACH_X / (halfHeight * safeAspect));
+
+	camera.aspect = safeAspect;
+	camera.position.set(0, distance * CAMERA_LIFT, distance);
+	camera.lookAt(0, 0, 0);
+	camera.updateProjectionMatrix();
+}
 
 type Disposable = { dispose: () => void };
 
@@ -105,11 +132,9 @@ export function createCakeScene(
 	renderer.toneMappingExposure = 0.85;
 
 	const scene = new Scene();
-	const camera = new PerspectiveCamera(32, width / Math.max(height, 1), 0.1, 100);
+	const camera = new PerspectiveCamera(FOV, 1, 0.1, 100);
 
-	// far enough back that the widest cake still clears the frame while it drifts, tilts and hops
-	camera.position.set(0, 0.55, 6.8);
-	camera.lookAt(0, 0, 0);
+	placeCamera(camera, width / Math.max(height, 1));
 
 	const pmrem = new PMREMGenerator(renderer);
 	const room = new RoomEnvironment();
@@ -206,7 +231,11 @@ export function createCakeScene(
 			// the other, so the cake travels corner to corner instead of only spinning in place
 			const travel = elapsedSeconds * 0.42;
 
-			drift.position.set(Math.sin(travel) * 0.42, Math.sin(travel + 0.9) * 0.22 + pokeEnergy * POKE_LIFT, 0);
+			drift.position.set(
+				Math.sin(travel) * DRIFT_X,
+				Math.sin(travel + 0.9) * DRIFT_Y + pokeEnergy * POKE_LIFT,
+				0
+			);
 
 			spin += (BASE_SPIN + pokeEnergy * POKE_SPIN) * delta;
 			pivot.rotation.y = spin;
@@ -233,8 +262,7 @@ export function createCakeScene(
 			renderer.render(scene, camera);
 		},
 		resize: (nextWidth, nextHeight) => {
-			camera.aspect = nextWidth / Math.max(nextHeight, 1);
-			camera.updateProjectionMatrix();
+			placeCamera(camera, nextWidth / Math.max(nextHeight, 1));
 			renderer.setSize(nextWidth, nextHeight, false);
 		},
 	};

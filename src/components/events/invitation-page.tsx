@@ -64,7 +64,7 @@ export function InvitationPage(props: InvitationPageProps) {
 			<div className='mx-auto grid w-full max-w-2xl gap-6'>
 				<header className='grid justify-items-center gap-4 text-center'>
 					{isDecorationKey(event.decoration) ? (
-						<EventDecoration className='max-w-sm' decoration={event.decoration} />
+						<EventDecoration className='h-72 max-w-md sm:h-80' decoration={event.decoration} />
 					) : null}
 
 					<h1 className='design-page-title text-[clamp(2rem,6vw,3.25rem)]'>{event.title}</h1>
