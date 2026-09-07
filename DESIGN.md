@@ -75,3 +75,27 @@ Auth cards stay compact and focused: narrow max width, moderate padding, pill co
 - Do not change application structure solely to match mockups; apply this design language through tokens and utilities first.
 - Keep mobile safe-area handling on fixed bottom elements.
 - Use `data-testid` on visible layout and navigation elements.
+
+## Guest Pages
+
+The invitation page at `/i/<token>` is the one surface a host may restyle, and the only one that
+leaves the token system above. Its palette arrives as four custom properties on the page's own
+wrapper (`--invitation-accent`, `--invitation-background`, `--invitation-panel`,
+`--invitation-text`), set by `toThemeStyle` in `src/lib/events/event-theme.ts`:
+
+- The **accent** is free — a host picks it with a colour picker. The text on top of it is *not*
+  free: `readableForeground` computes the WCAG relative luminance and returns near-black or white,
+  so a pale lime and a deep blue both stay readable. Never hard-code a foreground next to a
+  user-chosen colour.
+- The **surfaces** are two curated sets (light and dark), never a free background. A free
+  background plus a free accent produces unreadable pages, and no amount of care at the call site
+  fixes it.
+- The **font** is one of a curated few, loaded per page with `next/font`. Anything unknown falls
+  back to the app's own Space Grotesk.
+
+The admin surface never follows an event theme. A host styling a wedding must not restyle the tool
+they are working in, and the contrast rules above are guaranteed only for the two curated surface
+sets.
+
+The design tab renders the real `InvitationPage` component with the draft theme rather than a
+mock-up, so a preview cannot drift from what the guest receives.

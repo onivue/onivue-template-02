@@ -7,8 +7,10 @@ export type RouteAccess = 'guest' | 'public' | 'viewer';
 export type RouteName =
 	| 'ACCOUNT'
 	| 'CONSENT'
+	| 'EVENTS'
 	| 'FORGOT_PASSWORD'
 	| 'HOME'
+	| 'INVITATION'
 	| 'LANDING'
 	| 'LOGIN'
 	| 'REGISTER'
@@ -36,14 +38,24 @@ export const ROUTES = {
 		access: 'viewer',
 		path: '/consent',
 	},
+	// the working surface of the app; the root redirects here
+	EVENTS: {
+		access: 'viewer',
+		nav: { label: 'Events', testId: 'navigation-events-link' },
+		path: '/events',
+	},
 	FORGOT_PASSWORD: {
 		access: 'guest',
 		path: '/forgot-password',
 	},
 	HOME: {
 		access: 'viewer',
-		nav: { label: 'Home', testId: 'navigation-home-link' },
 		path: '/',
+	},
+	// the guest link. public by design: possession of the token is the authorization (ADR-0004)
+	INVITATION: {
+		access: 'public',
+		path: '/i',
 	},
 	LANDING: {
 		access: 'public',
@@ -71,6 +83,8 @@ export const ROUTES = {
 
 export const APP_ROUTES = {
 	HOME: ROUTES.HOME.path,
+	EVENTS: ROUTES.EVENTS.path,
+	INVITATION: ROUTES.INVITATION.path,
 	LANDING: ROUTES.LANDING.path,
 	ACCOUNT: ROUTES.ACCOUNT.path,
 	SETTINGS: ROUTES.SETTINGS.path,
@@ -99,7 +113,7 @@ export function getAccessFor(pathname: string): RouteAccess {
 	return route?.access ?? 'viewer';
 }
 
-const NAVIGATION_ORDER = ['HOME', 'ACCOUNT', 'SETTINGS'] as const satisfies readonly RouteName[];
+const NAVIGATION_ORDER = ['EVENTS', 'ACCOUNT', 'SETTINGS'] as const satisfies readonly RouteName[];
 
 export const NAVIGATION_ROUTES = NAVIGATION_ORDER.map((name) => ({
 	href: ROUTES[name].path,
@@ -109,3 +123,12 @@ export const NAVIGATION_ROUTES = NAVIGATION_ORDER.map((name) => ({
 }));
 
 export type NavigationRoute = (typeof NAVIGATION_ROUTES)[number];
+
+// dynamic paths belong here too: nothing internal should be assembled from string literals.
+// two sections only: the overview carries the guest list, the settings page carries the form.
+export const eventPath = (eventId: string, section?: 'settings'): string =>
+	section ? `${ROUTES.EVENTS.path}/${eventId}/${section}` : `${ROUTES.EVENTS.path}/${eventId}`;
+
+export const eventExportPath = (eventId: string): string => `${ROUTES.EVENTS.path}/${eventId}/export`;
+
+export const invitationPath = (token: string): string => `${ROUTES.INVITATION.path}/${token}`;

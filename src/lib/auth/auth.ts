@@ -5,6 +5,7 @@ import { APIError, betterAuth } from 'better-auth';
 import { nextCookies } from 'better-auth/next-js';
 import { jwt } from 'better-auth/plugins/jwt';
 import { magicLink } from 'better-auth/plugins/magic-link';
+import { organization } from 'better-auth/plugins/organization';
 import { username } from 'better-auth/plugins/username';
 
 import type { AuthEmail } from '@/lib/email/email-gateway';
@@ -14,6 +15,8 @@ import { SERVER_CONFIG } from '@/config/env';
 import { APP_ROUTES } from '@/config/routes';
 import { db } from '@/db/client';
 import * as schema from '@/db/schema';
+import { DrizzleOrganizationStore } from '@/lib/auth/drizzle-organization-store';
+import { ensurePersonalOrganization } from '@/lib/auth/personal-organization';
 import { createResendTransport, ResendGateway } from '@/lib/email/resend-gateway';
 import { getMcpEndpointUrl } from '@/lib/mcp/mcp-config';
 import { MCP_SCOPES } from '@/lib/mcp/mcp-scopes';
@@ -30,6 +33,8 @@ import {
 } from '@/lib/profile/profile-schema';
 
 // the one wiring point where config meets the transport
+const organizationStore = new DrizzleOrganizationStore(db);
+
 const emailGateway = new ResendGateway({
 	from: SERVER_CONFIG.mail.from,
 	transport: createResendTransport(SERVER_CONFIG.mail.resendApiKey),
@@ -70,6 +75,17 @@ function rejectInvalidProfileFields(user: Record<string, unknown>): void {
 	}
 }
 
+// every user owns one organization. it is created here so the first request already finds it, and
+// never blocks registration: getActiveMembership() performs the same idempotent write if this
+// failed, or if the user registered before organizations existed.
+async function createPersonalOrganization(user: { id: string; name: string }): Promise<void> {
+	try {
+		await ensurePersonalOrganization(organizationStore, user);
+	} catch {
+		// registration succeeds regardless; the organization is healed on the next request
+	}
+}
+
 export const auth = betterAuth({
 	appName: APP_CONFIG.app.name,
 	baseURL: SERVER_CONFIG.auth.baseUrl,
@@ -104,6 +120,11 @@ export const auth = betterAuth({
 	},
 	databaseHooks: {
 		user: {
+			create: {
+				after: async (user) => {
+					await createPersonalOrganization(user);
+				},
+			},
 			update: {
 				before: async (user) => {
 					rejectInvalidProfileFields(user);
@@ -139,6 +160,13 @@ export const auth = betterAuth({
 			maxUsernameLength: USERNAME_MAX_LENGTH,
 			usernameValidator: (candidate) =>
 				USERNAME_PATTERN.test(candidate) && !profanityFilter.containsBlockedWord(candidate),
+		}),
+		// events belong to organizations (ADR-0003). there is no organization ui yet, so nothing may
+		// create one through the api — the hook above owns that — and none may be deleted, since
+		// that would cascade away every event it holds.
+		organization({
+			allowUserToCreateOrganization: false,
+			disableOrganizationDeletion: true,
 		}),
 		// signs the access tokens that mcp() issues; requireMcpAuth verifies them against /jwks
 		jwt(),

@@ -13,7 +13,7 @@ describe('navigation item resolution', () => {
 	test('every registry route is resolved, in order, with an icon', () => {
 		const items = resolveNavigationItems(APP_ROUTES.HOME);
 
-		expect(items.map((item) => item.label)).toEqual(['Home', 'Account', 'Settings']);
+		expect(items.map((item) => item.label)).toEqual(['Events', 'Account', 'Settings']);
 		expect(items.every((item) => typeof item.icon === 'function' || typeof item.icon === 'object')).toBe(true);
 	});
 
@@ -22,9 +22,10 @@ describe('navigation item resolution', () => {
 		expect(activeHrefs(APP_ROUTES.SETTINGS)).toEqual([APP_ROUTES.SETTINGS]);
 	});
 
-	test('home is active only at the root, not on every path', () => {
-		expect(activeHrefs(APP_ROUTES.HOME)).toEqual([APP_ROUTES.HOME]);
-		expect(activeHrefs(APP_ROUTES.SETTINGS)).not.toContain(APP_ROUTES.HOME);
+	test('events stays active on its detail pages', () => {
+		expect(activeHrefs(APP_ROUTES.EVENTS)).toEqual([APP_ROUTES.EVENTS]);
+		expect(activeHrefs('/events/ev-1/guests')).toEqual([APP_ROUTES.EVENTS]);
+		expect(activeHrefs(APP_ROUTES.SETTINGS)).not.toContain(APP_ROUTES.EVENTS);
 	});
 
 	test('a nested path keeps its parent item active', () => {

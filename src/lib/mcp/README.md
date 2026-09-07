@@ -14,17 +14,33 @@ Token-Ausgabe bereit. Es muss **nichts mehr manuell kopiert** werden.
 
 Endpoint: `POST /api/mcp` (Streamable HTTP, [Model Context Protocol](https://modelcontextprotocol.io)).
 
-Zwei Tools, MVP-Umfang:
+Profil-Tools:
 
 | Tool             | Macht                                                                       | Benötigter Scope |
 | ---------------- | --------------------------------------------------------------------------- | ---------------- |
 | `get_profile`    | Liest E-Mail, Vorname, Nachname und Benutzername des angemeldeten Nutzers.  | `profile:read`   |
 | `update_profile` | Ändert Vorname, Nachname und/oder Benutzername. Nur gesetzte Felder ändern. | `profile:write`  |
 
-Beide Tools schreiben über `internalAdapter.updateUser` und laufen damit durch **exakt dieselben**
-`databaseHooks` wie die Account-Seite im Browser: Länge, Zeichen, Schimpfwortfilter und
+Die beiden Profil-Tools schreiben über `internalAdapter.updateUser` und laufen damit durch **exakt
+dieselben** `databaseHooks` wie die Account-Seite im Browser: Länge, Zeichen, Schimpfwortfilter und
 Verfügbarkeit des Benutzernamens (`username`-Plugin) sowie die Vor-/Nachnamen-Prüfung aus
 `auth.ts`. Es gibt keinen zweiten, laxeren Validierungspfad.
+
+Event-Tools:
+
+| Tool                   | Macht                                                                        | Benötigter Scope |
+| ---------------------- | ---------------------------------------------------------------------------- | ---------------- |
+| `list_events`          | Listet die Events des Nutzers mit Zu-, Ab- und offenen Antworten.            | `events:read`    |
+| `get_event`            | Liest ein Event mit Einladungen, Personen, Antwortstand und Formularfeldern. | `events:read`    |
+| `create_event`         | Legt ein neues Event an.                                                     | `events:write`   |
+| `update_event`         | Ändert Titel, Zeiten, Ort, Begrüßungstext oder Antwort-Frist.                | `events:write`   |
+| `add_invitations`      | Legt Einladungen aus einer Gästeliste an.                                    | `events:write`   |
+| `mark_invitation_sent` | Vermerkt, ob eine Einladung verschickt wurde (reine Buchführung).            | `events:write`   |
+
+Die Grenze der Event-Tools ist bewusst gezogen: **löschen, archivieren, einen Einladungslink
+ersetzen und für einen Gast antworten** werden gar nicht erst angeboten. Ein Agent kann sie also
+auch mit `events:write` nicht auslösen. `get_event` gibt zudem keine Einladungs-Tokens heraus —
+ein Link gehört dem Gast, für den er gemacht wurde.
 
 ## Wie man sich verbindet
 
@@ -180,8 +196,12 @@ OAuth-Flow selbstständig.
 | `mcp-tool-schema.ts`         | Zod-4-Schemas der Tool-Ein-/Ausgaben; validiert mit `profile-schema.ts`.  |
 | `agent-session.ts`           | Eine authentifizierte Anfrage: Identität, Scope-Prüfung, Profil-Zugriff.  |
 | `better-auth-mcp-gateway.ts` | Produktions-Adapter: übersetzt den Session-Port auf den internen Adapter. |
-| `mcp-tools.ts`               | Registriert die Tools gegen eine `AgentSession`, übersetzt Ergebnisse.    |
-| `mcp-handler.ts`             | `requireMcpAuth` → pro Request eine `AgentSession` → Tools.               |
+| `mcp-tools.ts`               | Registriert die Profil-Tools gegen eine `AgentSession`.                   |
+| `event-session.ts`           | Dasselbe für Events: Identität, Scope-Prüfung, erlaubte Event-Aktionen.   |
+| `mcp-event-service.ts`       | Die Event-Aktionen selbst, in der Organisation des Nutzers.               |
+| `mcp-event-tools.ts`         | Registriert die Event-Tools gegen eine `EventSession`.                    |
+| `mcp-result.ts`              | Die zwei Ergebnisformen, die jedes Tool zurückgibt.                       |
+| `mcp-handler.ts`             | `requireMcpAuth` → pro Request eine Session je Bereich → Tools.           |
 | `mcp-connection.ts`          | Reine Formen und Mapping für verbundene Clients, ohne Datenbank.          |
 | `mcp-client-lookup.ts`       | Liest Name/URI eines registrierten Clients für die Consent-Seite.         |
 | `mcp-connection-actions.ts`  | Server Action: trennt einen Client und widerruft seine Tokens.            |

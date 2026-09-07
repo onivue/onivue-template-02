@@ -89,7 +89,8 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ## Data & State
 
-- **Server State:** Use TanStack Query. Keep separate from client state.
+- **Server State:** Read it in Server Components and write it through Server Actions. TanStack Query is for
+  client-side fetching only — do not add it where there is none. Keep it separate from client state.
 - **Cancellation:** Use `AbortController` to handle async cancellations and race conditions.
 - **Client State:** Use Zustand v5+ for complex local state.
 - **Forms:** Use React Hook Form + Zod resolvers.
