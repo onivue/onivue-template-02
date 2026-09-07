@@ -1,7 +1,10 @@
-import { CalendarClock, Download, ListChecks, MapPin, Send, Users } from 'lucide-react';
+import { CalendarClock, Download, ListChecks, Map, MapPin, Send } from 'lucide-react';
 import Link from 'next/link';
 
+import { BulkInviteForm } from '@/components/events/bulk-invite-form';
+import { GuestTable } from '@/components/events/guest-table';
 import { ResponseCounts } from '@/components/events/response-counts';
+import { Section, SectionDescription, SectionHeader, SectionHeading, SectionTitle } from '@/components/layout/section';
 import { Button } from '@/components/ui/button';
 import { eventExportPath, eventPath } from '@/config/routes';
 import { formatBerlin } from '@/lib/events/berlin-time';
@@ -13,18 +16,25 @@ type OverviewPageProps = {
 	params: Promise<{ eventId: string }>;
 };
 
-type NextStep = {
-	href: string;
-	label: string;
-	text: string;
-};
+function Fact({ children, icon: Icon, label }: { children: React.ReactNode; icon: typeof MapPin; label: string }) {
+	return (
+		<div className='flex items-start gap-2.5'>
+			<Icon aria-hidden='true' className='mt-0.5 size-4 shrink-0 text-ink-soft' />
+			<div className='min-w-0'>
+				<dt className='text-xs text-ink-soft'>{label}</dt>
+				<dd className='mt-0.5'>{children}</dd>
+			</div>
+		</div>
+	);
+}
 
 export default async function EventOverviewPage({ params }: OverviewPageProps) {
 	const { eventId } = await params;
 	const { event } = await loadEvent(eventId);
-	const [counts, fields] = await Promise.all([
+	const [counts, fields, invitations] = await Promise.all([
 		eventRepository.eventCounts(event.id),
 		eventRepository.listFormFields(event.id),
+		eventRepository.listInvitations(event.id),
 	]);
 
 	const window = resolveResponseWindow(
@@ -32,95 +42,66 @@ export default async function EventOverviewPage({ params }: OverviewPageProps) {
 		new Date()
 	);
 
-	// the overview earns its place by saying what is missing, in the order a host would do it
-	const steps: NextStep[] = [
-		...(event.startsAt
-			? []
-			: [
-					{
-						href: eventPath(event.id, 'settings'),
-						label: 'Datum eintragen',
-						text: 'Das Event hat noch kein Datum.',
-					},
-				]),
-		...(counts.invitations === 0
-			? [
-					{
-						href: eventPath(event.id, 'guests'),
-						label: 'Gäste eintragen',
-						text: 'Noch keine Einladung angelegt.',
-					},
-				]
-			: []),
-		...(counts.invitations > 0 && counts.unsent > 0
-			? [
-					{
-						href: eventPath(event.id, 'guests'),
-						label: 'Links verschicken',
-						text: `${counts.unsent} Einladung${counts.unsent === 1 ? ' wartet' : 'en warten'} darauf, verschickt zu werden.`,
-					},
-				]
-			: []),
-		...(event.responseDeadline
-			? []
-			: [
-					{
-						href: eventPath(event.id, 'settings'),
-						label: 'Frist setzen',
-						text: 'Ohne Frist können Gäste ihre Antwort unbegrenzt ändern.',
-					},
-				]),
-	];
+	const guestCount = invitations.reduce((total, invitation) => total + invitation.guests.length, 0);
 
 	return (
-		<div className='grid gap-4' data-testid='event-overview'>
-			<ResponseCounts counts={counts} />
+		<div className='grid gap-8' data-testid='event-overview'>
+			<div className='grid gap-4'>
+				<ResponseCounts counts={counts} />
 
-			{steps.length > 0 ? (
-				<section className='design-panel grid gap-2 px-4 py-4' data-testid='next-steps'>
-					<h2 className='design-label'>Als Nächstes</h2>
-					<ul className='grid gap-2'>
-						{steps.map((step) => (
-							<li className='flex flex-wrap items-center justify-between gap-2 text-sm' key={step.label}>
-								<span className='text-ink-soft'>{step.text}</span>
-								<Button
-									nativeButton={false}
-									render={<Link href={step.href} />}
-									size='sm'
-									variant='outline'
-								>
-									{step.label}
-								</Button>
-							</li>
-						))}
-					</ul>
-				</section>
-			) : null}
-
-			<section className='design-panel grid gap-3 px-4 py-4'>
-				<h2 className='design-label'>Eckdaten</h2>
-				<dl className='grid gap-2 text-sm sm:grid-cols-2'>
-					<div className='flex items-start gap-2'>
-						<CalendarClock aria-hidden='true' className='mt-0.5 size-4 shrink-0 text-ink-soft' />
-						<div>
-							<dt className='text-ink-soft'>Wann</dt>
-							<dd>{event.startsAt ? formatBerlin(event.startsAt) : 'Noch nicht festgelegt'}</dd>
-						</div>
+				<section className='design-panel grid gap-4 p-5 sm:p-6'>
+					<div className='flex flex-wrap items-center justify-between gap-2'>
+						<h2 className='design-label'>Eckdaten</h2>
+						<Button
+							data-testid='edit-event-details'
+							nativeButton={false}
+							render={<Link href={eventPath(event.id, 'settings')} />}
+							size='sm'
+							variant='ghost'
+						>
+							Bearbeiten
+						</Button>
 					</div>
 
-					<div className='flex items-start gap-2'>
-						<MapPin aria-hidden='true' className='mt-0.5 size-4 shrink-0 text-ink-soft' />
-						<div>
-							<dt className='text-ink-soft'>Wo</dt>
-							<dd>{event.location ?? 'Noch nicht festgelegt'}</dd>
-						</div>
-					</div>
+					{/* one fact per row: an address runs to several lines, so columns would tear it apart */}
+					<dl className='grid gap-4 text-sm'>
+						<Fact icon={CalendarClock} label='Wann'>
+							{event.startsAt ? formatBerlin(event.startsAt) : 'Noch nicht festgelegt'}
+							{event.startsAt && event.endsAt ? (
+								<span className='text-ink-soft'> – {formatBerlin(event.endsAt)}</span>
+							) : null}
+						</Fact>
 
-					<div className='flex items-start gap-2'>
-						<Send aria-hidden='true' className='mt-0.5 size-4 shrink-0 text-ink-soft' />
-						<div>
-							<dt className='text-ink-soft'>Antworten</dt>
-							<dd data-testid='response-window'>
+						<Fact icon={MapPin} label='Wo'>
+							<span className='whitespace-pre-line'>{event.location ?? 'Noch nicht festgelegt'}</span>
+							{event.locationAppleMapsUrl || event.locationGoogleMapsUrl ? (
+								<span className='mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs'>
+									{event.locationAppleMapsUrl ? (
+										<a
+											className='inline-flex items-center gap-1 underline-offset-2 hover:underline'
+											href={event.locationAppleMapsUrl}
+											rel='noopener noreferrer'
+											target='_blank'
+										>
+											<MapPin aria-hidden='true' className='size-3.5' /> Apple Karten
+										</a>
+									) : null}
+									{event.locationGoogleMapsUrl ? (
+										<a
+											className='inline-flex items-center gap-1 underline-offset-2 hover:underline'
+											href={event.locationGoogleMapsUrl}
+											rel='noopener noreferrer'
+											target='_blank'
+										>
+											<Map aria-hidden='true' className='size-3.5' /> Google Maps
+										</a>
+									) : null}
+								</span>
+							) : null}
+						</Fact>
+
+						<Fact icon={Send} label='Antworten'>
+							<span data-testid='response-window'>
 								{window.open
 									? window.closesAt
 										? `Offen bis ${formatBerlin(window.closesAt)}`
@@ -128,46 +109,49 @@ export default async function EventOverviewPage({ params }: OverviewPageProps) {
 									: window.reason === 'archived'
 										? 'Geschlossen — das Event ist archiviert'
 										: 'Geschlossen — die Frist ist abgelaufen'}
-							</dd>
-						</div>
-					</div>
+							</span>
+						</Fact>
 
-					<div className='flex items-start gap-2'>
-						<ListChecks aria-hidden='true' className='mt-0.5 size-4 shrink-0 text-ink-soft' />
-						<div>
-							<dt className='text-ink-soft'>Formular</dt>
-							<dd>
-								{fields.length === 0
-									? 'Nur Zu- und Absage'
-									: `${fields.length} zusätzliche Frage${fields.length === 1 ? '' : 'n'}`}
-							</dd>
-						</div>
-					</div>
-				</dl>
-			</section>
-
-			<div className='flex flex-wrap gap-2'>
-				<Button
-					nativeButton={false}
-					render={<Link href={eventPath(event.id, 'guests')} />}
-					size='xl'
-					variant='strong'
-				>
-					<Users data-icon='inline-start' /> Gäste verwalten
-				</Button>
-				<Button
-					data-testid='event-export'
-					disabled={counts.invitations === 0}
-					nativeButton={false}
-					render={
-						<a aria-label='Gästeliste als CSV herunterladen' download href={eventExportPath(event.id)} />
-					}
-					size='xl'
-					variant='outline'
-				>
-					<Download data-icon='inline-start' /> CSV-Export
-				</Button>
+						<Fact icon={ListChecks} label='Formular'>
+							{fields.length === 0
+								? 'Nur Zu- und Absage'
+								: `${fields.length} zusätzliche Frage${fields.length === 1 ? '' : 'n'}`}
+						</Fact>
+					</dl>
+				</section>
 			</div>
+
+			<Section>
+				<SectionHeader>
+					<SectionHeading>
+						<SectionTitle>Gäste</SectionTitle>
+						<SectionDescription>
+							{counts.invitations === 0
+								? 'Noch keine Einladungen angelegt.'
+								: `${counts.invitations} Einladung${counts.invitations === 1 ? '' : 'en'} · ${guestCount} Person${guestCount === 1 ? '' : 'en'}`}
+						</SectionDescription>
+					</SectionHeading>
+					<Button
+						data-testid='event-export'
+						disabled={counts.invitations === 0}
+						nativeButton={false}
+						render={
+							<a
+								aria-label='Gästeliste als CSV herunterladen'
+								download
+								href={eventExportPath(event.id)}
+							/>
+						}
+						size='sm'
+						variant='outline'
+					>
+						<Download data-icon='inline-start' /> CSV-Export
+					</Button>
+				</SectionHeader>
+
+				<BulkInviteForm defaultOpen={counts.invitations === 0} eventId={event.id} />
+				<GuestTable eventId={event.id} invitations={invitations} />
+			</Section>
 		</div>
 	);
 }

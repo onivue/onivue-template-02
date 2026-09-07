@@ -224,7 +224,7 @@ export function FormBuilder({ eventId, fields }: FormBuilderProps) {
 			</div>
 
 			{isAdding ? (
-				<section className='design-panel grid gap-3 px-4 py-4'>
+				<section className='design-panel grid gap-3 p-5 sm:p-6'>
 					<h2 className='design-label'>Neue Frage</h2>
 					<FieldEditor
 						draft={draft}
@@ -242,14 +242,14 @@ export function FormBuilder({ eventId, fields }: FormBuilderProps) {
 			) : null}
 
 			{fields.length === 0 ? (
-				<p className='design-panel px-4 py-6 text-sm text-ink-soft' data-testid='form-empty'>
+				<p className='design-panel px-6 py-8 text-sm text-ink-soft' data-testid='form-empty'>
 					Noch keine Fragen. Zu- und Absage funktionieren auch ohne — alles weitere ist optional.
 				</p>
 			) : (
 				<ul className='grid gap-3' data-testid='form-field-list'>
 					{fields.map((field, index) => (
 						<li
-							className='design-panel grid gap-3 px-4 py-4'
+							className='design-panel grid gap-3 p-5 sm:p-6'
 							data-testid={`form-field-${field.id}`}
 							key={field.id}
 						>

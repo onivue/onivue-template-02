@@ -1,5 +1,6 @@
 'use client';
 
+import { Plus, X } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -9,6 +10,8 @@ import { parseGuestList } from '@/lib/events/guest-list-parser';
 import { addInvitations } from '@/lib/events/invitation-actions';
 
 type BulkInviteFormProps = {
+	// the first guests are the whole job; later they are one task among many, so it starts folded
+	defaultOpen?: boolean;
 	eventId: string;
 };
 
@@ -18,7 +21,8 @@ Oma`;
 
 // the same parser that runs on the server previews the paste here, so what is shown is what will
 // be created
-export function BulkInviteForm({ eventId }: BulkInviteFormProps) {
+export function BulkInviteForm({ defaultOpen = false, eventId }: BulkInviteFormProps) {
+	const [isOpen, setIsOpen] = useState(defaultOpen);
 	const [raw, setRaw] = useState('');
 	const [isSaving, setIsSaving] = useState(false);
 	const preview = parseGuestList(raw);
@@ -40,14 +44,39 @@ export function BulkInviteForm({ eventId }: BulkInviteFormProps) {
 		toast.success(`${result.data.created} Einladung(en) angelegt.`);
 	};
 
+	if (!isOpen) {
+		return (
+			<Button
+				className='w-fit'
+				data-testid='bulk-invite-open'
+				onClick={() => setIsOpen(true)}
+				size='xl'
+				variant='outline'
+			>
+				<Plus data-icon='inline-start' /> Gäste eintragen
+			</Button>
+		);
+	}
+
 	return (
-		<section className='design-panel grid gap-3 px-4 py-4' data-testid='bulk-invite-form'>
-			<div className='grid gap-1'>
-				<h2 className='design-label'>Gäste eintragen</h2>
-				<p className='text-xs text-ink-soft'>
-					Eine Zeile ist eine Einladung. Mehrere Personen mit Komma trennen — die erste Person ist die
-					Hauptperson.
-				</p>
+		<section className='design-panel grid gap-3 p-5 sm:p-6' data-testid='bulk-invite-form'>
+			<div className='flex flex-wrap items-start justify-between gap-2'>
+				<div className='grid gap-1'>
+					<h3 className='design-label'>Gäste eintragen</h3>
+					<p className='text-xs text-ink-soft'>
+						Eine Zeile ist eine Einladung. Mehrere Personen mit Komma trennen — die erste Person ist die
+						Hauptperson.
+					</p>
+				</div>
+				<Button
+					aria-label='Eingabe schließen'
+					data-testid='bulk-invite-close'
+					onClick={() => setIsOpen(false)}
+					size='icon-sm'
+					variant='ghost'
+				>
+					<X />
+				</Button>
 			</div>
 
 			<Textarea

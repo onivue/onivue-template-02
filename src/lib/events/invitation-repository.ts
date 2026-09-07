@@ -20,16 +20,15 @@ export type InvitationGuest = {
 };
 
 export type InvitationEvent = {
+	decoration: null | string;
 	endsAt: Date | null;
 	greeting: null | string;
 	location: null | string;
+	locationAppleMapsUrl: null | string;
+	locationGoogleMapsUrl: null | string;
 	responseDeadline: Date | null;
 	startsAt: Date | null;
 	status: EventStatus;
-	themeAccent: string;
-	themeFont: string;
-	themeHeaderImageKey: null | string;
-	themeMode: 'dark' | 'light';
 	title: string;
 };
 
@@ -51,6 +50,7 @@ export class InvitationRepository {
 	public async findByToken(token: string): Promise<InvitationView | null> {
 		const [row] = await this.database
 			.select({
+				decoration: event.decoration,
 				endsAt: event.endsAt,
 				eventId: event.id,
 				eventStatus: event.status,
@@ -58,12 +58,10 @@ export class InvitationRepository {
 				invitationDeadline: eventInvitation.responseDeadline,
 				invitationId: eventInvitation.id,
 				location: event.location,
+				locationAppleMapsUrl: event.locationAppleMapsUrl,
+				locationGoogleMapsUrl: event.locationGoogleMapsUrl,
 				responseDeadline: event.responseDeadline,
 				startsAt: event.startsAt,
-				themeAccent: event.themeAccent,
-				themeFont: event.themeFont,
-				themeHeaderImageKey: event.themeHeaderImageKey,
-				themeMode: event.themeMode,
 				title: event.title,
 				updatedAt: eventInvitation.updatedAt,
 			})
@@ -100,16 +98,15 @@ export class InvitationRepository {
 		return {
 			answers,
 			event: {
+				decoration: row.decoration,
 				endsAt: row.endsAt,
 				greeting: row.greeting,
 				location: row.location,
+				locationAppleMapsUrl: row.locationAppleMapsUrl,
+				locationGoogleMapsUrl: row.locationGoogleMapsUrl,
 				responseDeadline: row.responseDeadline,
 				startsAt: row.startsAt,
 				status: row.eventStatus,
-				themeAccent: row.themeAccent,
-				themeFont: row.themeFont,
-				themeHeaderImageKey: row.themeHeaderImageKey,
-				themeMode: row.themeMode,
 				title: row.title,
 			},
 			fields: fields.map((field) => ({

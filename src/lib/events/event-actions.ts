@@ -11,24 +11,33 @@ import { getActiveMembership } from '@/lib/auth/active-organization';
 import { requireViewer } from '@/lib/auth/viewer';
 import { accessFailure, ACTION_MESSAGES, failure, ok } from '@/lib/events/action-result';
 import { parseBerlinDateTime } from '@/lib/events/berlin-time';
+import { isDecorationKey } from '@/lib/events/event-decoration';
 import { eventAccess, eventRepository } from '@/lib/events/event-services';
 
 const titleSchema = z.string().trim().min(1, 'Ein Titel fehlt.').max(120, 'Der Titel ist zu lang.');
 
+// a maps deep link, pasted in as-is — either app, both, or neither
+const mapsUrlSchema = z
+	.string()
+	.trim()
+	.max(1000)
+	.refine((value) => value === '' || /^https:\/\//i.test(value), 'Der Link muss mit https:// beginnen.')
+	.optional();
+
 const detailsSchema = z.object({
+	// '' is "no ornament"; anything else has to be one the app actually knows how to draw
+	decoration: z
+		.string()
+		.refine((value) => value === '' || isDecorationKey(value), 'Dieses 3D-Element gibt es nicht.')
+		.optional(),
 	endsAt: z.string().optional(),
 	greeting: z.string().max(2000).optional(),
-	location: z.string().max(200).optional(),
+	location: z.string().max(500).optional(),
+	locationAppleMapsUrl: mapsUrlSchema,
+	locationGoogleMapsUrl: mapsUrlSchema,
 	responseDeadline: z.string().optional(),
 	startsAt: z.string().optional(),
 	title: titleSchema,
-});
-
-// a colour picker sends hex; a token from the design system may also be pasted in
-const themeSchema = z.object({
-	themeAccent: z.string().regex(/^#[0-9a-f]{6}$/i, 'Das ist keine gültige Farbe.'),
-	themeFont: z.enum(['grotesk', 'serif', 'script']),
-	themeMode: z.enum(['light', 'dark']),
 });
 
 function emptyToNull(value: string | undefined): null | string {
@@ -72,9 +81,12 @@ export async function updateEventDetails(eventId: string, input: z.input<typeof 
 	}
 
 	const patch: EventPatch = {
+		decoration: emptyToNull(parsed.data.decoration),
 		endsAt: parseBerlinDateTime(parsed.data.endsAt),
 		greeting: emptyToNull(parsed.data.greeting),
 		location: emptyToNull(parsed.data.location),
+		locationAppleMapsUrl: emptyToNull(parsed.data.locationAppleMapsUrl),
+		locationGoogleMapsUrl: emptyToNull(parsed.data.locationGoogleMapsUrl),
 		responseDeadline: parseBerlinDateTime(parsed.data.responseDeadline),
 		startsAt: parseBerlinDateTime(parsed.data.startsAt),
 		title: parsed.data.title,
@@ -84,33 +96,6 @@ export async function updateEventDetails(eventId: string, input: z.input<typeof 
 
 	revalidatePath(eventPath(eventId, 'settings'));
 	revalidatePath(APP_ROUTES.EVENTS);
-
-	return ok();
-}
-
-export async function updateEventTheme(eventId: string, input: z.input<typeof themeSchema>): Promise<ActionResult> {
-	const membership = await getActiveMembership();
-	const access = await eventAccess.forManaging(eventId, membership);
-
-	if (!access.success) {
-		return accessFailure(access.error);
-	}
-
-	const parsed = themeSchema.safeParse(input);
-
-	if (!parsed.success) {
-		return failure(parsed.error.issues[0]?.message ?? ACTION_MESSAGES.invalid);
-	}
-
-	// the header image is not part of this form: it is uploaded and removed on its own, so saving
-	// the colours can never clobber it
-	await eventRepository.updateEvent(eventId, {
-		themeAccent: parsed.data.themeAccent,
-		themeFont: parsed.data.themeFont,
-		themeMode: parsed.data.themeMode,
-	});
-
-	revalidatePath(eventPath(eventId, 'design'));
 
 	return ok();
 }

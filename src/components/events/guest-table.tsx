@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, ChevronDown, Copy, Search, Send, SendHorizontal } from 'lucide-react';
+import { Check, ChevronDown, Copy, Reply, Search, Send, SendHorizontal } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -60,30 +60,49 @@ async function copyLink(token: string): Promise<void> {
 	toast.success('Link kopiert.');
 }
 
+// each group is its own segmented control, so two filters side by side never read as one long row.
+// the icon names the group, not the options — repeating one per pill was noise.
 function FilterPills<T extends string>({
+	icon: Icon,
+	label,
 	name,
 	onChange,
 	options,
 	value,
 }: {
+	icon: typeof Reply;
+	label: string;
 	name: string;
 	onChange: (value: T) => void;
 	options: readonly { label: string; value: T }[];
 	value: T;
 }) {
 	return (
-		<div className='flex flex-wrap gap-1'>
-			{options.map((option) => (
-				<Button
-					data-testid={`filter-${name}-${option.value}`}
-					key={option.value}
-					onClick={() => onChange(option.value)}
-					size='sm'
-					variant={value === option.value ? 'secondary' : 'ghost'}
-				>
-					{option.label}
-				</Button>
-			))}
+		<div className='flex items-center gap-2'>
+			<span className='flex items-center gap-1.5 text-xs text-ink-soft'>
+				<Icon aria-hidden='true' className='size-3.5 shrink-0' />
+				{label}
+			</span>
+			<div className='flex flex-wrap gap-1 rounded-full bg-muted p-1'>
+				{options.map((option) => (
+					<Button
+						// a near-white "selected" tint is not a selection; the chosen filter takes the ink
+						// pill — and keeps it on hover, or the label disappears into its own background
+						className={
+							value === option.value
+								? 'bg-ink font-bold text-background hover:bg-ink/90 hover:text-background'
+								: 'text-ink-soft hover:bg-surface-elevated hover:text-ink'
+						}
+						data-testid={`filter-${name}-${option.value}`}
+						key={option.value}
+						onClick={() => onChange(option.value)}
+						size='sm'
+						variant='ghost'
+					>
+						{option.label}
+					</Button>
+				))}
+			</div>
 		</div>
 	);
 }
@@ -97,7 +116,7 @@ export function GuestTable({ eventId, invitations }: GuestTableProps) {
 
 	if (invitations.length === 0) {
 		return (
-			<p className='design-panel px-4 py-8 text-center text-sm text-ink-soft' data-testid='guests-empty'>
+			<p className='design-panel px-6 py-10 text-center text-sm text-ink-soft' data-testid='guests-empty'>
 				Noch keine Einladungen. Füge oben Zeilen ein — eine Zeile ist eine Einladung.
 			</p>
 		);
@@ -105,37 +124,38 @@ export function GuestTable({ eventId, invitations }: GuestTableProps) {
 
 	return (
 		<div className='grid gap-3' data-testid='guest-table'>
-			<div className='design-panel grid gap-3 px-4 py-3'>
-				<label className='relative block'>
-					<span className='sr-only'>Gäste durchsuchen</span>
-					<Search
-						aria-hidden='true'
-						className='absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ink-soft'
-					/>
-					<Input
-						className='design-input pl-9'
-						data-testid='guest-search'
-						onChange={(nativeEvent) => setFilter({ ...filter, search: nativeEvent.target.value })}
-						placeholder='Nach Name, E-Mail oder Notiz suchen'
-						type='search'
-						value={filter.search}
-					/>
-				</label>
+			{/* one card: the filters are the head of this list, not a panel of their own */}
+			<div className='design-panel overflow-hidden'>
+				<div className='grid gap-3 p-5 sm:p-6'>
+					<label className='relative block'>
+						<span className='sr-only'>Gäste durchsuchen</span>
+						<Search
+							aria-hidden='true'
+							className='absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ink-soft'
+						/>
+						<Input
+							className='design-input pl-9'
+							data-testid='guest-search'
+							onChange={(nativeEvent) => setFilter({ ...filter, search: nativeEvent.target.value })}
+							placeholder='Nach Name, E-Mail oder Notiz suchen'
+							type='search'
+							value={filter.search}
+						/>
+					</label>
 
-				<div className='flex flex-wrap items-center gap-x-6 gap-y-2'>
-					<div className='flex items-center gap-2'>
-						<span className='design-label'>Antwort</span>
+					<div className='flex flex-wrap items-center gap-x-8 gap-y-3'>
 						<FilterPills
+							icon={Reply}
+							label='Antwort'
 							name='response'
 							onChange={(response) => setFilter({ ...filter, response })}
 							options={RESPONSE_FILTERS}
 							value={filter.response}
 						/>
-					</div>
 
-					<div className='flex items-center gap-2'>
-						<span className='design-label'>Versand</span>
 						<FilterPills
+							icon={Send}
+							label='Versand'
 							name='sent'
 							onChange={(sent) => setFilter({ ...filter, sent })}
 							options={SENT_FILTERS}
@@ -143,110 +163,112 @@ export function GuestTable({ eventId, invitations }: GuestTableProps) {
 						/>
 					</div>
 				</div>
+
+				{visible.length === 0 ? (
+					<p
+						className='border-t border-border px-6 py-10 text-center text-sm text-ink-soft'
+						data-testid='guests-filtered-empty'
+					>
+						Keine Einladung passt zu diesem Filter.{' '}
+						<Button onClick={() => setFilter(EMPTY_FILTER)} size='sm' variant='link'>
+							Filter zurücksetzen
+						</Button>
+					</p>
+				) : (
+					<ul className='divide-y divide-border border-t border-border' data-testid='invitation-list'>
+						{visible.map((invitation) => (
+							<li
+								className='grid gap-3 px-5 py-4'
+								data-testid={`invitation-${invitation.id}`}
+								key={invitation.id}
+							>
+								<div className='flex flex-wrap items-center justify-between gap-3'>
+									<div className='flex min-w-0 flex-wrap items-center gap-1.5'>
+										{invitation.guests.map((guest) => (
+											<span
+												className={cn(
+													'rounded-full px-2.5 py-1 text-sm',
+													RESPONSE_STYLE[guest.response],
+													guest.isMainGuest && 'font-bold'
+												)}
+												key={guest.id}
+												title={`${guestFullName(guest)} — ${RESPONSE_TITLE[guest.response]}`}
+											>
+												{guestFullName(guest)}
+											</span>
+										))}
+									</div>
+
+									<div className='flex shrink-0 items-center gap-1'>
+										<Button
+											aria-label='Einladungslink kopieren'
+											data-testid={`copy-${invitation.id}`}
+											onClick={() => void copyLink(invitation.token)}
+											size='sm'
+											variant='outline'
+										>
+											<Copy /> Link
+										</Button>
+
+										{invitation.sentAt ? (
+											<Button
+												data-testid={`unsend-${invitation.id}`}
+												onClick={() =>
+													void report(
+														setInvitationSent(eventId, invitation.id, false),
+														'Als offen markiert.'
+													)
+												}
+												size='sm'
+												title={`Versendet am ${formatBerlinShort(invitation.sentAt)} — klicken, um das zurückzunehmen`}
+												variant='ghost'
+											>
+												<Check className='text-accent-strong' /> Versendet
+											</Button>
+										) : (
+											<Button
+												data-testid={`send-${invitation.id}`}
+												onClick={() =>
+													void report(
+														setInvitationSent(eventId, invitation.id, true),
+														'Als versendet markiert.'
+													)
+												}
+												size='sm'
+												variant='ghost'
+											>
+												<SendHorizontal /> Versendet?
+											</Button>
+										)}
+
+										<Button
+											aria-expanded={expanded === invitation.id}
+											aria-label='Weitere Einstellungen'
+											data-testid={`expand-${invitation.id}`}
+											onClick={() =>
+												setExpanded(expanded === invitation.id ? null : invitation.id)
+											}
+											size='icon-sm'
+											variant='ghost'
+										>
+											<ChevronDown
+												className={cn(
+													'transition-transform',
+													expanded === invitation.id && 'rotate-180'
+												)}
+											/>
+										</Button>
+									</div>
+								</div>
+
+								{expanded === invitation.id ? (
+									<InvitationDetails eventId={eventId} invitation={invitation} />
+								) : null}
+							</li>
+						))}
+					</ul>
+				)}
 			</div>
-
-			{visible.length === 0 ? (
-				<p
-					className='design-panel px-4 py-8 text-center text-sm text-ink-soft'
-					data-testid='guests-filtered-empty'
-				>
-					Keine Einladung passt zu diesem Filter.{' '}
-					<Button onClick={() => setFilter(EMPTY_FILTER)} size='sm' variant='link'>
-						Filter zurücksetzen
-					</Button>
-				</p>
-			) : (
-				<ul className='design-panel divide-y divide-border overflow-hidden p-0' data-testid='invitation-list'>
-					{visible.map((invitation) => (
-						<li
-							className='grid gap-3 px-4 py-3'
-							data-testid={`invitation-${invitation.id}`}
-							key={invitation.id}
-						>
-							<div className='flex flex-wrap items-center justify-between gap-3'>
-								<div className='flex min-w-0 flex-wrap items-center gap-1.5'>
-									{invitation.guests.map((guest) => (
-										<span
-											className={cn(
-												'rounded-full px-2.5 py-1 text-sm',
-												RESPONSE_STYLE[guest.response],
-												guest.isMainGuest && 'font-bold'
-											)}
-											key={guest.id}
-											title={`${guestFullName(guest)} — ${RESPONSE_TITLE[guest.response]}`}
-										>
-											{guestFullName(guest)}
-										</span>
-									))}
-								</div>
-
-								<div className='flex shrink-0 items-center gap-1'>
-									<Button
-										aria-label='Einladungslink kopieren'
-										data-testid={`copy-${invitation.id}`}
-										onClick={() => void copyLink(invitation.token)}
-										size='sm'
-										variant='outline'
-									>
-										<Copy /> Link
-									</Button>
-
-									{invitation.sentAt ? (
-										<Button
-											data-testid={`unsend-${invitation.id}`}
-											onClick={() =>
-												void report(
-													setInvitationSent(eventId, invitation.id, false),
-													'Als offen markiert.'
-												)
-											}
-											size='sm'
-											title={`Versendet am ${formatBerlinShort(invitation.sentAt)} — klicken, um das zurückzunehmen`}
-											variant='ghost'
-										>
-											<Check className='text-accent-strong' /> Versendet
-										</Button>
-									) : (
-										<Button
-											data-testid={`send-${invitation.id}`}
-											onClick={() =>
-												void report(
-													setInvitationSent(eventId, invitation.id, true),
-													'Als versendet markiert.'
-												)
-											}
-											size='sm'
-											variant='ghost'
-										>
-											<SendHorizontal /> Versendet?
-										</Button>
-									)}
-
-									<Button
-										aria-expanded={expanded === invitation.id}
-										aria-label='Weitere Einstellungen'
-										data-testid={`expand-${invitation.id}`}
-										onClick={() => setExpanded(expanded === invitation.id ? null : invitation.id)}
-										size='icon-sm'
-										variant='ghost'
-									>
-										<ChevronDown
-											className={cn(
-												'transition-transform',
-												expanded === invitation.id && 'rotate-180'
-											)}
-										/>
-									</Button>
-								</div>
-							</div>
-
-							{expanded === invitation.id ? (
-								<InvitationDetails eventId={eventId} invitation={invitation} />
-							) : null}
-						</li>
-					))}
-				</ul>
-			)}
 
 			<p
 				className='flex flex-wrap items-center gap-1 px-1 text-xs text-ink-soft'

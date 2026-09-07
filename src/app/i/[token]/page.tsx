@@ -1,17 +1,11 @@
 import type { Metadata } from 'next';
 
-import { Caveat, Playfair_Display } from 'next/font/google';
-
 import type { Submission } from '@/lib/events/form-schema';
 
 import { InvitationPage } from '@/components/events/invitation-page';
 import { invitationRepository } from '@/lib/events/event-services';
 import { checkGuestPageLimit, submitInvitationResponse } from '@/lib/events/guest-actions';
-import { resolveHeaderImageUrl } from '@/lib/events/header-image';
 import { resolveResponseWindow } from '@/lib/events/response-window';
-
-const playfair = Playfair_Display({ subsets: ['latin'], variable: '--font-invitation-serif' });
-const caveat = Caveat({ subsets: ['latin'], variable: '--font-invitation-script' });
 
 type InvitationPageProps = {
 	params: Promise<{ token: string }>;
@@ -46,8 +40,6 @@ export default async function GuestInvitationPage({ params }: InvitationPageProp
 		return <Notice>Diese Einladung ist nicht verfügbar.</Notice>;
 	}
 
-	const headerImageUrl = await resolveHeaderImageUrl(view.event.themeHeaderImageKey);
-
 	const window = resolveResponseWindow(
 		{
 			eventDeadline: view.event.responseDeadline,
@@ -64,23 +56,14 @@ export default async function GuestInvitationPage({ params }: InvitationPageProp
 	}
 
 	return (
-		<div className={`${playfair.variable} ${caveat.variable}`}>
-			<InvitationPage
-				answers={view.answers}
-				closedReason={window.open ? undefined : window.reason}
-				closesAt={window.open ? window.closesAt : null}
-				event={view.event}
-				fields={view.fields}
-				guests={view.guests}
-				headerImageUrl={headerImageUrl}
-				onSubmit={window.open ? submit : undefined}
-				theme={{
-					themeAccent: view.event.themeAccent,
-					themeFont: view.event.themeFont,
-					themeHeaderImageKey: view.event.themeHeaderImageKey,
-					themeMode: view.event.themeMode,
-				}}
-			/>
-		</div>
+		<InvitationPage
+			answers={view.answers}
+			closedReason={window.open ? undefined : window.reason}
+			closesAt={window.open ? window.closesAt : null}
+			event={view.event}
+			fields={view.fields}
+			guests={view.guests}
+			onSubmit={window.open ? submit : undefined}
+		/>
 	);
 }

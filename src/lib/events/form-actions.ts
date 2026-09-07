@@ -74,9 +74,10 @@ async function guard(eventId: string) {
 	return await eventAccess.forManaging(eventId, membership);
 }
 
+// the form builder sits on the settings page; the overview counts the questions
 function revalidateForm(eventId: string): void {
-	revalidatePath(eventPath(eventId, 'form'));
-	revalidatePath(eventPath(eventId, 'design'));
+	revalidatePath(eventPath(eventId, 'settings'));
+	revalidatePath(eventPath(eventId));
 }
 
 export async function addFormField(eventId: string, input: z.input<typeof fieldSchema>): Promise<ActionResult> {

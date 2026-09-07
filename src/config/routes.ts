@@ -124,8 +124,9 @@ export const NAVIGATION_ROUTES = NAVIGATION_ORDER.map((name) => ({
 
 export type NavigationRoute = (typeof NAVIGATION_ROUTES)[number];
 
-// dynamic paths belong here too: nothing internal should be assembled from string literals
-export const eventPath = (eventId: string, section?: 'design' | 'form' | 'guests' | 'settings'): string =>
+// dynamic paths belong here too: nothing internal should be assembled from string literals.
+// two sections only: the overview carries the guest list, the settings page carries the form.
+export const eventPath = (eventId: string, section?: 'settings'): string =>
 	section ? `${ROUTES.EVENTS.path}/${eventId}/${section}` : `${ROUTES.EVENTS.path}/${eventId}`;
 
 export const eventExportPath = (eventId: string): string => `${ROUTES.EVENTS.path}/${eventId}/export`;

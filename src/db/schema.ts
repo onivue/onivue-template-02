@@ -422,7 +422,6 @@ export const passkeyRelations = relations(passkey, ({ one }) => ({
 // ---------------------------------------------------------------------------
 
 export const eventStatus = pgEnum('event_status', ['active', 'archived']);
-export const themeMode = pgEnum('theme_mode', ['light', 'dark']);
 export const guestResponse = pgEnum('guest_response', ['open', 'accepted', 'declined']);
 export const guestAgeGroup = pgEnum('guest_age_group', ['adult', 'child']);
 export const formFieldType = pgEnum('form_field_type', ['text', 'textarea', 'select', 'radio', 'checkbox']);
@@ -430,10 +429,6 @@ export const formFieldType = pgEnum('form_field_type', ['text', 'textarea', 'sel
 export const formFieldScope = pgEnum('form_field_scope', ['guest', 'invitation']);
 export const responseLogKind = pgEnum('response_log_kind', ['response', 'answer']);
 export const responseLogActor = pgEnum('response_log_actor', ['guest', 'admin']);
-
-// the design system's lime, so an event that was never styled still looks like the app
-const DEFAULT_THEME_ACCENT = '#bbfa0d';
-const DEFAULT_THEME_FONT = 'grotesk';
 
 export const event = pgTable(
 	'event',
@@ -447,17 +442,18 @@ export const event = pgTable(
 		title: text('title').notNull(),
 		greeting: text('greeting'),
 		location: text('location'),
+		// two separate deep links, since a guest on ios reaches for apple maps and one on android for
+		// google maps — either, both, or neither may be set
+		locationAppleMapsUrl: text('location_apple_maps_url'),
+		locationGoogleMapsUrl: text('location_google_maps_url'),
 		startsAt: timestamp('starts_at', { withTimezone: true }),
 		endsAt: timestamp('ends_at', { withTimezone: true }),
 		// the deadline for every invitation of this event; a single invitation may be granted a later one
 		responseDeadline: timestamp('response_deadline', { withTimezone: true }),
+		// the 3d ornament on the guest page; null means none. text, not an enum, so the curated set in
+		// event-decoration.ts can grow without a migration
+		decoration: text('decoration'),
 		status: eventStatus('status').notNull().default('active'),
-		// theme: four columns rather than a table, since they only ever belong to one event
-		themeAccent: text('theme_accent').notNull().default(DEFAULT_THEME_ACCENT),
-		themeMode: themeMode('theme_mode').notNull().default('light'),
-		// a curated set, kept as text so adding a font is a config change rather than a type migration
-		themeFont: text('theme_font').notNull().default(DEFAULT_THEME_FONT),
-		themeHeaderImageKey: text('theme_header_image_key'),
 		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 		updatedAt: timestamp('updated_at', { withTimezone: true })
 			.notNull()

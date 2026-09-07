@@ -11,11 +11,8 @@ type EventTabsProps = {
 };
 
 const SECTIONS = [
-	{ label: 'Übersicht', section: undefined },
-	{ label: 'Gäste', section: 'guests' },
-	{ label: 'Formular', section: 'form' },
-	{ label: 'Design', section: 'design' },
-	{ label: 'Einstellungen', section: 'settings' },
+	{ label: 'Übersicht & Gäste', section: undefined },
+	{ label: 'Formular & Einstellungen', section: 'settings' },
 ] as const;
 
 // real routes rather than client-side tabs: every section is linkable, and each one loads its own
@@ -32,8 +29,12 @@ export function EventTabs({ eventId }: EventTabsProps) {
 				return (
 					<Link
 						className={cn(
-							'rounded-full px-3 py-1.5 text-sm font-medium transition-colors',
-							isActive ? 'bg-sidebar-accent text-sidebar-primary' : 'text-ink-soft hover:bg-muted'
+							'rounded-full px-4 py-2 text-sm font-medium transition-colors',
+							// the accent is a highlighter: too loud as a fill this size, so the active tab
+							// takes the calm ink pill and the accent stays for small emphasis
+							isActive
+								? 'bg-ink font-bold text-background'
+								: 'text-ink-soft hover:bg-muted hover:text-ink'
 						)}
 						data-testid={`event-tab-${entry.section ?? 'overview'}`}
 						href={href}

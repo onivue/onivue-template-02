@@ -1,4 +1,4 @@
-import { CalendarDays, ChevronRight, Send } from 'lucide-react';
+import { CalendarDays, Send } from 'lucide-react';
 import Link from 'next/link';
 
 import { CreateEventForm } from '@/components/events/create-event-form';
@@ -44,10 +44,10 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
 			<nav className='flex items-center gap-1 text-sm' data-testid='events-filter'>
 				<Link
 					className={cn(
-						'rounded-full px-3 py-1.5 transition-colors',
+						'rounded-full px-4 py-2 transition-colors',
 						showArchived
-							? 'text-ink-soft hover:bg-muted'
-							: 'bg-sidebar-accent font-bold text-sidebar-primary'
+							? 'text-ink-soft hover:bg-muted hover:text-ink'
+							: 'bg-ink font-bold text-background'
 					)}
 					data-testid='filter-active'
 					href='/events'
@@ -56,10 +56,10 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
 				</Link>
 				<Link
 					className={cn(
-						'rounded-full px-3 py-1.5 transition-colors',
+						'rounded-full px-4 py-2 transition-colors',
 						showArchived
-							? 'bg-sidebar-accent font-bold text-sidebar-primary'
-							: 'text-ink-soft hover:bg-muted'
+							? 'bg-ink font-bold text-background'
+							: 'text-ink-soft hover:bg-muted hover:text-ink'
 					)}
 					data-testid='filter-archived'
 					href={ARCHIVE_QUERY}
@@ -69,47 +69,44 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
 			</nav>
 
 			{events.length === 0 ? (
-				<p className='design-panel px-4 py-8 text-center text-sm text-ink-soft' data-testid='events-empty'>
+				<p className='design-panel px-6 py-10 text-center text-sm text-ink-soft' data-testid='events-empty'>
 					{showArchived
 						? 'Im Archiv liegt noch nichts.'
 						: 'Noch kein Event. Gib oben einen Titel ein — den Rest kannst du danach in Ruhe einstellen.'}
 				</p>
 			) : (
-				<ul className='design-panel divide-y divide-border overflow-hidden p-0' data-testid='events-list'>
+				<ul className='grid gap-4 sm:grid-cols-2 xl:grid-cols-3' data-testid='events-list'>
 					{events.map((item) => (
-						<li key={item.id}>
+						<li className='grid' key={item.id}>
 							<Link
-								className='flex items-center gap-4 px-4 py-4 transition-colors hover:bg-muted/60'
+								className='design-panel grid content-start gap-3 p-5 transition-colors hover:bg-muted/50'
 								data-testid={`event-card-${item.id}`}
 								href={eventPath(item.id)}
 							>
-								<div className='grid min-w-0 flex-1 gap-1.5'>
-									<div className='flex flex-wrap items-center gap-2'>
-										<h2 className='truncate text-lg font-bold'>{item.title}</h2>
-										{item.status === 'archived' ? (
-											<Badge variant='secondary'>Archiviert</Badge>
-										) : null}
-										{item.counts.unsent > 0 ? (
-											<span className='flex items-center gap-1 text-xs text-ink-soft'>
-												<Send aria-hidden='true' className='size-3' />
-												{item.counts.unsent} nicht versendet
-											</span>
-										) : null}
-									</div>
+								<div className='flex items-start justify-between gap-2'>
+									<h2 className='text-lg leading-tight font-bold text-balance'>{item.title}</h2>
+									{item.status === 'archived' ? <Badge variant='secondary'>Archiviert</Badge> : null}
+								</div>
 
-									<p className='flex items-center gap-1.5 text-sm text-ink-soft'>
-										<CalendarDays aria-hidden='true' className='size-3.5' />
-										{item.startsAt ? formatBerlin(item.startsAt) : 'Noch kein Datum'}
-									</p>
+								<p className='flex items-center gap-1.5 text-sm text-ink-soft'>
+									<CalendarDays aria-hidden='true' className='size-3.5 shrink-0' />
+									{item.startsAt ? formatBerlin(item.startsAt) : 'Noch kein Datum'}
+								</p>
 
+								<div className='mt-1 grid gap-1.5 border-t border-border pt-3'>
 									{item.counts.invitations > 0 ? (
 										<ResponseCounts counts={item.counts} variant='inline' />
 									) : (
 										<p className='text-sm text-ink-soft'>Noch keine Einladungen</p>
 									)}
-								</div>
 
-								<ChevronRight aria-hidden='true' className='size-5 shrink-0 text-ink-soft' />
+									{item.counts.unsent > 0 ? (
+										<span className='flex items-center gap-1.5 text-xs text-ink-soft'>
+											<Send aria-hidden='true' className='size-3 shrink-0' />
+											{item.counts.unsent} nicht versendet
+										</span>
+									) : null}
+								</div>
 							</Link>
 						</li>
 					))}

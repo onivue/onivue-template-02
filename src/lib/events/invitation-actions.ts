@@ -21,8 +21,8 @@ async function guard(eventId: string) {
 	return await eventAccess.forManaging(eventId, membership);
 }
 
+// the guest list sits on the overview page, which is also where the counts are read from
 function revalidateGuests(eventId: string): void {
-	revalidatePath(eventPath(eventId, 'guests'));
 	revalidatePath(eventPath(eventId));
 }
 

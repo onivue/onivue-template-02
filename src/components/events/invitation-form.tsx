@@ -8,8 +8,8 @@ import type { ActionResult } from '@/lib/events/action-result';
 import type { AnswerValue, FormFieldDefinition, GuestResponse, Submission } from '@/lib/events/form-schema';
 
 import { InvitationField } from '@/components/events/invitation-field';
+import { InvitationSummary } from '@/components/events/invitation-summary';
 import { Button } from '@/components/ui/button';
-import { formatBerlinShort } from '@/lib/events/berlin-time';
 import { isFieldVisible } from '@/lib/events/form-schema';
 
 export type InvitationFormGuest = {
@@ -27,12 +27,6 @@ type InvitationFormProps = {
 	guests: InvitationFormGuest[];
 	onSubmit?: (submission: Submission) => Promise<ActionResult>;
 };
-
-const RESPONSE_WORDS = {
-	accepted: 'Zugesagt',
-	declined: 'Abgesagt',
-	open: 'Noch offen',
-} as const;
 
 const CLOSED_MESSAGES = {
 	archived: 'Dieses Event ist abgeschlossen. Deine Antwort bleibt sichtbar, lässt sich aber nicht mehr ändern.',
@@ -79,9 +73,10 @@ function guestName(guest: InvitationFormGuest): string {
 export function InvitationForm(props: InvitationFormProps) {
 	const [submission, setSubmission] = useState<Submission>(() => initialState(props));
 	const [isSaving, setIsSaving] = useState(false);
+	// somebody who has already answered lands on their answer, not on an empty form again
+	const [isEditing, setIsEditing] = useState(() => !props.guests.some((guest) => guest.respondedAt !== null));
 	const isClosed = Boolean(props.closedReason);
-	const isPreview = !props.onSubmit;
-	const disabled = isClosed || isPreview;
+	const isReadOnly = isClosed || !props.onSubmit;
 
 	const setResponse = (guestId: string, response: GuestResponse) => {
 		setSubmission((current) => ({
@@ -120,6 +115,8 @@ export function InvitationForm(props: InvitationFormProps) {
 
 		if (result.success) {
 			toast.success('Danke! Deine Antwort ist gespeichert.');
+			// the answer is in — read it back instead of leaving the form open
+			setIsEditing(false);
 
 			return;
 		}
@@ -127,14 +124,20 @@ export function InvitationForm(props: InvitationFormProps) {
 		toast.error(result.message);
 	};
 
+	if (isReadOnly || !isEditing) {
+		return (
+			<InvitationSummary
+				closedNote={props.closedReason ? CLOSED_MESSAGES[props.closedReason] : null}
+				fields={props.fields}
+				guests={props.guests}
+				onEdit={isReadOnly ? undefined : () => setIsEditing(true)}
+				submission={submission}
+			/>
+		);
+	}
+
 	return (
 		<div className='grid gap-6' data-testid='invitation-form'>
-			{props.closedReason ? (
-				<p className='design-panel px-4 py-3 text-sm' data-testid='invitation-closed-note'>
-					{CLOSED_MESSAGES[props.closedReason]}
-				</p>
-			) : null}
-
 			{props.guests.map((guest) => {
 				const state = submission.guests[guest.id];
 
@@ -144,53 +147,44 @@ export function InvitationForm(props: InvitationFormProps) {
 
 				return (
 					<section
-						className='design-panel grid gap-4 px-4 py-4'
+						className='design-panel grid gap-4 p-5 sm:p-6'
 						data-testid={`guest-${guest.id}`}
 						key={guest.id}
 					>
-						<header className='grid gap-1'>
-							<h2 className='text-lg font-bold'>{guestName(guest)}</h2>
-							{guest.respondedAt ? (
-								<p className='text-xs text-[var(--invitation-soft)]'>
-									{RESPONSE_WORDS[state.response]} · zuletzt geändert am{' '}
-									{formatBerlinShort(guest.respondedAt)}
-								</p>
-							) : null}
-						</header>
+						<h2 className='text-lg font-bold'>{guestName(guest)}</h2>
 
-						<fieldset className='flex gap-2'>
-							<legend className='sr-only'>Antwort für {guestName(guest)}</legend>
-							<Button
-								aria-pressed={state.response === 'accepted'}
-								className='flex-1'
-								data-testid={`accept-${guest.id}`}
-								disabled={disabled}
-								onClick={() => setResponse(guest.id, 'accepted')}
-								size='xl'
-								variant={state.response === 'accepted' ? 'strong' : 'outline'}
-							>
-								{state.response === 'accepted' ? <Check data-icon='inline-start' /> : null}
-								Ich komme
-							</Button>
-							<Button
-								aria-pressed={state.response === 'declined'}
-								className='flex-1'
-								data-testid={`decline-${guest.id}`}
-								disabled={disabled}
-								onClick={() => setResponse(guest.id, 'declined')}
-								size='xl'
-								variant={state.response === 'declined' ? 'secondary' : 'outline'}
-							>
-								{state.response === 'declined' ? <X data-icon='inline-start' /> : null}
-								Ich kann nicht
-							</Button>
+						<fieldset className='grid gap-2'>
+							<legend className='design-label mb-2'>Bist du dabei?</legend>
+							<div className='flex gap-2'>
+								<Button
+									aria-pressed={state.response === 'accepted'}
+									className='flex-1'
+									data-testid={`accept-${guest.id}`}
+									onClick={() => setResponse(guest.id, 'accepted')}
+									size='xl'
+									variant={state.response === 'accepted' ? 'strong' : 'outline'}
+								>
+									{state.response === 'accepted' ? <Check data-icon='inline-start' /> : null}
+									Ja
+								</Button>
+								<Button
+									aria-pressed={state.response === 'declined'}
+									className='flex-1'
+									data-testid={`decline-${guest.id}`}
+									onClick={() => setResponse(guest.id, 'declined')}
+									size='xl'
+									variant={state.response === 'declined' ? 'secondary' : 'outline'}
+								>
+									{state.response === 'declined' ? <X data-icon='inline-start' /> : null}
+									Nein
+								</Button>
+							</div>
 						</fieldset>
 
 						{props.fields
 							.filter((field) => field.scope === 'guest' && isFieldVisible(field, state.response))
 							.map((field) => (
 								<InvitationField
-									disabled={disabled}
 									field={field}
 									key={field.id}
 									onChange={(value) => setGuestAnswer(guest.id, field.id, value)}
@@ -202,12 +196,11 @@ export function InvitationForm(props: InvitationFormProps) {
 			})}
 
 			{props.fields.some((field) => field.scope === 'invitation') ? (
-				<section className='design-panel grid gap-4 px-4 py-4' data-testid='invitation-fields'>
+				<section className='design-panel grid gap-4 p-5 sm:p-6' data-testid='invitation-fields'>
 					{props.fields
 						.filter((field) => field.scope === 'invitation')
 						.map((field) => (
 							<InvitationField
-								disabled={disabled}
 								field={field}
 								key={field.id}
 								onChange={(value) => setInvitationAnswer(field.id, value)}
@@ -217,11 +210,9 @@ export function InvitationForm(props: InvitationFormProps) {
 				</section>
 			) : null}
 
-			{!disabled ? (
-				<Button data-testid='submit-invitation' disabled={isSaving} onClick={save} size='xl' variant='strong'>
-					{isSaving ? 'Wird gespeichert …' : 'Antwort speichern'}
-				</Button>
-			) : null}
+			<Button data-testid='submit-invitation' disabled={isSaving} onClick={save} size='xl' variant='strong'>
+				{isSaving ? 'Wird gespeichert …' : 'Antwort speichern'}
+			</Button>
 		</div>
 	);
 }

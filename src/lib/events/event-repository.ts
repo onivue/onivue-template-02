@@ -49,15 +49,14 @@ export type EventDraft = {
 export type EventPatch = Partial<
 	Pick<
 		EventRecord,
+		| 'decoration'
 		| 'endsAt'
 		| 'greeting'
 		| 'location'
+		| 'locationAppleMapsUrl'
+		| 'locationGoogleMapsUrl'
 		| 'responseDeadline'
 		| 'startsAt'
-		| 'themeAccent'
-		| 'themeFont'
-		| 'themeHeaderImageKey'
-		| 'themeMode'
 		| 'title'
 	>
 >;
