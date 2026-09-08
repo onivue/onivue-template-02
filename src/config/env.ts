@@ -10,6 +10,9 @@ const serverEnvSchema = z.object({
 	BETTER_AUTH_URL: z.string().url(),
 	RESEND_API_KEY: z.string().min(1),
 	RESEND_FROM_EMAIL: z.string().min(1),
+	// optional so a local start and a preview deployment do not need it. the cron route refuses
+	// every request while it is unset, so a missing secret closes the endpoint instead of opening it.
+	CRON_SECRET: z.string().min(1).optional(),
 });
 
 const serverEnv = serverEnvSchema.safeParse(process.env);
@@ -27,6 +30,9 @@ export const SERVER_CONFIG = {
 		origin: authUrls.origin,
 		passkeyRpId: authUrls.passkeyRpId,
 		secret: serverEnv.data.BETTER_AUTH_SECRET,
+	},
+	cron: {
+		secret: serverEnv.data.CRON_SECRET ?? null,
 	},
 	database: {
 		url: serverEnv.data.DATABASE_URL,

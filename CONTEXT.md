@@ -133,8 +133,17 @@ Lives in [`src/lib/mcp/agent-session.ts`](src/lib/mcp/agent-session.ts).
 
 ## Scope
 
-What an Agent Session is allowed to do: `profile:read` and `profile:write`. Read and write are
-separate so a client that only needs to read never has to hold write.
+What an Agent Session is allowed to do. Reading and writing are separate per area — `profile:read`
+and `profile:write`, `events:read` and `events:write` — so a client that only needs to read never
+has to hold write.
+
+Two Scopes stand apart from that pattern. `events:links` is deliberately not part of `events:read`,
+because an Invitation Link is the whole authorization: handing one to an agent hands it the ability
+to answer for those Guests. `offline_access` is what lets an MCP Connection last — without it no
+refresh token is issued, and the Viewer is sent through the consent screen again every hour.
+
+The authorization server advertises exactly this list and refuses everything outside it, so a Scope
+that is not declared cannot be granted at all — not even to a client that asks for it by name.
 
 OAuth carries granted scopes as one space-delimited string, both in the token claim and in the
 authorize request the consent screen reads. `parseScopes` is the single parse rule for both, and it
@@ -166,6 +175,23 @@ The reads sit behind `AccountRecordGateway`, which returns rows rather than answ
 rules stay in the module so the in-memory adapter can drive them.
 
 Lives in [`src/lib/account/account-overview.ts`](src/lib/account/account-overview.ts).
+
+## Sweep
+
+The scheduled pass that removes what nothing points at any more: registrations nobody ever
+consented to, expired sessions, spent verification tokens, dead rate-limit windows. Better Auth
+prunes none of its own tables, so this is the app's own housekeeping rather than something the
+library does for it.
+
+What a Sweep may *not* touch is the harder half. Removing an OAuth client takes its consents and
+tokens with it, and removing an expired session takes the refresh token issued under it — so a live
+MCP Connection, and one whose access is meant to outlive the browser session, has to be unreachable
+from every rule rather than merely unlikely to match. Nothing goes the moment it expires either: a
+registration still waiting for its consent screen, and a rate limit someone is about to ask about,
+both look like litter for a while first.
+
+Lives in [`src/lib/maintenance/database-sweeper.ts`](src/lib/maintenance/database-sweeper.ts); the
+schedule that triggers it is in `vercel.json`.
 
 ## Conventions this model assumes
 
