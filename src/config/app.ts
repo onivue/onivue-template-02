@@ -8,5 +8,8 @@ export const APP_CONFIG = {
 		magicLinkExpiresInSeconds: 900,
 		passkeyRpName: 'event.onivue',
 		resetPasswordExpiresInSeconds: 1800,
+		// how long a session may be read from the cookie instead of the database, and therefore how
+		// long a session revoked elsewhere still resolves
+		sessionCookieCacheSeconds: 300,
 	},
 } as const;

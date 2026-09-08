@@ -94,6 +94,16 @@ export const auth = betterAuth({
 		storage: 'database',
 		window: 60,
 	},
+	// the session travels in a signed cookie, so the proxy pass and the render pass stop costing a
+	// database round trip each — two on every navigation, on every route. better-auth rewrites the
+	// cookie whenever it writes the session (profile change, email change), so those stay in step.
+	// the price is revocation: a session ended elsewhere keeps working until the cookie expires.
+	session: {
+		cookieCache: {
+			enabled: true,
+			maxAge: APP_CONFIG.auth.sessionCookieCacheSeconds,
+		},
+	},
 	secret: SERVER_CONFIG.auth.secret,
 	trustedOrigins: [SERVER_CONFIG.auth.origin],
 	emailAndPassword: {
