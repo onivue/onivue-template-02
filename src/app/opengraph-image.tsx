@@ -30,8 +30,9 @@ export default function OpengraphImage() {
 				width: '100%',
 			}}
 		>
-			<div style={{ fontSize: 150, letterSpacing: -5, lineHeight: 1 }}>{APP_CONFIG.app.name}</div>
-			<div style={{ fontSize: 38, letterSpacing: -0.5, marginTop: 18, opacity: 0.72 }}>{SITE.tagline}</div>
+			{/* sized so the wordmark keeps its margin at the length the name has room to grow to */}
+			<div style={{ fontSize: 118, letterSpacing: -4, lineHeight: 1 }}>{APP_CONFIG.app.name}</div>
+			<div style={{ fontSize: 34, letterSpacing: -0.5, marginTop: 16, opacity: 0.72 }}>{SITE.tagline}</div>
 		</div>,
 		{ ...size, fonts: [{ data: spaceGrotesk, name: 'Space Grotesk', style: 'normal', weight: 700 }] }
 	);
