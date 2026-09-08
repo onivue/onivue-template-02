@@ -9,6 +9,7 @@ export const ACTION_MESSAGES = {
 	eventArchived: 'Dieses Event ist archiviert und kann nicht mehr geändert werden.',
 	forbidden: 'Dafür fehlt dir die Berechtigung. Nur Inhaber und Admins dürfen das.',
 	invalid: 'Die Eingabe ist nicht gültig.',
+	invitationNotFound: 'Diese Einladung gibt es in diesem Event nicht (mehr).',
 	notFound: 'Dieses Event gibt es nicht (mehr).',
 	titleMismatch: 'Der eingegebene Name stimmt nicht mit dem Event überein.',
 	tooManyRequests: 'Zu viele Versuche. Bitte warte einen Moment.',

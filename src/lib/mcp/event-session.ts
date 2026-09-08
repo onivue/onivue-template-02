@@ -1,5 +1,12 @@
 import type { EventPatch } from '@/lib/events/event-repository';
-import type { McpEventResult, McpEventService, McpEventSummary } from '@/lib/mcp/mcp-event-service';
+import type { NotificationPatch, NotificationSettings } from '@/lib/events/notification-settings';
+import type {
+	McpEventPort,
+	McpEventResult,
+	McpEventSummary,
+	McpEventViews,
+	McpInvitationLink,
+} from '@/lib/mcp/mcp-event-service';
 
 import { MCP_SCOPE_IDS, parseScopes } from '@/lib/mcp/mcp-scopes';
 
@@ -12,13 +19,13 @@ function missingScope<T>(scope: string): McpEventResult<T> {
 // user id and a scope list, so no tool can forget the scope check or be called for the wrong user.
 export class EventSession {
 	private constructor(
-		private readonly service: McpEventService,
+		private readonly service: McpEventPort,
 		private readonly userId: string,
 		private readonly scopes: string[]
 	) {}
 
 	// there is no session without a verified subject; scopes may legitimately be empty
-	public static fromClaims(service: McpEventService, claims: Record<string, unknown>): EventSession | null {
+	public static fromClaims(service: McpEventPort, claims: Record<string, unknown>): EventSession | null {
 		if (typeof claims.sub !== 'string' || !claims.sub) {
 			return null;
 		}
@@ -42,6 +49,24 @@ export class EventSession {
 		return await this.service.getEvent(this.userId, eventId);
 	}
 
+	public async eventViews(eventId: string): Promise<McpEventResult<McpEventViews>> {
+		if (!this.canRead()) {
+			return missingScope(MCP_SCOPE_IDS.eventsRead);
+		}
+
+		return await this.service.eventViews(this.userId, eventId);
+	}
+
+	// its own scope, not events:read: possession of a link is the whole authorization (ADR-0004),
+	// so handing one out is handing over the ability to answer for those guests
+	public async listInvitationLinks(eventId: string): Promise<McpEventResult<{ invitations: McpInvitationLink[] }>> {
+		if (!this.scopes.includes(MCP_SCOPE_IDS.eventsLinks)) {
+			return missingScope(MCP_SCOPE_IDS.eventsLinks);
+		}
+
+		return await this.service.listInvitationLinks(this.userId, eventId);
+	}
+
 	public async createEvent(title: string): Promise<McpEventResult<{ eventId: string }>> {
 		if (!this.canWrite()) {
 			return missingScope(MCP_SCOPE_IDS.eventsWrite);
@@ -56,6 +81,17 @@ export class EventSession {
 		}
 
 		return await this.service.updateEvent(this.userId, eventId, patch);
+	}
+
+	public async setNotifications(
+		eventId: string,
+		settings: NotificationPatch
+	): Promise<McpEventResult<NotificationSettings>> {
+		if (!this.canWrite()) {
+			return missingScope(MCP_SCOPE_IDS.eventsWrite);
+		}
+
+		return await this.service.setNotifications(this.userId, eventId, settings);
 	}
 
 	public async addInvitations(eventId: string, rawList: string): Promise<McpEventResult<{ created: number }>> {
@@ -76,6 +112,17 @@ export class EventSession {
 		}
 
 		return await this.service.markInvitationSent(this.userId, eventId, invitationId, sent);
+	}
+
+	public async deleteInvitation(
+		eventId: string,
+		invitationId: string
+	): Promise<McpEventResult<{ invitationId: string }>> {
+		if (!this.canWrite()) {
+			return missingScope(MCP_SCOPE_IDS.eventsWrite);
+		}
+
+		return await this.service.deleteInvitation(this.userId, eventId, invitationId);
 	}
 
 	private canRead(): boolean {

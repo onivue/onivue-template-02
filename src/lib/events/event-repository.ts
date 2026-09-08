@@ -267,37 +267,52 @@ export class EventRepository {
 		return invitations.length;
 	}
 
-	public async markSent(invitationId: string, sentAt: Date | null): Promise<void> {
-		await this.database.update(eventInvitation).set({ sentAt }).where(eq(eventInvitation.id, invitationId));
+	// an invitation id on its own would reach across events. the caller has been cleared for one
+	// event, so every write below is narrowed to that event at the query level.
+	private invitationOf(eventId: string, invitationId: string) {
+		return and(eq(eventInvitation.id, invitationId), eq(eventInvitation.eventId, eventId));
+	}
+
+	public async markSent(eventId: string, invitationId: string, sentAt: Date | null): Promise<void> {
+		await this.database.update(eventInvitation).set({ sentAt }).where(this.invitationOf(eventId, invitationId));
 	}
 
 	// the tally is the host's own, so they may start it over. the answers and the link stay untouched.
-	public async resetInvitationViews(invitationId: string): Promise<void> {
+	public async resetInvitationViews(eventId: string, invitationId: string): Promise<void> {
 		await this.database
 			.update(eventInvitation)
 			.set({ lastViewedAt: null, viewCount: 0 })
-			.where(eq(eventInvitation.id, invitationId));
+			.where(this.invitationOf(eventId, invitationId));
 	}
 
-	public async setInvitationDeadline(invitationId: string, deadline: Date | null): Promise<void> {
+	public async setInvitationDeadline(eventId: string, invitationId: string, deadline: Date | null): Promise<void> {
 		await this.database
 			.update(eventInvitation)
 			.set({ responseDeadline: deadline })
-			.where(eq(eventInvitation.id, invitationId));
+			.where(this.invitationOf(eventId, invitationId));
 	}
 
 	// the remedy when a link has travelled somewhere it should not have: the answers stay, the old
-	// link stops working
-	public async rotateToken(invitationId: string): Promise<string> {
+	// link stops working. null means the event has no such invitation.
+	public async rotateToken(eventId: string, invitationId: string): Promise<null | string> {
 		const token = createInvitationToken();
+		const [row] = await this.database
+			.update(eventInvitation)
+			.set({ token })
+			.where(this.invitationOf(eventId, invitationId))
+			.returning({ id: eventInvitation.id });
 
-		await this.database.update(eventInvitation).set({ token }).where(eq(eventInvitation.id, invitationId));
-
-		return token;
+		return row ? token : null;
 	}
 
-	public async deleteInvitation(invitationId: string): Promise<void> {
-		await this.database.delete(eventInvitation).where(eq(eventInvitation.id, invitationId));
+	// final: the guests on it and their answers go too
+	public async deleteInvitation(eventId: string, invitationId: string): Promise<boolean> {
+		const [row] = await this.database
+			.delete(eventInvitation)
+			.where(this.invitationOf(eventId, invitationId))
+			.returning({ id: eventInvitation.id });
+
+		return !!row;
 	}
 
 	public async addGuest(invitationId: string, guest: { firstName: string; lastName: null | string }): Promise<void> {

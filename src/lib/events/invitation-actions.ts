@@ -62,7 +62,7 @@ export async function setInvitationSent(eventId: string, invitationId: string, s
 		return accessFailure(access.error);
 	}
 
-	await eventRepository.markSent(invitationId, sent ? new Date() : null);
+	await eventRepository.markSent(eventId, invitationId, sent ? new Date() : null);
 
 	expireGuests(access.data);
 
@@ -80,7 +80,11 @@ export async function rotateInvitationToken(
 		return accessFailure(access.error);
 	}
 
-	const token = await eventRepository.rotateToken(invitationId);
+	const token = await eventRepository.rotateToken(eventId, invitationId);
+
+	if (!token) {
+		return failure(ACTION_MESSAGES.invitationNotFound);
+	}
 
 	expireGuests(access.data);
 
@@ -98,7 +102,7 @@ export async function setInvitationDeadline(
 		return accessFailure(access.error);
 	}
 
-	await eventRepository.setInvitationDeadline(invitationId, parseBerlinDateTime(value, 'end-of-day'));
+	await eventRepository.setInvitationDeadline(eventId, invitationId, parseBerlinDateTime(value, 'end-of-day'));
 
 	expireGuests(access.data);
 
@@ -112,7 +116,7 @@ export async function resetInvitationViews(eventId: string, invitationId: string
 		return accessFailure(access.error);
 	}
 
-	await eventRepository.resetInvitationViews(invitationId);
+	await eventRepository.resetInvitationViews(eventId, invitationId);
 
 	expireGuests(access.data);
 
@@ -126,7 +130,7 @@ export async function removeInvitation(eventId: string, invitationId: string): P
 		return accessFailure(access.error);
 	}
 
-	await eventRepository.deleteInvitation(invitationId);
+	await eventRepository.deleteInvitation(eventId, invitationId);
 
 	expireGuests(access.data);
 

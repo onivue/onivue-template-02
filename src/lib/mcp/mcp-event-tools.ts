@@ -11,6 +11,15 @@ import { toolError, toolSuccess } from '@/lib/mcp/mcp-result';
 
 const eventIdSchema = z.string().min(1).describe('Die id des Events.');
 
+const invitationIdSchema = z.string().min(1).describe('Die id der Einladung.');
+
+const notificationEmailSchema = z
+	.string()
+	.trim()
+	.max(200)
+	.refine((value) => value === '' || z.email().safeParse(value).success, 'Das ist keine gültige E-Mail-Adresse.')
+	.describe('Empfängeradresse. Leerer String löscht sie und schaltet damit auch ab.');
+
 const dateSchema = z
 	.string()
 	.describe(
@@ -22,9 +31,9 @@ function toResult<T extends Record<string, unknown>>(result: McpEventResult<T>):
 }
 
 // events for one authenticated request. the caller's identity and granted scopes are already
-// inside the session, so the handlers are pure MCP glue. the write tools stop short of anything
-// irreversible: deleting, archiving, replacing a token and answering for a guest are not offered
-// at all, so an agent cannot reach them even with the write scope.
+// inside the session, so the handlers are pure MCP glue. the write tools stop short of the rest of
+// what is irreversible: deleting or archiving an event, replacing a token and answering for a
+// guest are not offered at all, so an agent cannot reach them even with the write scope.
 export function registerEventTools(server: McpServer, session: EventSession): void {
 	server.registerTool(
 		MCP_CONFIG.tools.listEvents,
@@ -42,7 +51,7 @@ export function registerEventTools(server: McpServer, session: EventSession): vo
 		{
 			annotations: { readOnlyHint: true },
 			description:
-				'Liest ein Event mit Einladungen, Personen, Antwortstand und Formularfeldern. Einladungslinks sind bewusst nicht enthalten.',
+				'Liest ein Event mit Einladungen, Personen, Antwortstand, Benachrichtigungs-Einstellungen und Formularfeldern. Einladungslinks sind bewusst nicht enthalten — dafür gibt es get_invitation_links.',
 			inputSchema: { eventId: eventIdSchema },
 			title: 'Event lesen',
 		},
@@ -112,12 +121,64 @@ export function registerEventTools(server: McpServer, session: EventSession): vo
 				'Vermerkt, ob eine Einladung bereits verschickt wurde. Die App verschickt selbst nichts — das ist reine Buchführung.',
 			inputSchema: {
 				eventId: eventIdSchema,
-				invitationId: z.string().min(1),
+				invitationId: invitationIdSchema,
 				sent: z.boolean().describe('true = versendet, false = wieder als offen markieren.'),
 			},
 			title: 'Versand vermerken',
 		},
 		async ({ eventId, invitationId, sent }) =>
 			toResult(await session.markInvitationSent(eventId, invitationId, sent))
+	);
+
+	server.registerTool(
+		MCP_CONFIG.tools.deleteInvitation,
+		{
+			annotations: { destructiveHint: true },
+			description:
+				'Löscht eine Einladung endgültig, mit allen Personen darauf und deren Antworten. Der Link dieser Einladung funktioniert danach nicht mehr.',
+			inputSchema: { eventId: eventIdSchema, invitationId: invitationIdSchema },
+			title: 'Einladung löschen',
+		},
+		async ({ eventId, invitationId }) => toResult(await session.deleteInvitation(eventId, invitationId))
+	);
+
+	server.registerTool(
+		MCP_CONFIG.tools.setNotifications,
+		{
+			annotations: { idempotentHint: true },
+			description:
+				'Schaltet die E-Mail-Benachrichtigung bei neuen Antworten ein oder aus und legt die Empfängeradresse fest. Nur angegebene Felder ändern sich; eingeschaltet ohne Adresse geht nicht.',
+			inputSchema: {
+				email: notificationEmailSchema.optional(),
+				enabled: z.boolean().optional().describe('true = bei jeder Antwort benachrichtigen.'),
+				eventId: eventIdSchema,
+			},
+			title: 'Benachrichtigungen einstellen',
+		},
+		async ({ email, enabled, eventId }) => toResult(await session.setNotifications(eventId, { email, enabled }))
+	);
+
+	server.registerTool(
+		MCP_CONFIG.tools.getInvitationLinks,
+		{
+			annotations: { readOnlyHint: true },
+			description:
+				'Liest die Einladungslinks eines Events, je Einladung einen. Achtung: wer einen Link hat, kann damit für die Gäste dieser Einladung antworten — nur an die Eingeladenen weitergeben.',
+			inputSchema: { eventId: eventIdSchema },
+			title: 'Einladungslinks lesen',
+		},
+		async ({ eventId }) => toResult(await session.listInvitationLinks(eventId))
+	);
+
+	server.registerTool(
+		MCP_CONFIG.tools.getEventViews,
+		{
+			annotations: { readOnlyHint: true },
+			description:
+				'Liest, wie oft die Einladungen eines Events geöffnet wurden: Summe, Anzahl der schon geöffneten Einladungen und die Zahl je Einladung. Gezählt werden Aufrufe, nicht Personen.',
+			inputSchema: { eventId: eventIdSchema },
+			title: 'Aufrufe lesen',
+		},
+		async ({ eventId }) => toResult(await session.eventViews(eventId))
 	);
 }
