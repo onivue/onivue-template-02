@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 
+import { Analytics } from '@vercel/analytics/next';
 import { Geist_Mono, Space_Grotesk } from 'next/font/google';
 import { Toaster } from 'sonner';
 
@@ -69,6 +70,7 @@ export default function RootLayout({
 				{/* each shell places its own footer and account control, next to its own content */}
 				<div className='grid min-h-dvh grid-rows-[1fr]'>{children}</div>
 				<Toaster richColors position='top-center' />
+				<Analytics />
 			</body>
 		</html>
 	);
