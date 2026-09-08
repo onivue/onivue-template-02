@@ -1,7 +1,9 @@
+import { Inbox } from 'lucide-react';
 import { Suspense } from 'react';
 
 import { Layout } from '@/components/layout/layout';
 import { ConsentForm } from '@/components/mcp/consent-form';
+import { ConsentNotice } from '@/components/mcp/consent-notice';
 import { CardSkeleton } from '@/components/ui/skeleton';
 import { requireViewer } from '@/lib/auth/viewer';
 import { findOAuthClient } from '@/lib/mcp/mcp-client-lookup';
@@ -25,7 +27,7 @@ function readParam(params: Record<string, string | string[] | undefined>, key: s
 // the request being confirmed is entirely in the url, so it waits on its own while the page around
 // it — which says what this screen is for — ships with the shell
 async function ConsentRequest({ searchParams }: ConsentPageProps) {
-	await requireViewer();
+	const viewer = await requireViewer();
 
 	const params = await searchParams;
 	const clientId = readParam(params, 'client_id');
@@ -34,16 +36,23 @@ async function ConsentRequest({ searchParams }: ConsentPageProps) {
 
 	if (!clientId) {
 		return (
-			<div className='design-panel grid gap-3 p-6' data-testid='consent-missing-request'>
-				<p className='text-lg font-bold text-foreground'>Keine offene Anfrage</p>
-				<p className='design-page-description'>
-					Diese Seite wird automatisch geöffnet, wenn ein Client Zugriff anfragt.
-				</p>
-			</div>
+			<ConsentNotice
+				description='Diese Seite wird automatisch geöffnet, wenn ein Client Zugriff anfragt.'
+				icon={Inbox}
+				testId='consent-missing-request'
+				title='Keine offene Anfrage'
+			/>
 		);
 	}
 
-	return <ConsentForm clientName={client?.name ?? clientId} clientUri={client?.uri ?? null} scopes={scopes} />;
+	return (
+		<ConsentForm
+			clientName={client?.name ?? clientId}
+			clientUri={client?.uri ?? null}
+			scopes={scopes}
+			viewerEmail={viewer.email}
+		/>
+	);
 }
 
 export default function ConsentPage({ searchParams }: ConsentPageProps) {
@@ -55,16 +64,14 @@ export default function ConsentPage({ searchParams }: ConsentPageProps) {
 					<div className='grid gap-2'>
 						<h1 className='design-page-title text-[clamp(2rem,5vw,3.5rem)]'>Zugriff bestätigen</h1>
 						<p className='design-page-description'>
-							Ein Client möchte in deinem Namen auf onivue zugreifen. Prüfe, was er darf, bevor du
-							zustimmst.
+							Prüfe, was der Client darf, bevor du zustimmst. Du kannst den Zugriff später jederzeit
+							wieder trennen.
 						</p>
 					</div>
 				</header>
-				<div className='max-w-md'>
-					<Suspense fallback={<CardSkeleton className='h-64' />}>
-						<ConsentRequest searchParams={searchParams} />
-					</Suspense>
-				</div>
+				<Suspense fallback={<CardSkeleton className='h-96' />}>
+					<ConsentRequest searchParams={searchParams} />
+				</Suspense>
 			</div>
 		</Layout>
 	);
