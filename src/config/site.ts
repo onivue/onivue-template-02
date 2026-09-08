@@ -17,4 +17,6 @@ export const OG_COLORS = {
 	inkSoft: '#545860',
 } as const;
 
-export const OG_SIZE = { height: 630, width: 1200 } as const;
+// 2:1 — the ratio x asks for and the flattest one messengers still show as a large card rather
+// than letterboxing. shorter than the 1.91:1 default, so the preview takes less room in a chat.
+export const OG_SIZE = { height: 500, width: 1000 } as const;
