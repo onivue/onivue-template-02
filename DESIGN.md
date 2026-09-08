@@ -37,9 +37,17 @@ Global design utilities live in `src/app/globals.css`:
 - `design-page-description`: muted supporting description text.
 - `design-section-label`: compact lime-tinted section label.
 - `design-label`: uppercase field label.
-- `design-input`: pill-shaped form field at `--control-height`, with focus, invalid, and disabled states.
+- `design-control`: the surface, border, focus, invalid, and disabled states every form control shares. Not used directly — `design-input` and `design-textarea` build on it, so a control can never drift from the rest.
+- `design-input`: pill-shaped form field at `--control-height`.
+- `design-textarea`: the same surface for multi-line input, trading the pill and the fixed height for `rounded-2xl` and a minimum height.
+- `design-form`: the vertical rhythm of a form — one gap between fields.
+- `design-field`: one label and its control, with the gap between them.
 - `design-field-error`: inline validation message under a field.
 - `design-divider`: uppercase divider with a rule on each side.
+
+Controls carry their own design: `Input` renders `design-input` and `Textarea` renders `design-textarea` without a call site asking for it, and `SelectTrigger` takes `size='field'` for the same pill at `--control-height`. Never re-apply those utilities at a call site, and never override a control's height — a form where the fields sit at different heights is the first thing a reader notices.
+
+The app shell caps its content at `max-w-3xl` and centres it, and that is the only place the reading width is set — a page or a panel that narrows itself again only breaks the alignment with its neighbours. Everything inside that column stacks: form fields sit one under another at every size, never two across, so a wide screen reads exactly like a phone and each field gets the full width.
 
 Every labelled input is a `FormField` (`src/components/ui/form-field.tsx`) rather than a hand-assembled label/input/error block. It owns the whole accessibility contract — label association, `aria-invalid`, `aria-describedby`, the error slot — and the test ids derived from its `id`: `{id}-field` on the label, `{id}-input` on the control, `{id}-error` on the message. Pass `type` and `autoComplete` as props; pass `labelSuffix` for anything that sits beside the label, like a "forgot password?" link. Never re-derive that wiring at a call site.
 

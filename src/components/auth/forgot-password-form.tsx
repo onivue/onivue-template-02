@@ -23,7 +23,7 @@ export function ForgotPasswordForm() {
 	}
 
 	return (
-		<form className='grid gap-4' onSubmit={form.handleSubmit(handleSubmit)} data-testid='forgot-password-form'>
+		<form className='design-form' onSubmit={form.handleSubmit(handleSubmit)} data-testid='forgot-password-form'>
 			<FormField
 				id='forgot-password-email'
 				label='E-Mail-Adresse'

@@ -46,7 +46,7 @@ export function ProfileSettings({ currentFirstName, currentLastName, currentUser
 	}
 
 	return (
-		<div className='grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,0.8fr)]' data-testid='profile-settings'>
+		<div className='grid gap-6' data-testid='profile-settings'>
 			<section
 				className='design-panel grid content-start gap-5 p-5 sm:p-6'
 				data-testid='profile-username-section'
@@ -60,7 +60,7 @@ export function ProfileSettings({ currentFirstName, currentLastName, currentUser
 					</p>
 				</div>
 
-				<form className='grid gap-4' onSubmit={usernameForm.handleSubmit(handleSaveUsername)}>
+				<form className='design-form' onSubmit={usernameForm.handleSubmit(handleSaveUsername)}>
 					<FormField
 						id='profile-username'
 						label='Benutzername'
@@ -91,7 +91,7 @@ export function ProfileSettings({ currentFirstName, currentLastName, currentUser
 					<p className='design-page-description'>Hinterlege deinen Vor- und Nachnamen.</p>
 				</div>
 
-				<form className='grid gap-4' onSubmit={nameForm.handleSubmit(handleSaveName)}>
+				<form className='design-form' onSubmit={nameForm.handleSubmit(handleSaveName)}>
 					<FormField
 						id='profile-first-name'
 						label='Vorname'

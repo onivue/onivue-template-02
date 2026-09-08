@@ -216,15 +216,14 @@
 	line-height: 1.3;
 }
 
-@utility design-input {
+/* the surface every form control shares. only shape and size differ below, so an input, a textarea
+   and a select trigger can never drift apart. */
+@utility design-control {
 	background: var(--surface-elevated);
 	border: 1px solid var(--input);
-	border-radius: 999px;
 	color: var(--ink);
 	font-size: 0.95rem;
 	font-weight: 500;
-	height: var(--control-height);
-	padding-inline: 1.1rem;
 	transition:
 		border-color 160ms ease,
 		box-shadow 160ms ease;
@@ -248,10 +247,38 @@
 		box-shadow: 0 0 0 3px color-mix(in oklch, var(--destructive) 30%, transparent);
 	}
 
-	&:disabled {
+	&:disabled,
+	&[data-disabled] {
 		cursor: not-allowed;
 		opacity: 0.55;
 	}
+}
+
+@utility design-input {
+	@apply design-control;
+	border-radius: 999px;
+	height: var(--control-height);
+	padding-inline: 1.1rem;
+}
+
+/* a textarea grows, so it trades the pill and the fixed height for a radius from the scale */
+@utility design-textarea {
+	@apply design-control;
+	border-radius: var(--radius-2xl);
+	min-height: calc(var(--control-height) * 2);
+	padding-block: 0.8rem;
+	padding-inline: 1.1rem;
+}
+
+/* the vertical rhythm of a form: one gap between fields, one between a label and its control */
+@utility design-form {
+	display: grid;
+	gap: 1.5rem;
+}
+
+@utility design-field {
+	display: grid;
+	gap: 0.5rem;
 }
 
 /* uppercase divider with a rule on each side */

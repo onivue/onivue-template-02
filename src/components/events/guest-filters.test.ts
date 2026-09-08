@@ -27,9 +27,11 @@ function invitation(overrides: Partial<InvitationRecord> = {}): InvitationRecord
 	return {
 		guests: [guest()],
 		id: 'inv1',
+		lastViewedAt: null,
 		responseDeadline: null,
 		sentAt: null,
 		token: 'tok1',
+		viewCount: 0,
 		...overrides,
 	};
 }

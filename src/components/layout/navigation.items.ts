@@ -20,3 +20,10 @@ export function resolveNavigationItems(pathname: string): ResolvedNavigationItem
 export function useNavigationItems(): ResolvedNavigationItem[] {
 	return resolveNavigationItems(usePathname());
 }
+
+// the path is only known at request time, so this is what the prerendered shell ships: every link
+// there and clickable, the highlight a moment later.
+export const UNRESOLVED_NAVIGATION_ITEMS: ResolvedNavigationItem[] = PRIMARY_NAVIGATION_ITEMS.map((item) => ({
+	...item,
+	isActive: false,
+}));

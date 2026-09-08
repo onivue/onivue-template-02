@@ -40,10 +40,7 @@ export function PasswordSettings({ currentEmail, hasPassword }: PasswordSettings
 	}
 
 	return (
-		<section
-			className='design-panel grid content-start gap-5 p-5 sm:p-6 lg:max-w-2xl'
-			data-testid='password-settings'
-		>
+		<section className='design-panel grid content-start gap-5 p-5 sm:p-6' data-testid='password-settings'>
 			<div className='grid gap-2'>
 				<p className='design-section-label w-fit px-3 py-1.5'>Passwort</p>
 				<h2 className='text-xl font-bold text-foreground'>
@@ -57,7 +54,7 @@ export function PasswordSettings({ currentEmail, hasPassword }: PasswordSettings
 			</div>
 
 			{hasPassword ? (
-				<form className='grid gap-4' onSubmit={form.handleSubmit(handleChangePassword)}>
+				<form className='design-form' onSubmit={form.handleSubmit(handleChangePassword)}>
 					<FormField
 						id='current-password'
 						label='Aktuelles Passwort'

@@ -78,6 +78,13 @@
       "when": 1788812763245,
       "tag": "0010_fine_xorn",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1788849688297,
+      "tag": "0011_old_scarlet_witch",
+      "breakpoints": true
     }
   ]
 }

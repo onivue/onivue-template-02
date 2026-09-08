@@ -38,7 +38,7 @@ export function CreateEventForm() {
 		<form className='flex flex-col gap-3 sm:flex-row' data-testid='create-event-form' onSubmit={submit}>
 			<Input
 				aria-label='Titel des Events'
-				className='design-input sm:max-w-md'
+
 				data-testid='create-event-title'
 				onChange={(nativeEvent) => setTitle(nativeEvent.target.value)}
 				placeholder='z. B. Hochzeit von Anna und Ben'

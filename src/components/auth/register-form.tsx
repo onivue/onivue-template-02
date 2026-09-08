@@ -49,7 +49,7 @@ export function RegisterForm() {
 	return (
 		<>
 			<form
-				className='grid gap-4'
+				className='design-form'
 				onSubmit={passwordForm.handleSubmit(handlePasswordSignUp)}
 				data-testid='register-password-form'
 			>
@@ -97,7 +97,7 @@ export function RegisterForm() {
 			<AuthDivider label='oder' />
 
 			<form
-				className='grid gap-4'
+				className='design-form'
 				onSubmit={magicLinkForm.handleSubmit(handleMagicLinkRegister)}
 				data-testid='register-form'
 			>

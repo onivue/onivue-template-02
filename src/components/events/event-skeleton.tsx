@@ -1,28 +1,11 @@
-import { Skeleton } from '@/components/ui/skeleton';
+import { CardSkeleton } from '@/components/ui/skeleton';
 
-// the shapes the real content will take, so nothing jumps when the data lands
-export function PanelSkeleton({ rows = 3 }: { rows?: number }) {
+// the list holds cards, so its placeholder is cards — same column, same gap, same corners
+export function EventCardsSkeleton({ cards = 3 }: { cards?: number }) {
 	return (
-		<div className='design-panel grid gap-3 p-5 sm:p-6'>
-			<Skeleton className='h-3 w-24' />
-			{Array.from({ length: rows }, (_, index) => (
-				<Skeleton className='h-4 w-full' key={index} />
-			))}
-		</div>
-	);
-}
-
-export function ListSkeleton({ rows = 4 }: { rows?: number }) {
-	return (
-		<div className='design-panel divide-y divide-border overflow-hidden p-0'>
-			{Array.from({ length: rows }, (_, index) => (
-				<div className='flex items-center justify-between gap-4 px-5 py-4' key={index}>
-					<div className='grid flex-1 gap-2'>
-						<Skeleton className='h-4 w-1/3' />
-						<Skeleton className='h-3 w-1/2' />
-					</div>
-					<Skeleton className='size-8 rounded-full' />
-				</div>
+		<div className='grid gap-4' data-testid='event-cards-skeleton'>
+			{Array.from({ length: cards }, (_, index) => (
+				<CardSkeleton className='h-36' key={index} />
 			))}
 		</div>
 	);

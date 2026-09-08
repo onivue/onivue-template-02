@@ -55,7 +55,11 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **DRY:** No code duplication.
 - **Async:** Always use `async`/`await` and `try/catch`. Avoid `.then()`.
 - **Formatting:** Use single quotes (configure oxfmt accordingly).
-- **Comments:** Short, simple, readable, and always in lowercase.
+- **Comments:** As few as possible. Write one only where the code cannot speak for itself — a
+  non-obvious constraint, an alternative that was tried and rejected, a rule that spans files. Never
+  restate what the next line already says, and never narrate a function's steps. When a comment feels
+  needed, first try a clearer name or a small extraction instead. Keep the ones that stay to a single
+  short line where possible, two at most, always in lowercase.
 
 ## React & UI
 

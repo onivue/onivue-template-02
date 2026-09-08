@@ -5,6 +5,7 @@ import type { AnswerValue, FormFieldDefinition } from '@/lib/events/form-schema'
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 
 type InvitationFieldProps = {
@@ -14,6 +15,8 @@ type InvitationFieldProps = {
 	onChange: (value: AnswerValue) => void;
 	value: AnswerValue;
 };
+
+const CHOOSE_PLACEHOLDER = 'Bitte wählen';
 
 function toText(value: AnswerValue): string {
 	return Array.isArray(value) ? (value[0] ?? '') : value;
@@ -29,7 +32,7 @@ export function InvitationField({ disabled, error, field, onChange, value }: Inv
 	const fieldId = `field-${field.id}`;
 
 	return (
-		<div className='grid gap-2' data-testid={`invitation-field-${field.id}`}>
+		<div className='design-field' data-testid={`invitation-field-${field.id}`}>
 			<label className='design-label' htmlFor={fieldId}>
 				{field.label}
 				{field.required ? <span aria-hidden='true'> *</span> : null}
@@ -38,7 +41,6 @@ export function InvitationField({ disabled, error, field, onChange, value }: Inv
 
 			{field.type === 'text' ? (
 				<Input
-					className='design-input'
 					disabled={disabled}
 					id={fieldId}
 					onChange={(nativeEvent) => onChange(nativeEvent.target.value)}
@@ -57,20 +59,26 @@ export function InvitationField({ disabled, error, field, onChange, value }: Inv
 			) : null}
 
 			{field.type === 'select' ? (
-				<select
-					className='design-input'
+				<Select
 					disabled={disabled}
-					id={fieldId}
-					onChange={(nativeEvent) => onChange(nativeEvent.target.value)}
+					onValueChange={(next) => onChange(String(next ?? ''))}
 					value={toText(value)}
 				>
-					<option value=''>Bitte wählen</option>
-					{field.options.map((option) => (
-						<option key={option.id} value={option.id}>
-							{option.label}
-						</option>
-					))}
-				</select>
+					<SelectTrigger id={fieldId} size='field'>
+						<SelectValue placeholder={CHOOSE_PLACEHOLDER}>
+							{(chosen) =>
+								field.options.find((option) => option.id === chosen)?.label ?? CHOOSE_PLACEHOLDER
+							}
+						</SelectValue>
+					</SelectTrigger>
+					<SelectContent>
+						{field.options.map((option) => (
+							<SelectItem key={option.id} value={option.id}>
+								{option.label}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
 			) : null}
 
 			{field.type === 'radio' ? (

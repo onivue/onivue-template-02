@@ -31,9 +31,11 @@ export type FormFieldRecord = typeof eventFormField.$inferSelect;
 export type InvitationRecord = {
 	guests: GuestRecord[];
 	id: string;
+	lastViewedAt: Date | null;
 	responseDeadline: Date | null;
 	sentAt: Date | null;
 	token: string;
+	viewCount: number;
 };
 
 export type NewInvitation = {
@@ -177,9 +179,11 @@ export class EventRepository {
 		const invitations = await this.database
 			.select({
 				id: eventInvitation.id,
+				lastViewedAt: eventInvitation.lastViewedAt,
 				responseDeadline: eventInvitation.responseDeadline,
 				sentAt: eventInvitation.sentAt,
 				token: eventInvitation.token,
+				viewCount: eventInvitation.viewCount,
 			})
 			.from(eventInvitation)
 			.where(eq(eventInvitation.eventId, eventId))
@@ -243,6 +247,14 @@ export class EventRepository {
 
 	public async markSent(invitationId: string, sentAt: Date | null): Promise<void> {
 		await this.database.update(eventInvitation).set({ sentAt }).where(eq(eventInvitation.id, invitationId));
+	}
+
+	// the tally is the host's own, so they may start it over. the answers and the link stay untouched.
+	public async resetInvitationViews(invitationId: string): Promise<void> {
+		await this.database
+			.update(eventInvitation)
+			.set({ lastViewedAt: null, viewCount: 0 })
+			.where(eq(eventInvitation.id, invitationId));
 	}
 
 	public async setInvitationDeadline(invitationId: string, deadline: Date | null): Promise<void> {

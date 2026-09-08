@@ -196,7 +196,7 @@ export function InvitationForm(props: InvitationFormProps) {
 			})}
 
 			{props.fields.some((field) => field.scope === 'invitation') ? (
-				<section className='design-panel grid gap-4 p-5 sm:p-6' data-testid='invitation-fields'>
+				<section className='design-panel design-form p-6 sm:p-8' data-testid='invitation-fields'>
 					{props.fields
 						.filter((field) => field.scope === 'invitation')
 						.map((field) => (

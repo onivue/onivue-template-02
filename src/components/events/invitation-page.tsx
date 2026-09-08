@@ -122,7 +122,8 @@ export function InvitationPage(props: InvitationPageProps) {
 						data-testid='invitation-deadline'
 					>
 						<Clock aria-hidden='true' className='size-3.5 shrink-0' />
-						Antwort bitte bis {formatBerlin(props.closesAt)}. Du kannst sie bis dahin jederzeit ändern.
+						Antwort bitte bis {formatBerlin(props.closesAt, 'end-of-day')}. Du kannst sie bis dahin
+						jederzeit ändern.
 					</p>
 				) : null}
 

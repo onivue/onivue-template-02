@@ -1,4 +1,4 @@
-import { and, asc, eq, isNull } from 'drizzle-orm';
+import { and, asc, eq, isNull, sql } from 'drizzle-orm';
 
 import type { db } from '@/db/client';
 import type { FormFieldDefinition } from '@/lib/events/form-schema';
@@ -6,6 +6,10 @@ import type { InvitationState } from '@/lib/events/response-plan';
 import type { EventStatus } from '@/lib/events/response-window';
 
 import { event, eventAnswer, eventFormField, eventGuest, eventInvitation } from '@/db/schema';
+
+// counted in the statement, never read and written back: two guests opening the same link at the
+// same moment must not settle on one view
+export const VIEW_INCREMENT = sql`${eventInvitation.viewCount} + 1`;
 
 // the guest side. one lookup by token, one shape carrying everything the page renders — a guest
 // page that had to make five round trips would be five chances to leak something else.
@@ -22,6 +26,8 @@ export type InvitationGuest = {
 export type InvitationEvent = {
 	decoration: null | string;
 	endsAt: Date | null;
+	// the guest page never shows it; the response action needs it to expire the host's guest list
+	id: string;
 	greeting: null | string;
 	location: null | string;
 	locationAppleMapsUrl: null | string;
@@ -100,6 +106,7 @@ export class InvitationRepository {
 			event: {
 				decoration: row.decoration,
 				endsAt: row.endsAt,
+				id: row.eventId,
 				greeting: row.greeting,
 				location: row.location,
 				locationAppleMapsUrl: row.locationAppleMapsUrl,
@@ -128,6 +135,14 @@ export class InvitationRepository {
 	}
 
 	// the guest's own answers: theirs and the invitation's, never another household's
+	// keyed by the token, so a view costs one statement
+	public async recordView(token: string): Promise<void> {
+		await this.database
+			.update(eventInvitation)
+			.set({ lastViewedAt: new Date(), viewCount: VIEW_INCREMENT })
+			.where(eq(eventInvitation.token, token));
+	}
+
 	private async answersFor(invitationId: string): Promise<InvitationState['answers']> {
 		const guestAnswers = await this.database
 			.select({ fieldId: eventAnswer.fieldId, guestId: eventAnswer.guestId, value: eventAnswer.value })

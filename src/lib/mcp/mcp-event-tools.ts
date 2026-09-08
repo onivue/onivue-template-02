@@ -13,7 +13,9 @@ const eventIdSchema = z.string().min(1).describe('Die id des Events.');
 
 const dateSchema = z
 	.string()
-	.describe('Zeitpunkt in deutscher Zeit, als "2026-07-15T18:00". Leerer String löscht die Angabe.');
+	.describe(
+		'Zeitpunkt in deutscher Zeit, als "2026-07-15T18:00", oder ein Tag ohne Uhrzeit als "2026-07-15". Leerer String löscht die Angabe.'
+	);
 
 function toResult<T extends Record<string, unknown>>(result: McpEventResult<T>): CallToolResult {
 	return result.success ? toolSuccess(result.data) : toolError(result.error);
@@ -81,7 +83,7 @@ export function registerEventTools(server: McpServer, session: EventSession): vo
 					...(location === undefined ? {} : { location: location || null }),
 					...(responseDeadline === undefined
 						? {}
-						: { responseDeadline: parseBerlinDateTime(responseDeadline) }),
+						: { responseDeadline: parseBerlinDateTime(responseDeadline, 'end-of-day') }),
 					...(startsAt === undefined ? {} : { startsAt: parseBerlinDateTime(startsAt) }),
 					...(title === undefined ? {} : { title }),
 				})

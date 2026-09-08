@@ -20,6 +20,7 @@ function input(overrides: Partial<CsvExportInput> = {}): CsvExportInput {
 		answers: [],
 		fields: [MENU, NOTE],
 		formatDate: (date) => (date ? date.toISOString() : ''),
+		formatDeadline: (date) => (date ? date.toISOString() : ''),
 		invitations: [
 			{
 				guests: [

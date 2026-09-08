@@ -61,7 +61,7 @@ export function AccountSettings({ currentEmail }: AccountSettingsProps) {
 	}
 
 	return (
-		<div className='grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,0.8fr)]' data-testid='account-settings'>
+		<div className='grid gap-6' data-testid='account-settings'>
 			<section
 				className='design-panel grid content-start gap-5 p-5 sm:p-6'
 				data-testid='account-passkeys-section'

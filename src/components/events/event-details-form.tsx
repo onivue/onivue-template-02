@@ -9,6 +9,7 @@ import { EventDecoration } from '@/components/events/event-decoration';
 import { Button } from '@/components/ui/button';
 import { DateTimePicker } from '@/components/ui/date-time-picker';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { toBerlinInputValue } from '@/lib/events/berlin-time';
 import { updateEventDetails } from '@/lib/events/event-actions';
@@ -17,6 +18,12 @@ import { DECORATION_KEYS, DECORATIONS, isDecorationKey } from '@/lib/events/even
 type EventDetailsFormProps = {
 	event: EventRecord;
 };
+
+const NO_DECORATION_LABEL = 'Keines';
+
+const DECORATION_LABELS: Record<string, string> = Object.fromEntries(
+	DECORATION_KEYS.map((key) => [key, DECORATIONS[key].label])
+);
 
 // everything a guest gets to see about the event itself: what it is called, when and where it is,
 // and how long the door stays open
@@ -28,7 +35,7 @@ export function EventDetailsForm({ event }: EventDetailsFormProps) {
 		location: event.location ?? '',
 		locationAppleMapsUrl: event.locationAppleMapsUrl ?? '',
 		locationGoogleMapsUrl: event.locationGoogleMapsUrl ?? '',
-		responseDeadline: toBerlinInputValue(event.responseDeadline),
+		responseDeadline: toBerlinInputValue(event.responseDeadline, 'end-of-day'),
 		startsAt: toBerlinInputValue(event.startsAt),
 		title: event.title,
 	});
@@ -51,38 +58,36 @@ export function EventDetailsForm({ event }: EventDetailsFormProps) {
 	};
 
 	return (
-		<section className='design-panel grid gap-4 p-5 sm:p-6' data-testid='event-settings'>
-			<label className='grid gap-1'>
+		<section className='design-panel design-form p-6 sm:p-8' data-testid='event-settings'>
+			<label className='design-field'>
 				<span className='design-label'>Titel</span>
 				<Input
-					className='design-input'
 					data-testid='settings-title'
 					onChange={(nativeEvent) => setDetails({ ...details, title: nativeEvent.target.value })}
 					value={details.title}
 				/>
 			</label>
 
-			<div className='grid gap-3 sm:grid-cols-2'>
-				<div className='grid gap-1'>
-					<span className='design-label'>Beginn</span>
-					<DateTimePicker
-						data-testid='settings-starts-at'
-						label='Beginn'
-						onChange={(value) => setDetails({ ...details, startsAt: value })}
-						value={details.startsAt}
-					/>
-				</div>
-				<div className='grid gap-1'>
-					<span className='design-label'>Ende (optional)</span>
-					<DateTimePicker
-						label='Ende'
-						onChange={(value) => setDetails({ ...details, endsAt: value })}
-						value={details.endsAt}
-					/>
-				</div>
+			<div className='design-field'>
+				<span className='design-label'>Beginn</span>
+				<DateTimePicker
+					data-testid='settings-starts-at'
+					label='Beginn'
+					onChange={(value) => setDetails({ ...details, startsAt: value })}
+					value={details.startsAt}
+				/>
 			</div>
 
-			<label className='grid gap-1'>
+			<div className='design-field'>
+				<span className='design-label'>Ende (optional)</span>
+				<DateTimePicker
+					label='Ende'
+					onChange={(value) => setDetails({ ...details, endsAt: value })}
+					value={details.endsAt}
+				/>
+			</div>
+
+			<label className='design-field'>
 				<span className='design-label'>Ort</span>
 				<Textarea
 					onChange={(nativeEvent) => setDetails({ ...details, location: nativeEvent.target.value })}
@@ -94,39 +99,36 @@ Hauptstraße 1
 				/>
 			</label>
 
-			<div className='grid gap-3 sm:grid-cols-2'>
-				<label className='grid gap-1'>
-					<span className='design-label'>Link zu Apple Karten (optional)</span>
-					<Input
-						className='design-input'
-						data-testid='settings-location-apple-maps-url'
-						onChange={(nativeEvent) =>
-							setDetails({ ...details, locationAppleMapsUrl: nativeEvent.target.value })
-						}
-						placeholder='https://maps.apple.com/…'
-						type='url'
-						value={details.locationAppleMapsUrl}
-					/>
-				</label>
-				<label className='grid gap-1'>
-					<span className='design-label'>Link zu Google Maps (optional)</span>
-					<Input
-						className='design-input'
-						data-testid='settings-location-google-maps-url'
-						onChange={(nativeEvent) =>
-							setDetails({ ...details, locationGoogleMapsUrl: nativeEvent.target.value })
-						}
-						placeholder='https://maps.google.com/…'
-						type='url'
-						value={details.locationGoogleMapsUrl}
-					/>
-				</label>
-			</div>
-			<p className='-mt-2 text-xs text-ink-soft'>
+			<label className='design-field'>
+				<span className='design-label'>Link zu Apple Karten (optional)</span>
+				<Input
+					data-testid='settings-location-apple-maps-url'
+					onChange={(nativeEvent) =>
+						setDetails({ ...details, locationAppleMapsUrl: nativeEvent.target.value })
+					}
+					placeholder='https://maps.apple.com/…'
+					type='url'
+					value={details.locationAppleMapsUrl}
+				/>
+			</label>
+
+			<label className='design-field'>
+				<span className='design-label'>Link zu Google Maps (optional)</span>
+				<Input
+					data-testid='settings-location-google-maps-url'
+					onChange={(nativeEvent) =>
+						setDetails({ ...details, locationGoogleMapsUrl: nativeEvent.target.value })
+					}
+					placeholder='https://maps.google.com/…'
+					type='url'
+					value={details.locationGoogleMapsUrl}
+				/>
+			</label>
+			<p className='-mt-4 text-xs text-ink-soft'>
 				Der Ort wird für Gäste anklickbar, sobald einer der beiden Links hinterlegt ist.
 			</p>
 
-			<label className='grid gap-1'>
+			<label className='design-field'>
 				<span className='design-label'>Begrüßungstext</span>
 				<Textarea
 					onChange={(nativeEvent) => setDetails({ ...details, greeting: nativeEvent.target.value })}
@@ -136,27 +138,32 @@ Hauptstraße 1
 				/>
 			</label>
 
-			<label className='grid gap-1'>
+			<div className='design-field'>
 				<span className='design-label'>3D-Element (optional)</span>
-				<select
-					className='design-input'
-					data-testid='settings-decoration'
-					onChange={(nativeEvent) => setDetails({ ...details, decoration: nativeEvent.target.value })}
+				<Select
+					onValueChange={(next) => setDetails({ ...details, decoration: String(next ?? '') })}
 					value={details.decoration}
 				>
-					<option value=''>Keines</option>
-					{DECORATION_KEYS.map((key) => (
-						<option key={key} value={key}>
-							{DECORATIONS[key].label}
-						</option>
-					))}
-				</select>
+					<SelectTrigger data-testid='settings-decoration' size='field'>
+						<SelectValue>
+							{(key) => DECORATION_LABELS[String(key ?? '')] ?? NO_DECORATION_LABEL}
+						</SelectValue>
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem value=''>{NO_DECORATION_LABEL}</SelectItem>
+						{DECORATION_KEYS.map((key) => (
+							<SelectItem key={key} value={key}>
+								{DECORATIONS[key].label}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
 				<span className='text-xs text-ink-soft'>
 					{isDecorationKey(details.decoration)
 						? DECORATIONS[details.decoration].description
 						: 'Ohne Auswahl bleibt die Einladung schlicht.'}
 				</span>
-			</label>
+			</div>
 
 			{isDecorationKey(details.decoration) ? (
 				<div
@@ -167,7 +174,7 @@ Hauptstraße 1
 				</div>
 			) : null}
 
-			<div className='grid gap-1'>
+			<div className='design-field'>
 				<span className='design-label'>Antwort-Frist</span>
 				<DateTimePicker
 					data-testid='settings-deadline'

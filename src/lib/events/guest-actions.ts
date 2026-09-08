@@ -1,12 +1,13 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
+import { updateTag } from 'next/cache';
 import { headers } from 'next/headers';
+import { connection } from 'next/server';
 
 import type { ActionResult } from '@/lib/events/action-result';
 
-import { invitationPath } from '@/config/routes';
 import { ACTION_MESSAGES, failure, ok } from '@/lib/events/action-result';
+import { eventInvitationsTag } from '@/lib/events/event-cache';
 import { guestRateLimiter, invitationRepository, responseService } from '@/lib/events/event-services';
 import { buildSubmissionSchema } from '@/lib/events/form-schema';
 import { toInvitationState } from '@/lib/events/invitation-repository';
@@ -66,13 +67,32 @@ export async function submitInvitationResponse(token: string, raw: unknown): Pro
 		return failure(result.error === 'archived' ? ACTION_MESSAGES.eventArchived : ACTION_MESSAGES.deadlinePassed);
 	}
 
-	revalidatePath(invitationPath(token));
+	// the host is the one waiting to see it, so their guest list expires here
+	updateTag(eventInvitationsTag(view.event.id));
 
 	return ok();
 }
 
-// the guest page itself is rate limited too: a token is only worth guessing if guessing is cheap
+// fired from the browser, so a messenger's link preview is not counted as an opened invitation.
+// silent either way: a bad token is indistinguishable from a good one here.
+export async function recordInvitationView(token: string): Promise<void> {
+	const limit = await guestRateLimiter.check(
+		guestRateLimitKey('view', await clientAddress()),
+		GUEST_RATE_LIMITS.view
+	);
+
+	if (!limit.allowed) {
+		return;
+	}
+
+	await invitationRepository.recordView(token);
+}
+
+// the guest page itself is rate limited too: a token is only worth guessing if guessing is cheap.
+// counting a view is a write against the clock, so it can never be part of a prerender or a prefetch
 export async function checkGuestPageLimit(): Promise<boolean> {
+	await connection();
+
 	const limit = await guestRateLimiter.check(
 		guestRateLimitKey('resolve', await clientAddress()),
 		GUEST_RATE_LIMITS.resolve

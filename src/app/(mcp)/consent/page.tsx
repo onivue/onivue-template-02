@@ -1,5 +1,8 @@
+import { Suspense } from 'react';
+
 import { Layout } from '@/components/layout/layout';
 import { ConsentForm } from '@/components/mcp/consent-form';
+import { CardSkeleton } from '@/components/ui/skeleton';
 import { requireViewer } from '@/lib/auth/viewer';
 import { findOAuthClient } from '@/lib/mcp/mcp-client-lookup';
 import { parseScopes } from '@/lib/mcp/mcp-scopes';
@@ -19,7 +22,9 @@ function readParam(params: Record<string, string | string[] | undefined>, key: s
 	return Array.isArray(value) ? (value[0] ?? '') : (value ?? '');
 }
 
-export default async function ConsentPage({ searchParams }: ConsentPageProps) {
+// the request being confirmed is entirely in the url, so it waits on its own while the page around
+// it — which says what this screen is for — ships with the shell
+async function ConsentRequest({ searchParams }: ConsentPageProps) {
 	await requireViewer();
 
 	const params = await searchParams;
@@ -27,6 +32,21 @@ export default async function ConsentPage({ searchParams }: ConsentPageProps) {
 	const scopes = parseScopes(readParam(params, 'scope'));
 	const client = clientId ? await findOAuthClient(clientId) : null;
 
+	if (!clientId) {
+		return (
+			<div className='design-panel grid gap-3 p-6' data-testid='consent-missing-request'>
+				<p className='text-lg font-bold text-foreground'>Keine offene Anfrage</p>
+				<p className='design-page-description'>
+					Diese Seite wird automatisch geöffnet, wenn ein Client Zugriff anfragt.
+				</p>
+			</div>
+		);
+	}
+
+	return <ConsentForm clientName={client?.name ?? clientId} clientUri={client?.uri ?? null} scopes={scopes} />;
+}
+
+export default function ConsentPage({ searchParams }: ConsentPageProps) {
 	return (
 		<Layout>
 			<div className='flex flex-col gap-6 py-2' data-testid='consent-page'>
@@ -41,20 +61,9 @@ export default async function ConsentPage({ searchParams }: ConsentPageProps) {
 					</div>
 				</header>
 				<div className='max-w-md'>
-					{clientId ? (
-						<ConsentForm
-							clientName={client?.name ?? clientId}
-							clientUri={client?.uri ?? null}
-							scopes={scopes}
-						/>
-					) : (
-						<div className='design-panel grid gap-3 p-6' data-testid='consent-missing-request'>
-							<p className='text-lg font-bold text-foreground'>Keine offene Anfrage</p>
-							<p className='design-page-description'>
-								Diese Seite wird automatisch geöffnet, wenn ein Client Zugriff anfragt.
-							</p>
-						</div>
-					)}
+					<Suspense fallback={<CardSkeleton className='h-64' />}>
+						<ConsentRequest searchParams={searchParams} />
+					</Suspense>
 				</div>
 			</div>
 		</Layout>

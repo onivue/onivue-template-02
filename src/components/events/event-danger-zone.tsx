@@ -76,7 +76,6 @@ export function EventDangerZone({ canDelete, event }: EventDangerZoneProps) {
 				{canDelete ? (
 					<div className='flex flex-wrap gap-2'>
 						<Input
-							className='design-input sm:max-w-sm'
 							data-testid='settings-delete-confirmation'
 							onChange={(nativeEvent) => setConfirmation(nativeEvent.target.value)}
 							placeholder={event.title}

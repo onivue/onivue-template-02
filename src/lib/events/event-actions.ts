@@ -1,16 +1,16 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
+import { updateTag } from 'next/cache';
 import { z } from 'zod';
 
 import type { ActionResult } from '@/lib/events/action-result';
 import type { EventPatch } from '@/lib/events/event-repository';
 
-import { APP_ROUTES, eventPath } from '@/config/routes';
 import { getActiveMembership } from '@/lib/auth/active-organization';
 import { requireViewer } from '@/lib/auth/viewer';
 import { accessFailure, ACTION_MESSAGES, failure, ok } from '@/lib/events/action-result';
 import { parseBerlinDateTime } from '@/lib/events/berlin-time';
+import { eventListTag, eventTag } from '@/lib/events/event-cache';
 import { isDecorationKey } from '@/lib/events/event-decoration';
 import { eventAccess, eventRepository } from '@/lib/events/event-services';
 
@@ -61,7 +61,7 @@ export async function createEvent(input: { title: string }): Promise<ActionResul
 		title: parsed.data,
 	});
 
-	revalidatePath(APP_ROUTES.EVENTS);
+	updateTag(eventListTag(membership.organizationId));
 
 	return ok({ eventId });
 }
@@ -87,15 +87,16 @@ export async function updateEventDetails(eventId: string, input: z.input<typeof 
 		location: emptyToNull(parsed.data.location),
 		locationAppleMapsUrl: emptyToNull(parsed.data.locationAppleMapsUrl),
 		locationGoogleMapsUrl: emptyToNull(parsed.data.locationGoogleMapsUrl),
-		responseDeadline: parseBerlinDateTime(parsed.data.responseDeadline),
+		responseDeadline: parseBerlinDateTime(parsed.data.responseDeadline, 'end-of-day'),
 		startsAt: parseBerlinDateTime(parsed.data.startsAt),
 		title: parsed.data.title,
 	};
 
 	await eventRepository.updateEvent(eventId, patch);
 
-	revalidatePath(eventPath(eventId, 'settings'));
-	revalidatePath(APP_ROUTES.EVENTS);
+	// the title and date show on the card too, so the list goes with it
+	updateTag(eventTag(eventId));
+	updateTag(eventListTag(membership.organizationId));
 
 	return ok();
 }
@@ -112,8 +113,8 @@ export async function setEventStatus(eventId: string, status: 'active' | 'archiv
 
 	await eventRepository.setEventStatus(eventId, status);
 
-	revalidatePath(APP_ROUTES.EVENTS);
-	revalidatePath(eventPath(eventId));
+	updateTag(eventTag(eventId));
+	updateTag(eventListTag(membership.organizationId));
 
 	return ok();
 }
@@ -133,7 +134,8 @@ export async function deleteEvent(eventId: string, confirmation: string): Promis
 
 	await eventRepository.deleteEvent(eventId);
 
-	revalidatePath(APP_ROUTES.EVENTS);
+	updateTag(eventTag(eventId));
+	updateTag(eventListTag(membership.organizationId));
 
 	return ok();
 }

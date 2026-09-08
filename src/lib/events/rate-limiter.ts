@@ -8,10 +8,11 @@ export type RateLimitWindow = {
 	windowSeconds: number;
 };
 
-// resolving a token is cheap and happens on every page view; submitting writes and is rare
+// resolving a token is cheap and happens on every page view; submitting and counting a view write
 export const GUEST_RATE_LIMITS = {
 	resolve: { limit: 60, windowSeconds: 60 },
 	submit: { limit: 10, windowSeconds: 60 },
+	view: { limit: 20, windowSeconds: 60 },
 } as const satisfies Record<string, RateLimitWindow>;
 
 export type GuestRateLimitAction = keyof typeof GUEST_RATE_LIMITS;

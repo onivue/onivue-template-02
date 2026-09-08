@@ -19,8 +19,6 @@ const MODEL_URLS = {
 	'birthday-cake-slice': '/models/cake_birthday_slice.fbx',
 } satisfies Record<DecorationKey, string>;
 
-// a hover is a lighter touch than a tap, and gets a lighter reaction
-const HOVER_POKE = 0.35;
 const PRESS_POKE = 1;
 
 export function EventDecoration({ className, decoration }: EventDecorationProps) {
@@ -113,7 +111,6 @@ export function EventDecoration({ className, decoration }: EventDecorationProps)
 			className={cn('relative h-44 w-full cursor-pointer touch-manipulation select-none sm:h-52', className)}
 			data-testid={`event-decoration-${decoration}`}
 			onPointerDown={() => sceneRef.current?.poke(PRESS_POKE)}
-			onPointerEnter={() => sceneRef.current?.poke(HOVER_POKE)}
 		>
 			{/* a soft lime pool under the ornament, so it sits on the page instead of floating on it */}
 			<div className='absolute inset-x-1/4 bottom-4 h-10 rounded-[50%] bg-lime-glow/25 blur-2xl' />

@@ -1,7 +1,7 @@
 'use client';
 
-import { Check, ChevronDown, Copy, Reply, Search, Send, SendHorizontal } from 'lucide-react';
-import { useState } from 'react';
+import { ChevronDown, Copy, Eye, Reply, Search, Send } from 'lucide-react';
+import { startTransition, useOptimistic, useState } from 'react';
 import { toast } from 'sonner';
 
 import type { InvitationRecord } from '@/lib/events/event-repository';
@@ -16,6 +16,7 @@ import {
 import { InvitationDetails } from '@/components/events/invitation-details';
 import { report } from '@/components/events/report-result';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { invitationPath } from '@/config/routes';
 import { formatBerlinShort } from '@/lib/events/berlin-time';
@@ -25,6 +26,11 @@ import { cn } from '@/lib/utils';
 type GuestTableProps = {
 	eventId: string;
 	invitations: InvitationRecord[];
+};
+
+type SentPatch = {
+	invitationId: string;
+	sentAt: Date | null;
 };
 
 // status lives in the colour of the name itself: at fifty guests, a badge next to every name is
@@ -107,14 +113,54 @@ function FilterPills<T extends string>({
 	);
 }
 
+// bookkeeping, not a decision: the mark flips at once and the server catches up. a failed write is
+// dropped by react and explained by the toast.
+function applySentAt(invitations: InvitationRecord[], patch: SentPatch): InvitationRecord[] {
+	return invitations.map((invitation) =>
+		invitation.id === patch.invitationId ? { ...invitation, sentAt: patch.sentAt } : invitation
+	);
+}
+
+// quiet on purpose: an unopened invitation should read as "nothing yet", not as a warning
+function InvitationViews({ count, lastViewedAt }: { count: number; lastViewedAt: Date | null }) {
+	return (
+		<span
+			className={cn(
+				'flex items-center gap-1 px-1.5 text-xs tabular-nums',
+				count > 0 ? 'text-ink-soft' : 'text-ink-soft/45'
+			)}
+			data-testid='invitation-views'
+			title={
+				lastViewedAt ? `${count}× geöffnet, zuletzt ${formatBerlinShort(lastViewedAt)}` : 'Noch nicht geöffnet'
+			}
+		>
+			<Eye aria-hidden='true' className='size-3.5 shrink-0' />
+			{count}
+			<span className='sr-only'>mal geöffnet</span>
+		</span>
+	);
+}
+
 export function GuestTable({ eventId, invitations }: GuestTableProps) {
 	const [filter, setFilter] = useState<GuestFilter>(EMPTY_FILTER);
 	const [expanded, setExpanded] = useState<null | string>(null);
+	const [optimistic, markSent] = useOptimistic(invitations, applySentAt);
 
-	const visible = filterInvitations(invitations, filter);
-	const unsentCount = invitations.filter((invitation) => !invitation.sentAt).length;
+	const visible = filterInvitations(optimistic, filter);
+	const unsentCount = optimistic.filter((invitation) => !invitation.sentAt).length;
 
-	if (invitations.length === 0) {
+	const toggleSent = (invitationId: string, sent: boolean) => {
+		startTransition(async () => {
+			markSent({ invitationId, sentAt: sent ? new Date() : null });
+
+			await report(
+				setInvitationSent(eventId, invitationId, sent),
+				sent ? 'Als versendet markiert.' : 'Als offen markiert.'
+			);
+		});
+	};
+
+	if (optimistic.length === 0) {
 		return (
 			<p className='design-panel px-6 py-10 text-center text-sm text-ink-soft' data-testid='guests-empty'>
 				Noch keine Einladungen. Füge oben Zeilen ein — eine Zeile ist eine Einladung.
@@ -134,7 +180,7 @@ export function GuestTable({ eventId, invitations }: GuestTableProps) {
 							className='absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ink-soft'
 						/>
 						<Input
-							className='design-input pl-9'
+							className='pl-9'
 							data-testid='guest-search'
 							onChange={(nativeEvent) => setFilter({ ...filter, search: nativeEvent.target.value })}
 							placeholder='Nach Name, E-Mail oder Notiz suchen'
@@ -200,6 +246,11 @@ export function GuestTable({ eventId, invitations }: GuestTableProps) {
 									</div>
 
 									<div className='flex shrink-0 items-center gap-1'>
+										<InvitationViews
+											count={invitation.viewCount}
+											lastViewedAt={invitation.lastViewedAt}
+										/>
+
 										<Button
 											aria-label='Einladungslink kopieren'
 											data-testid={`copy-${invitation.id}`}
@@ -210,36 +261,26 @@ export function GuestTable({ eventId, invitations }: GuestTableProps) {
 											<Copy /> Link
 										</Button>
 
-										{invitation.sentAt ? (
-											<Button
-												data-testid={`unsend-${invitation.id}`}
-												onClick={() =>
-													void report(
-														setInvitationSent(eventId, invitation.id, false),
-														'Als offen markiert.'
-													)
+										{/* the host works down the list ticking off what they sent, so this is a
+										    tick box. the label never changes, so the row cannot reflow under the
+										    cursor between two clicks. */}
+										<label
+											className='flex h-7 cursor-pointer items-center gap-2 rounded-full px-2.5 text-[0.8rem] font-medium text-ink-soft transition-colors hover:bg-muted hover:text-ink'
+											title={
+												invitation.sentAt
+													? `Versendet am ${formatBerlinShort(invitation.sentAt)}`
+													: 'Noch nicht versendet'
+											}
+										>
+											<Checkbox
+												checked={!!invitation.sentAt}
+												data-testid={`sent-${invitation.id}`}
+												onCheckedChange={(checked) =>
+													toggleSent(invitation.id, Boolean(checked))
 												}
-												size='sm'
-												title={`Versendet am ${formatBerlinShort(invitation.sentAt)} — klicken, um das zurückzunehmen`}
-												variant='ghost'
-											>
-												<Check className='text-accent-strong' /> Versendet
-											</Button>
-										) : (
-											<Button
-												data-testid={`send-${invitation.id}`}
-												onClick={() =>
-													void report(
-														setInvitationSent(eventId, invitation.id, true),
-														'Als versendet markiert.'
-													)
-												}
-												size='sm'
-												variant='ghost'
-											>
-												<SendHorizontal /> Versendet?
-											</Button>
-										)}
+											/>
+											Versendet
+										</label>
 
 										<Button
 											aria-expanded={expanded === invitation.id}
@@ -276,8 +317,8 @@ export function GuestTable({ eventId, invitations }: GuestTableProps) {
 			>
 				<span>
 					{isFilterActive(filter)
-						? `${visible.length} von ${invitations.length} Einladungen`
-						: `${invitations.length} Einladung${invitations.length === 1 ? '' : 'en'}`}
+						? `${visible.length} von ${optimistic.length} Einladungen`
+						: `${optimistic.length} Einladung${optimistic.length === 1 ? '' : 'en'}`}
 				</span>
 				{filter.sent === 'all' && unsentCount > 0 ? (
 					<Button

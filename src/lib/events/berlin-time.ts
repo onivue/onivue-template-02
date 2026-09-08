@@ -1,5 +1,5 @@
 import { TZDate } from '@date-fns/tz';
-import { format, isValid, parse } from 'date-fns';
+import { endOfDay, format, isValid, parse, startOfDay } from 'date-fns';
 import { de } from 'date-fns/locale';
 
 // every timestamp is stored in utc and read and written in one zone. the app is german, so the
@@ -8,18 +8,51 @@ import { de } from 'date-fns/locale';
 
 export const EVENT_TIME_ZONE = 'Europe/Berlin';
 
+const DATE_PATTERN = 'yyyy-MM-dd';
 const INPUT_PATTERN = 'yyyy-MM-dd HH:mm';
 const DISPLAY_PATTERN = "d. MMMM yyyy, HH:mm 'Uhr'";
+const DATE_DISPLAY_PATTERN = 'd. MMMM yyyy';
 const SHORT_PATTERN = 'dd.MM.yyyy, HH:mm';
+const SHORT_DATE_PATTERN = 'dd.MM.yyyy';
 
-// the value of an <input type="datetime-local">, read as berlin wall-clock time
-export function parseBerlinDateTime(value: null | string | undefined): Date | null {
+// a value may name a day without a time. which moment of that day it means depends on the field:
+// a beginning is its first, a deadline its last — otherwise "Frist: 15. Juli" would lock guests
+// out for the whole of the 15th.
+export type TimelessMoment = 'end-of-day' | 'start-of-day';
+
+function berlinNow(): TZDate {
+	return new TZDate(Date.now(), EVENT_TIME_ZONE);
+}
+
+// minute granularity is all the picker offers, so neither of these can be typed by hand and both
+// read back as "no time given"
+function isTimeless(date: TZDate, moment: TimelessMoment): boolean {
+	const marker = moment === 'end-of-day' ? endOfDay(date) : startOfDay(date);
+
+	return date.getTime() === marker.getTime();
+}
+
+export function parseBerlinDateTime(
+	value: null | string | undefined,
+	moment: TimelessMoment = 'start-of-day'
+): Date | null {
 	if (!value) {
 		return null;
 	}
 
-	const normalized = value.replace('T', ' ').slice(0, INPUT_PATTERN.length);
-	const parsed = parse(normalized, INPUT_PATTERN, new TZDate(Date.now(), EVENT_TIME_ZONE));
+	const normalized = value.replace('T', ' ');
+
+	if (normalized.length <= DATE_PATTERN.length) {
+		const day = parse(normalized, DATE_PATTERN, berlinNow());
+
+		if (!isValid(day)) {
+			return null;
+		}
+
+		return new Date((moment === 'end-of-day' ? endOfDay(day) : startOfDay(day)).getTime());
+	}
+
+	const parsed = parse(normalized.slice(0, INPUT_PATTERN.length), INPUT_PATTERN, berlinNow());
 
 	if (!isValid(parsed)) {
 		return null;
@@ -28,27 +61,37 @@ export function parseBerlinDateTime(value: null | string | undefined): Date | nu
 	return new Date(parsed.getTime());
 }
 
-// the reverse: fills a datetime-local input without dragging the browser's own zone into it
-export function toBerlinInputValue(date: Date | null): string {
+// the reverse: fills the picker without dragging the browser's own zone into it
+export function toBerlinInputValue(date: Date | null, moment: TimelessMoment = 'start-of-day'): string {
 	if (!date) {
 		return '';
 	}
 
-	return format(new TZDate(date, EVENT_TIME_ZONE), "yyyy-MM-dd'T'HH:mm");
+	const zoned = new TZDate(date, EVENT_TIME_ZONE);
+
+	if (isTimeless(zoned, moment)) {
+		return format(zoned, DATE_PATTERN);
+	}
+
+	return format(zoned, "yyyy-MM-dd'T'HH:mm");
 }
 
-export function formatBerlin(date: Date | null): string {
+export function formatBerlin(date: Date | null, moment: TimelessMoment = 'start-of-day'): string {
 	if (!date) {
 		return '';
 	}
 
-	return format(new TZDate(date, EVENT_TIME_ZONE), DISPLAY_PATTERN, { locale: de });
+	const zoned = new TZDate(date, EVENT_TIME_ZONE);
+
+	return format(zoned, isTimeless(zoned, moment) ? DATE_DISPLAY_PATTERN : DISPLAY_PATTERN, { locale: de });
 }
 
-export function formatBerlinShort(date: Date | null): string {
+export function formatBerlinShort(date: Date | null, moment: TimelessMoment = 'start-of-day'): string {
 	if (!date) {
 		return '';
 	}
 
-	return format(new TZDate(date, EVENT_TIME_ZONE), SHORT_PATTERN, { locale: de });
+	const zoned = new TZDate(date, EVENT_TIME_ZONE);
+
+	return format(zoned, isTimeless(zoned, moment) ? SHORT_DATE_PATTERN : SHORT_PATTERN);
 }

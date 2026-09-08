@@ -25,6 +25,7 @@ export async function GET(_request: Request, context: { params: Promise<{ eventI
 		answers,
 		fields,
 		formatDate: formatBerlinShort,
+		formatDeadline: (date) => formatBerlinShort(date, 'end-of-day'),
 		invitations,
 	});
 

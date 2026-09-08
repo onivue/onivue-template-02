@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { addFormField, moveFormField, retireFormField, updateFormField } from '@/lib/events/form-actions';
 
@@ -34,6 +35,11 @@ const TYPE_LABELS = {
 	select: 'Auswahl (Liste)',
 	text: 'Text',
 	textarea: 'Text, mehrzeilig',
+} as const;
+
+const SCOPE_LABELS = {
+	guest: 'Jede Person einzeln',
+	invitation: 'Einmal die ganze Einladung',
 } as const;
 
 const CHOICE_TYPES = new Set(['checkbox', 'radio', 'select']);
@@ -88,11 +94,10 @@ function FieldEditor({
 	submitLabel: string;
 }) {
 	return (
-		<div className='grid gap-3' data-testid='field-editor'>
-			<label className='grid gap-1'>
+		<div className='design-form' data-testid='field-editor'>
+			<label className='design-field'>
 				<span className='design-label'>Frage</span>
 				<Input
-					className='design-input'
 					data-testid='field-label'
 					onChange={(nativeEvent) => onChange({ ...draft, label: nativeEvent.target.value })}
 					placeholder='z. B. Menüwunsch'
@@ -100,52 +105,56 @@ function FieldEditor({
 				/>
 			</label>
 
-			<label className='grid gap-1'>
+			<label className='design-field'>
 				<span className='design-label'>Hinweis (optional)</span>
 				<Input
-					className='design-input'
 					onChange={(nativeEvent) => onChange({ ...draft, helpText: nativeEvent.target.value })}
 					value={draft.helpText}
 				/>
 			</label>
 
-			<div className='grid gap-3 sm:grid-cols-2'>
-				<label className='grid gap-1'>
+			<div className='design-form'>
+				<div className='design-field'>
 					<span className='design-label'>Feldart</span>
-					<select
-						className='design-input'
-						data-testid='field-type'
-						onChange={(nativeEvent) =>
-							onChange({ ...draft, type: nativeEvent.target.value as Draft['type'] })
-						}
+					<Select
+						onValueChange={(next) => onChange({ ...draft, type: next as Draft['type'] })}
 						value={draft.type}
 					>
-						{Object.entries(TYPE_LABELS).map(([value, label]) => (
-							<option key={value} value={value}>
-								{label}
-							</option>
-						))}
-					</select>
-				</label>
+						<SelectTrigger data-testid='field-type' size='field'>
+							<SelectValue>{(value) => TYPE_LABELS[value as Draft['type']]}</SelectValue>
+						</SelectTrigger>
+						<SelectContent>
+							{Object.entries(TYPE_LABELS).map(([value, label]) => (
+								<SelectItem key={value} value={value}>
+									{label}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+				</div>
 
-				<label className='grid gap-1'>
+				<div className='design-field'>
 					<span className='design-label'>Wen fragt das Feld?</span>
-					<select
-						className='design-input'
-						data-testid='field-scope'
-						onChange={(nativeEvent) =>
-							onChange({ ...draft, scope: nativeEvent.target.value as Draft['scope'] })
-						}
+					<Select
+						onValueChange={(next) => onChange({ ...draft, scope: next as Draft['scope'] })}
 						value={draft.scope}
 					>
-						<option value='guest'>Jede Person einzeln</option>
-						<option value='invitation'>Einmal die ganze Einladung</option>
-					</select>
-				</label>
+						<SelectTrigger data-testid='field-scope' size='field'>
+							<SelectValue>{(value) => SCOPE_LABELS[value as Draft['scope']]}</SelectValue>
+						</SelectTrigger>
+						<SelectContent>
+							{Object.entries(SCOPE_LABELS).map(([value, label]) => (
+								<SelectItem key={value} value={value}>
+									{label}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+				</div>
 			</div>
 
 			{CHOICE_TYPES.has(draft.type) ? (
-				<label className='grid gap-1'>
+				<label className='design-field'>
 					<span className='design-label'>Auswahlmöglichkeiten, eine pro Zeile</span>
 					<Textarea
 						data-testid='field-options'

@@ -1,6 +1,6 @@
 import type { ComponentProps, ReactNode } from 'react';
 
-import { cn } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
 
 type FormFieldProps = {
 	error?: string;
@@ -17,7 +17,7 @@ export function FormField({ className, error, id, label, labelSuffix, ...props }
 	const isInvalid = !!error;
 
 	return (
-		<label className='grid gap-2' htmlFor={id} data-testid={`${id}-field`} data-invalid={isInvalid}>
+		<label className='design-field' htmlFor={id} data-testid={`${id}-field`} data-invalid={isInvalid}>
 			{labelSuffix ? (
 				<div className='flex items-center justify-between gap-2'>
 					<span className='design-label'>{label}</span>
@@ -26,9 +26,9 @@ export function FormField({ className, error, id, label, labelSuffix, ...props }
 			) : (
 				<span className='design-label'>{label}</span>
 			)}
-			<input
+			<Input
 				id={id}
-				className={cn('design-input w-full', className)}
+				className={className}
 				aria-invalid={isInvalid}
 				aria-describedby={isInvalid ? errorId : undefined}
 				data-testid={`${id}-input`}

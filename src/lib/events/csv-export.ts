@@ -57,6 +57,8 @@ export type CsvExportInput = {
 	answers: ExportAnswer[];
 	fields: ExportField[];
 	formatDate: (date: Date | null) => string;
+	// a deadline may name a day without a time, and reads differently from a moment that was stamped
+	formatDeadline: (date: Date | null) => string;
 	invitations: ExportInvitation[];
 };
 
@@ -118,7 +120,7 @@ export function toCsv(input: CsvExportInput): string {
 			RESPONSE_LABELS[guest.response],
 			input.formatDate(guest.respondedAt),
 			input.formatDate(invitation.sentAt),
-			input.formatDate(invitation.responseDeadline),
+			input.formatDeadline(invitation.responseDeadline),
 			guest.note ?? '',
 			...input.fields.map((field) =>
 				toLabel(

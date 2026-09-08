@@ -39,7 +39,7 @@ export function ResetPasswordForm() {
 	}
 
 	return (
-		<form className='grid gap-4' onSubmit={form.handleSubmit(handleSubmit)} data-testid='reset-password-form'>
+		<form className='design-form' onSubmit={form.handleSubmit(handleSubmit)} data-testid='reset-password-form'>
 			<FormField
 				id='reset-password'
 				label='Neues Passwort'

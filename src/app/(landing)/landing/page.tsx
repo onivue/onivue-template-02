@@ -1,7 +1,8 @@
 import { ArrowRight, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
+import { Suspense } from 'react';
 
-import { AuthStatus } from '@/components/auth/auth-status';
+import { AuthStatus, AuthStatusSkeleton } from '@/components/auth/auth-status';
 import { Footer } from '@/components/layout/footer';
 import { Button } from '@/components/ui/button';
 import { APP_ROUTES } from '@/config/routes';
@@ -32,7 +33,9 @@ export default function LandingPage() {
 						>
 							onivue
 						</Link>
-						<AuthStatus placement='inline' />
+						<Suspense fallback={<AuthStatusSkeleton placement='inline' />}>
+							<AuthStatus placement='inline' />
+						</Suspense>
 					</header>
 
 					<section

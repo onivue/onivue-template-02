@@ -476,6 +476,9 @@ export const eventInvitation = pgTable(
 		sentAt: timestamp('sent_at', { withTimezone: true }),
 		// overrides the event deadline, which is how a straggler is let back in
 		responseDeadline: timestamp('response_deadline', { withTimezone: true }),
+		// counted from the browser, so a messenger's link preview is not an opened invitation
+		viewCount: integer('view_count').notNull().default(0),
+		lastViewedAt: timestamp('last_viewed_at', { withTimezone: true }),
 		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 		updatedAt: timestamp('updated_at', { withTimezone: true })
 			.notNull()

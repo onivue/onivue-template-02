@@ -63,7 +63,7 @@ export function LoginForm() {
 			<AuthDivider label='oder' />
 
 			<form
-				className='grid gap-4'
+				className='design-form'
 				onSubmit={passwordForm.handleSubmit(handlePasswordSignIn)}
 				data-testid='login-password-form'
 			>
@@ -111,7 +111,7 @@ export function LoginForm() {
 			<AuthDivider label='oder' />
 
 			<form
-				className='grid gap-4'
+				className='design-form'
 				onSubmit={magicLinkForm.handleSubmit(handleMagicLink)}
 				data-testid='login-magic-link-form'
 			>

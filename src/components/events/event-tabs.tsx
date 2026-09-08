@@ -1,27 +1,27 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { useParams, usePathname } from 'next/navigation';
 
 import { eventPath } from '@/config/routes';
 import { cn } from '@/lib/utils';
-
-type EventTabsProps = {
-	eventId: string;
-};
 
 const SECTIONS = [
 	{ label: 'Übersicht & Gäste', section: undefined },
 	{ label: 'Formular & Einstellungen', section: 'settings' },
 ] as const;
 
-// real routes rather than client-side tabs: every section is linkable, and each one loads its own
-// data instead of the page loading all of it
-export function EventTabs({ eventId }: EventTabsProps) {
+const TAB_CLASS = 'rounded-full px-4 py-2 text-sm font-medium transition-colors';
+const NAV_CLASS = 'flex flex-wrap gap-1 border-b border-border pb-2';
+
+// real routes rather than client-side tabs, so each section is linkable and loads its own data. the
+// id comes from the url, not a prop, so the tabs owe nothing to a query.
+export function EventTabs() {
+	const { eventId } = useParams<{ eventId: string }>();
 	const pathname = usePathname();
 
 	return (
-		<nav className='flex flex-wrap gap-1 border-b border-border pb-2' data-testid='event-tabs'>
+		<nav className={NAV_CLASS} data-testid='event-tabs'>
 			{SECTIONS.map((entry) => {
 				const href = eventPath(eventId, entry.section);
 				const isActive = pathname === href;
@@ -29,7 +29,7 @@ export function EventTabs({ eventId }: EventTabsProps) {
 				return (
 					<Link
 						className={cn(
-							'rounded-full px-4 py-2 text-sm font-medium transition-colors',
+							TAB_CLASS,
 							// the accent is a highlighter: too loud as a fill this size, so the active tab
 							// takes the calm ink pill and the accent stays for small emphasis
 							isActive
@@ -44,6 +44,19 @@ export function EventTabs({ eventId }: EventTabsProps) {
 					</Link>
 				);
 			})}
+		</nav>
+	);
+}
+
+// shown only on a cold load, where the id is not known yet
+export function EventTabsFallback() {
+	return (
+		<nav className={NAV_CLASS} data-testid='event-tabs-fallback'>
+			{SECTIONS.map((entry) => (
+				<span className={cn(TAB_CLASS, 'text-ink-soft/60')} key={entry.label}>
+					{entry.label}
+				</span>
+			))}
 		</nav>
 	);
 }

@@ -1,8 +1,12 @@
 import type { Metadata } from 'next';
 
+import { Suspense } from 'react';
+
 import type { Submission } from '@/lib/events/form-schema';
 
 import { InvitationPage } from '@/components/events/invitation-page';
+import { InvitationViewTracker } from '@/components/events/invitation-view-tracker';
+import { CardSkeleton, Skeleton } from '@/components/ui/skeleton';
 import { invitationRepository } from '@/lib/events/event-services';
 import { checkGuestPageLimit, submitInvitationResponse } from '@/lib/events/guest-actions';
 import { resolveResponseWindow } from '@/lib/events/response-window';
@@ -25,7 +29,19 @@ function Notice({ children }: { children: React.ReactNode }) {
 	);
 }
 
-export default async function GuestInvitationPage({ params }: InvitationPageProps) {
+// a guest opens this link cold on a phone, so the frame is on screen before the lookup returns
+function InvitationSkeleton() {
+	return (
+		<div className='min-h-dvh bg-background px-4 py-10 text-foreground' data-testid='invitation-loading'>
+			<div className='mx-auto grid w-full max-w-2xl gap-6'>
+				<Skeleton className='mx-auto h-72 w-full max-w-md rounded-3xl sm:h-80' />
+				<CardSkeleton className='h-72' />
+			</div>
+		</div>
+	);
+}
+
+async function GuestInvitation({ params }: InvitationPageProps) {
 	const { token } = await params;
 
 	if (!(await checkGuestPageLimit())) {
@@ -56,14 +72,25 @@ export default async function GuestInvitationPage({ params }: InvitationPageProp
 	}
 
 	return (
-		<InvitationPage
-			answers={view.answers}
-			closedReason={window.open ? undefined : window.reason}
-			closesAt={window.open ? window.closesAt : null}
-			event={view.event}
-			fields={view.fields}
-			guests={view.guests}
-			onSubmit={window.open ? submit : undefined}
-		/>
+		<>
+			<InvitationPage
+				answers={view.answers}
+				closedReason={window.open ? undefined : window.reason}
+				closesAt={window.open ? window.closesAt : null}
+				event={view.event}
+				fields={view.fields}
+				guests={view.guests}
+				onSubmit={window.open ? submit : undefined}
+			/>
+			<InvitationViewTracker token={token} />
+		</>
+	);
+}
+
+export default function GuestInvitationPage({ params }: InvitationPageProps) {
+	return (
+		<Suspense fallback={<InvitationSkeleton />}>
+			<GuestInvitation params={params} />
+		</Suspense>
 	);
 }
