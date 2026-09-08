@@ -1,13 +1,13 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
+import { updateTag } from 'next/cache';
 import { z } from 'zod';
 
 import type { ActionResult } from '@/lib/events/action-result';
 
-import { eventPath } from '@/config/routes';
 import { getActiveMembership } from '@/lib/auth/active-organization';
 import { accessFailure, ACTION_MESSAGES, failure, ok } from '@/lib/events/action-result';
+import { eventFormTag } from '@/lib/events/event-cache';
 import { eventAccess, eventRepository } from '@/lib/events/event-services';
 
 const CHOICE_TYPES = new Set(['checkbox', 'radio', 'select']);
@@ -76,9 +76,8 @@ async function guard(eventId: string) {
 
 // the form builder sits on the settings page and the overview counts the questions, and both read
 // the same entry
-function revalidateForm(eventId: string): void {
-	revalidatePath(eventPath(eventId, 'settings'));
-	revalidatePath(eventPath(eventId));
+function expireForm(eventId: string): void {
+	updateTag(eventFormTag(eventId));
 }
 
 export async function addFormField(eventId: string, input: z.input<typeof fieldSchema>): Promise<ActionResult> {
@@ -105,7 +104,7 @@ export async function addFormField(eventId: string, input: z.input<typeof fieldS
 		type: parsed.data.type,
 	});
 
-	revalidateForm(eventId);
+	expireForm(eventId);
 
 	return ok();
 }
@@ -137,7 +136,7 @@ export async function updateFormField(
 		type: parsed.data.type,
 	});
 
-	revalidateForm(eventId);
+	expireForm(eventId);
 
 	return ok();
 }
@@ -152,7 +151,7 @@ export async function retireFormField(eventId: string, fieldId: string): Promise
 
 	await eventRepository.retireFormField(fieldId);
 
-	revalidateForm(eventId);
+	expireForm(eventId);
 
 	return ok();
 }
@@ -166,7 +165,7 @@ export async function moveFormField(eventId: string, fieldId: string, otherField
 
 	await eventRepository.moveFormField(fieldId, otherFieldId);
 
-	revalidateForm(eventId);
+	expireForm(eventId);
 
 	return ok();
 }

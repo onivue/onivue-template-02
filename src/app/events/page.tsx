@@ -12,9 +12,8 @@ import {
 import { ResponseCounts } from '@/components/events/response-counts';
 import { Badge } from '@/components/ui/badge';
 import { eventPath } from '@/config/routes';
-import { getActiveMembership } from '@/lib/auth/active-organization';
 import { formatBerlin } from '@/lib/events/berlin-time';
-import { eventRepository } from '@/lib/events/event-services';
+import { loadEvents } from '@/lib/events/event-page-data';
 
 export const metadata = {
 	title: 'Events',
@@ -29,8 +28,7 @@ async function isArchiveView(searchParams: SearchParams): Promise<boolean> {
 
 async function EventList({ searchParams }: { searchParams: SearchParams }) {
 	const showArchived = await isArchiveView(searchParams);
-	const membership = await getActiveMembership();
-	const events = await eventRepository.listEvents(membership.organizationId, showArchived ? 'archived' : 'active');
+	const events = await loadEvents(showArchived ? 'archived' : 'active');
 
 	if (events.length === 0) {
 		return (

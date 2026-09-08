@@ -26,8 +26,10 @@ export type InvitationGuest = {
 export type InvitationEvent = {
 	decoration: null | string;
 	endsAt: Date | null;
-	// the guest page never shows it; the response action needs it to expire the host's guest list
+	// neither is ever shown to the guest; the response action needs both to expire the host's
+	// guest list and the counts on their event card
 	id: string;
+	organizationId: string;
 	greeting: null | string;
 	location: null | string;
 	locationAppleMapsUrl: null | string;
@@ -66,6 +68,7 @@ export class InvitationRepository {
 				location: event.location,
 				locationAppleMapsUrl: event.locationAppleMapsUrl,
 				locationGoogleMapsUrl: event.locationGoogleMapsUrl,
+				organizationId: event.organizationId,
 				responseDeadline: event.responseDeadline,
 				startsAt: event.startsAt,
 				title: event.title,
@@ -111,6 +114,7 @@ export class InvitationRepository {
 				location: row.location,
 				locationAppleMapsUrl: row.locationAppleMapsUrl,
 				locationGoogleMapsUrl: row.locationGoogleMapsUrl,
+				organizationId: row.organizationId,
 				responseDeadline: row.responseDeadline,
 				startsAt: row.startsAt,
 				status: row.eventStatus,

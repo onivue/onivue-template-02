@@ -1,13 +1,13 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
+import { updateTag } from 'next/cache';
 import { headers } from 'next/headers';
 import { after, connection } from 'next/server';
 
 import type { ActionResult } from '@/lib/events/action-result';
 
-import { eventPath } from '@/config/routes';
 import { ACTION_MESSAGES, failure, ok } from '@/lib/events/action-result';
+import { eventGuestsTag, eventListTag } from '@/lib/events/event-cache';
 import { guestRateLimiter, invitationRepository, responseService } from '@/lib/events/event-services';
 import { buildSubmissionSchema } from '@/lib/events/form-schema';
 import { toInvitationState } from '@/lib/events/invitation-repository';
@@ -68,8 +68,9 @@ export async function submitInvitationResponse(token: string, raw: unknown): Pro
 		return failure(result.error === 'archived' ? ACTION_MESSAGES.eventArchived : ACTION_MESSAGES.deadlinePassed);
 	}
 
-	// the host is the one waiting to see it, so their guest list expires here
-	revalidatePath(eventPath(view.event.id));
+	// the host is the one waiting to see it, so their guest list and their card expire here
+	updateTag(eventGuestsTag(view.event.id));
+	updateTag(eventListTag(view.event.organizationId));
 
 	// the guest has answered; telling the host is not their wait. after() lets the response go out
 	// first, and a mail that fails cannot turn a saved answer into an error on their screen.

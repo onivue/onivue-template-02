@@ -1,15 +1,16 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
+import { updateTag } from 'next/cache';
 import { z } from 'zod';
 
 import type { ActionResult } from '@/lib/events/action-result';
+import type { EventSummary } from '@/lib/events/event-access';
 import type { GuestListIssue } from '@/lib/events/guest-list-parser';
 
-import { APP_ROUTES, eventPath } from '@/config/routes';
 import { getActiveMembership } from '@/lib/auth/active-organization';
 import { accessFailure, ACTION_MESSAGES, failure, ok } from '@/lib/events/action-result';
 import { parseBerlinDateTime } from '@/lib/events/berlin-time';
+import { eventGuestsTag, eventListTag } from '@/lib/events/event-cache';
 import { eventAccess, eventRepository } from '@/lib/events/event-services';
 import { parseGuestList } from '@/lib/events/guest-list-parser';
 
@@ -22,9 +23,9 @@ async function guard(eventId: string) {
 }
 
 // the guest list sits on the overview page, and the same rows feed the counts on the card in the list
-function revalidateGuests(eventId: string): void {
-	revalidatePath(eventPath(eventId));
-	revalidatePath(APP_ROUTES.EVENTS);
+function expireGuests(event: EventSummary): void {
+	updateTag(eventGuestsTag(event.id));
+	updateTag(eventListTag(event.organizationId));
 }
 
 export async function addInvitations(
@@ -48,7 +49,7 @@ export async function addInvitations(
 		invitations.map((invitation) => ({ guests: invitation.guests }))
 	);
 
-	revalidateGuests(eventId);
+	expireGuests(access.data);
 
 	return ok({ created, issues });
 }
@@ -63,7 +64,7 @@ export async function setInvitationSent(eventId: string, invitationId: string, s
 
 	await eventRepository.markSent(invitationId, sent ? new Date() : null);
 
-	revalidateGuests(eventId);
+	expireGuests(access.data);
 
 	return ok();
 }
@@ -81,7 +82,7 @@ export async function rotateInvitationToken(
 
 	const token = await eventRepository.rotateToken(invitationId);
 
-	revalidateGuests(eventId);
+	expireGuests(access.data);
 
 	return ok({ token });
 }
@@ -99,7 +100,7 @@ export async function setInvitationDeadline(
 
 	await eventRepository.setInvitationDeadline(invitationId, parseBerlinDateTime(value, 'end-of-day'));
 
-	revalidateGuests(eventId);
+	expireGuests(access.data);
 
 	return ok();
 }
@@ -113,7 +114,7 @@ export async function resetInvitationViews(eventId: string, invitationId: string
 
 	await eventRepository.resetInvitationViews(invitationId);
 
-	revalidateGuests(eventId);
+	expireGuests(access.data);
 
 	return ok();
 }
@@ -127,7 +128,7 @@ export async function removeInvitation(eventId: string, invitationId: string): P
 
 	await eventRepository.deleteInvitation(invitationId);
 
-	revalidateGuests(eventId);
+	expireGuests(access.data);
 
 	return ok();
 }
@@ -152,7 +153,7 @@ export async function addGuest(eventId: string, invitationId: string, name: stri
 		lastName: rest.length > 0 ? rest.join(' ') : null,
 	});
 
-	revalidateGuests(eventId);
+	expireGuests(access.data);
 
 	return ok();
 }
@@ -174,7 +175,7 @@ export async function updateGuest(
 		...(patch.note === undefined ? {} : { note: patch.note.trim() || null }),
 	});
 
-	revalidateGuests(eventId);
+	expireGuests(access.data);
 
 	return ok();
 }
@@ -189,7 +190,7 @@ export async function removeGuest(eventId: string, guestId: string): Promise<Act
 
 	await eventRepository.deleteGuest(guestId);
 
-	revalidateGuests(eventId);
+	expireGuests(access.data);
 
 	return ok();
 }
