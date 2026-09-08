@@ -1,13 +1,13 @@
 'use server';
 
-import { updateTag } from 'next/cache';
+import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
 import { connection } from 'next/server';
 
 import type { ActionResult } from '@/lib/events/action-result';
 
+import { eventPath } from '@/config/routes';
 import { ACTION_MESSAGES, failure, ok } from '@/lib/events/action-result';
-import { eventInvitationsTag } from '@/lib/events/event-cache';
 import { guestRateLimiter, invitationRepository, responseService } from '@/lib/events/event-services';
 import { buildSubmissionSchema } from '@/lib/events/form-schema';
 import { toInvitationState } from '@/lib/events/invitation-repository';
@@ -68,7 +68,7 @@ export async function submitInvitationResponse(token: string, raw: unknown): Pro
 	}
 
 	// the host is the one waiting to see it, so their guest list expires here
-	updateTag(eventInvitationsTag(view.event.id));
+	revalidatePath(eventPath(view.event.id));
 
 	return ok();
 }

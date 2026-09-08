@@ -48,7 +48,7 @@ async function EventFacts({ params }: { params: Params }) {
 				<Button
 					data-testid='edit-event-details'
 					nativeButton={false}
-					render={<Link href={eventPath(event.id, 'settings')} prefetch />}
+					render={<Link href={eventPath(event.id, 'settings')} />}
 					size='sm'
 					variant='ghost'
 				>

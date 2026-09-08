@@ -1,12 +1,9 @@
-import { revalidateTag } from 'next/cache';
-
 import type { Membership } from '@/lib/auth/personal-organization';
 import type { EventPatch } from '@/lib/events/event-repository';
 
 import { db } from '@/db/client';
 import { DrizzleOrganizationStore } from '@/lib/auth/drizzle-organization-store';
 import { ensurePersonalOrganization } from '@/lib/auth/personal-organization';
-import { eventInvitationsTag, eventListTag, eventTag } from '@/lib/events/event-cache';
 import { eventAccess, eventRepository } from '@/lib/events/event-services';
 import { parseGuestList } from '@/lib/events/guest-list-parser';
 
@@ -25,13 +22,6 @@ const MESSAGES = {
 
 function failed<T>(error: string): McpEventResult<T> {
 	return { error, success: false };
-}
-
-// updateTag is server-actions only, and an agent writes from a route handler
-function expire(...tags: string[]): void {
-	for (const tag of tags) {
-		revalidateTag(tag, 'max');
-	}
 }
 
 export type McpEventSummary = {
@@ -145,8 +135,6 @@ export class McpEventService {
 			title,
 		});
 
-		expire(eventListTag(membership.organizationId));
-
 		return { data: { eventId }, success: true };
 	}
 
@@ -163,8 +151,6 @@ export class McpEventService {
 		}
 
 		await eventRepository.updateEvent(eventId, patch);
-
-		expire(eventTag(eventId), eventListTag(membership.organizationId));
 
 		return { data: { eventId }, success: true };
 	}
@@ -192,8 +178,6 @@ export class McpEventService {
 			invitations.map((invitation) => ({ guests: invitation.guests }))
 		);
 
-		expire(eventInvitationsTag(eventId), eventListTag(membership.organizationId));
-
 		return { data: { created }, success: true };
 	}
 
@@ -211,8 +195,6 @@ export class McpEventService {
 		}
 
 		await eventRepository.markSent(invitationId, sent ? new Date() : null);
-
-		expire(eventInvitationsTag(eventId), eventListTag(membership.organizationId));
 
 		return { data: { invitationId }, success: true };
 	}

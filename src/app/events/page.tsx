@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { eventPath } from '@/config/routes';
 import { getActiveMembership } from '@/lib/auth/active-organization';
 import { formatBerlin } from '@/lib/events/berlin-time';
-import { getEventList } from '@/lib/events/event-cache';
+import { eventRepository } from '@/lib/events/event-services';
 
 export const metadata = {
 	title: 'Events',
@@ -30,7 +30,7 @@ async function isArchiveView(searchParams: SearchParams): Promise<boolean> {
 async function EventList({ searchParams }: { searchParams: SearchParams }) {
 	const showArchived = await isArchiveView(searchParams);
 	const membership = await getActiveMembership();
-	const events = await getEventList(membership.organizationId, showArchived ? 'archived' : 'active');
+	const events = await eventRepository.listEvents(membership.organizationId, showArchived ? 'archived' : 'active');
 
 	if (events.length === 0) {
 		return (
@@ -50,7 +50,6 @@ async function EventList({ searchParams }: { searchParams: SearchParams }) {
 						className='design-panel grid content-start gap-3 p-5 transition-colors hover:bg-muted/50'
 						data-testid={`event-card-${item.id}`}
 						href={eventPath(item.id)}
-						prefetch
 					>
 						<div className='flex items-start justify-between gap-2'>
 							<h2 className='text-lg leading-tight font-bold text-balance'>{item.title}</h2>

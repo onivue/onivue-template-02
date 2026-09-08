@@ -6,7 +6,7 @@ import type { Membership } from '@/lib/auth/personal-organization';
 import type { EventRecord, FormFieldRecord, InvitationRecord } from '@/lib/events/event-repository';
 
 import { getActiveMembership } from '@/lib/auth/active-organization';
-import { getEvent, getEventFormFields, getEventInvitations } from '@/lib/events/event-cache';
+import { eventRepository } from '@/lib/events/event-services';
 
 export type EventPageData = {
 	event: EventRecord;
@@ -17,7 +17,7 @@ export type EventPageData = {
 // they share. the guard is the query: getEvent is org-scoped, so someone else's event reads as null.
 export const loadEvent = cache(async (eventId: string): Promise<EventPageData> => {
 	const membership = await getActiveMembership();
-	const event = await getEvent(eventId, membership.organizationId);
+	const event = await eventRepository.findEvent(eventId, membership.organizationId);
 
 	if (!event) {
 		notFound();
@@ -31,11 +31,11 @@ export const loadEvent = cache(async (eventId: string): Promise<EventPageData> =
 export const loadEventInvitations = cache(async (eventId: string): Promise<InvitationRecord[]> => {
 	const { event } = await loadEvent(eventId);
 
-	return await getEventInvitations(event.id);
+	return await eventRepository.listInvitations(event.id);
 });
 
 export const loadEventFormFields = cache(async (eventId: string): Promise<FormFieldRecord[]> => {
 	const { event } = await loadEvent(eventId);
 
-	return await getEventFormFields(event.id);
+	return await eventRepository.listFormFields(event.id);
 });

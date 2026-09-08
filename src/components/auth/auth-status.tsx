@@ -1,5 +1,3 @@
-import { cacheLife } from 'next/cache';
-
 import { AuthStatusMenu, type AuthStatusPlacement } from '@/components/auth/auth-status-menu';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getViewer } from '@/lib/auth/viewer';
@@ -9,13 +7,10 @@ type AuthStatusProps = {
 	placement: AuthStatusPlacement;
 };
 
-// cached in this browser only, never on the server — that is what lets the account row ride along
-// with the prefetched shell instead of arriving after the navigation.
+// plain and uncached on purpose. in a cache scope headers() resolves while the shell is being
+// prerendered, so the session query starts and is then aborted — and a viewer that failed to load
+// reads as signed out, which sends the reader to the login page they just came from.
 export async function AuthStatus({ placement }: AuthStatusProps) {
-	'use cache: private';
-	// five minutes of stale is the threshold for joining the shell
-	cacheLife({ stale: 300, revalidate: 60, expire: 3600 });
-
 	const viewer = await getViewer();
 
 	return <AuthStatusMenu placement={placement} user={viewer} />;

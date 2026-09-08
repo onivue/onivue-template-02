@@ -1,13 +1,13 @@
 'use server';
 
-import { updateTag } from 'next/cache';
+import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
 import type { ActionResult } from '@/lib/events/action-result';
 
+import { eventPath } from '@/config/routes';
 import { getActiveMembership } from '@/lib/auth/active-organization';
 import { accessFailure, ACTION_MESSAGES, failure, ok } from '@/lib/events/action-result';
-import { eventFieldsTag } from '@/lib/events/event-cache';
 import { eventAccess, eventRepository } from '@/lib/events/event-services';
 
 const CHOICE_TYPES = new Set(['checkbox', 'radio', 'select']);
@@ -77,7 +77,8 @@ async function guard(eventId: string) {
 // the form builder sits on the settings page and the overview counts the questions, and both read
 // the same entry
 function revalidateForm(eventId: string): void {
-	updateTag(eventFieldsTag(eventId));
+	revalidatePath(eventPath(eventId, 'settings'));
+	revalidatePath(eventPath(eventId));
 }
 
 export async function addFormField(eventId: string, input: z.input<typeof fieldSchema>): Promise<ActionResult> {

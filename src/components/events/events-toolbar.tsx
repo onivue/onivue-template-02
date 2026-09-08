@@ -26,7 +26,6 @@ function Toolbar({ showArchived }: { showArchived: boolean }) {
 					className={cn('rounded-full px-4 py-2 transition-colors', showArchived ? IDLE_CLASS : ACTIVE_CLASS)}
 					data-testid='filter-active'
 					href={APP_ROUTES.EVENTS}
-					prefetch
 				>
 					Aktiv
 				</Link>
@@ -34,7 +33,6 @@ function Toolbar({ showArchived }: { showArchived: boolean }) {
 					className={cn('rounded-full px-4 py-2 transition-colors', showArchived ? ACTIVE_CLASS : IDLE_CLASS)}
 					data-testid='filter-archived'
 					href={ARCHIVE_HREF}
-					prefetch
 				>
 					Archiv
 				</Link>

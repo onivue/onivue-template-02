@@ -95,6 +95,16 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 - **Server State:** Read it in Server Components and write it through Server Actions. TanStack Query is for
   client-side fetching only — do not add it where there is none. Keep it separate from client state.
+- **Never cache request-scoped reads.** Nothing behind the session — the viewer, their organization, and
+  every query keyed by it — may sit inside `use cache` or `use cache: private`. Inside a cache scope
+  `headers()` resolves while the shell is being prerendered, so the query starts and is then cut off
+  when the prerender completes: the reader is left on a skeleton, and a viewer that failed to load
+  reads as signed out and is sent to the login page they just came from. Such reads belong in a plain
+  async component behind `<Suspense>`; `React.cache` is the right tool for de-duplicating them within
+  one request. `use cache` is for data keyed by something the request does not decide.
+- **`partialPrefetching` stays off** for the same reason: it prerenders each route again per link with
+  cookies resolved, which is exactly the situation above. Neither `next build` nor the dev server
+  surfaces this — it only appears in production logs.
 - **Cancellation:** Use `AbortController` to handle async cancellations and race conditions.
 - **Client State:** Use Zustand v5+ for complex local state.
 - **Forms:** Use React Hook Form + Zod resolvers.

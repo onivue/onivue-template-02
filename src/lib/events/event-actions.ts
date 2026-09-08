@@ -1,16 +1,16 @@
 'use server';
 
-import { updateTag } from 'next/cache';
+import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
 import type { ActionResult } from '@/lib/events/action-result';
 import type { EventPatch } from '@/lib/events/event-repository';
 
+import { APP_ROUTES, eventPath } from '@/config/routes';
 import { getActiveMembership } from '@/lib/auth/active-organization';
 import { requireViewer } from '@/lib/auth/viewer';
 import { accessFailure, ACTION_MESSAGES, failure, ok } from '@/lib/events/action-result';
 import { parseBerlinDateTime } from '@/lib/events/berlin-time';
-import { eventListTag, eventTag } from '@/lib/events/event-cache';
 import { isDecorationKey } from '@/lib/events/event-decoration';
 import { eventAccess, eventRepository } from '@/lib/events/event-services';
 
@@ -61,7 +61,7 @@ export async function createEvent(input: { title: string }): Promise<ActionResul
 		title: parsed.data,
 	});
 
-	updateTag(eventListTag(membership.organizationId));
+	revalidatePath(APP_ROUTES.EVENTS);
 
 	return ok({ eventId });
 }
@@ -95,8 +95,9 @@ export async function updateEventDetails(eventId: string, input: z.input<typeof 
 	await eventRepository.updateEvent(eventId, patch);
 
 	// the title and date show on the card too, so the list goes with it
-	updateTag(eventTag(eventId));
-	updateTag(eventListTag(membership.organizationId));
+	revalidatePath(eventPath(eventId, 'settings'));
+	revalidatePath(eventPath(eventId));
+	revalidatePath(APP_ROUTES.EVENTS);
 
 	return ok();
 }
@@ -113,8 +114,8 @@ export async function setEventStatus(eventId: string, status: 'active' | 'archiv
 
 	await eventRepository.setEventStatus(eventId, status);
 
-	updateTag(eventTag(eventId));
-	updateTag(eventListTag(membership.organizationId));
+	revalidatePath(eventPath(eventId));
+	revalidatePath(APP_ROUTES.EVENTS);
 
 	return ok();
 }
@@ -134,8 +135,7 @@ export async function deleteEvent(eventId: string, confirmation: string): Promis
 
 	await eventRepository.deleteEvent(eventId);
 
-	updateTag(eventTag(eventId));
-	updateTag(eventListTag(membership.organizationId));
+	revalidatePath(APP_ROUTES.EVENTS);
 
 	return ok();
 }
