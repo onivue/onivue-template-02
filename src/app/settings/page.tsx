@@ -2,7 +2,7 @@ import { Layout } from '@/components/layout/layout';
 import { PagePlaceholder } from '@/components/layout/page-placeholder';
 
 export const metadata = {
-	title: 'Settings | onivue',
+	title: 'Settings',
 	description: 'Einstellungen der App.',
 };
 

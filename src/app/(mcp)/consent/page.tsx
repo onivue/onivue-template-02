@@ -8,7 +8,7 @@ import { findOAuthClient } from '@/lib/mcp/mcp-client-lookup';
 import { parseScopes } from '@/lib/mcp/mcp-scopes';
 
 export const metadata = {
-	title: 'Zugriff bestätigen | onivue',
+	title: 'Zugriff bestätigen',
 	description: 'Bestätige, worauf ein verbundener Client zugreifen darf.',
 };
 

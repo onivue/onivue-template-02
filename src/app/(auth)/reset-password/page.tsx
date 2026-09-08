@@ -4,7 +4,7 @@ import { AuthCard } from '@/components/auth/auth-card';
 import { ResetPasswordForm } from '@/components/auth/reset-password-form';
 
 export const metadata = {
-	title: 'Passwort zurücksetzen | onivue',
+	title: 'Passwort zurücksetzen',
 	description: 'Lege ein neues Passwort für dein Konto fest.',
 };
 

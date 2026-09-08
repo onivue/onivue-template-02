@@ -14,7 +14,7 @@ const LANDING_FEATURES = [
 ] as const;
 
 export const metadata = {
-	title: 'Landing | onivue',
+	title: 'Landing',
 	description: 'A focused landing page for the onivue template.',
 };
 

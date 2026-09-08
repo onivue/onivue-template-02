@@ -5,7 +5,7 @@ import { ForgotPasswordForm } from '@/components/auth/forgot-password-form';
 import { APP_ROUTES } from '@/config/routes';
 
 export const metadata = {
-	title: 'Passwort vergessen | onivue',
+	title: 'Passwort vergessen',
 	description: 'Fordere einen Link zum Zurücksetzen deines Passworts an.',
 };
 

@@ -106,8 +106,24 @@ export function matchesRoute(pathname: string, path: string): boolean {
 	return pathname === path || pathname.startsWith(`${path}${PATH_SEPARATOR}`);
 }
 
+// next serves its metadata files as ordinary routes. they hold nothing session-specific, and a
+// messenger asking for the preview image must not be answered with a redirect to the login page —
+// so they are named here rather than left to the deny-by-default rule below.
+const PUBLIC_METADATA_FILES = new Set(['apple-icon', 'icon', 'opengraph-image', 'twitter-image']);
+
+export function isPublicMetadataFile(pathname: string): boolean {
+	const segment = pathname.split(PATH_SEPARATOR).pop() ?? '';
+
+	// generateImageMetadata numbers its output, e.g. /opengraph-image/2
+	return PUBLIC_METADATA_FILES.has(segment.replace(/-\d+$/, ''));
+}
+
 // unknown paths are treated as viewer-only, keeping the proxy deny-by-default
 export function getAccessFor(pathname: string): RouteAccess {
+	if (isPublicMetadataFile(pathname)) {
+		return 'public';
+	}
+
 	const route = Object.values(ROUTES).find((candidate) => matchesRoute(pathname, candidate.path));
 
 	return route?.access ?? 'viewer';

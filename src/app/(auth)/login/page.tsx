@@ -6,7 +6,7 @@ import { LoginForm } from '@/components/auth/login-form';
 import { APP_ROUTES } from '@/config/routes';
 
 export const metadata = {
-	title: 'Login | onivue',
+	title: 'Login',
 	description: 'Mit Passkey, Passwort oder Magic Link anmelden.',
 };
 

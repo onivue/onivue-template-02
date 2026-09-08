@@ -11,7 +11,7 @@ import { drizzleAccountGateway } from '@/lib/account/drizzle-account-gateway';
 import { requireViewer } from '@/lib/auth/viewer';
 
 export const metadata = {
-	title: 'Account | onivue',
+	title: 'Account',
 	description: 'Profil, Passkeys und E-Mail-Adresse verwalten.',
 };
 

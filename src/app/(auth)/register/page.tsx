@@ -5,7 +5,7 @@ import { RegisterForm } from '@/components/auth/register-form';
 import { APP_ROUTES } from '@/config/routes';
 
 export const metadata = {
-	title: 'Registrieren | onivue',
+	title: 'Registrieren',
 	description: 'Konto mit Passwort oder per E-Mail-Link erstellen.',
 };
 

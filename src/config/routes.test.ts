@@ -68,3 +68,19 @@ describe('navigation routes', () => {
 		}
 	});
 });
+
+describe('metadata files', () => {
+	test('a preview image is reachable without a session, wherever it sits', () => {
+		expect(getAccessFor('/opengraph-image')).toBe('public');
+		expect(getAccessFor('/twitter-image')).toBe('public');
+		expect(getAccessFor('/icon')).toBe('public');
+		expect(getAccessFor('/apple-icon')).toBe('public');
+		// generateImageMetadata numbers its output
+		expect(getAccessFor('/opengraph-image-2')).toBe('public');
+	});
+
+	test('a route that merely ends in something similar stays behind the session', () => {
+		expect(getAccessFor('/events/my-opengraph-image-editor')).toBe('viewer');
+		expect(getAccessFor('/opengraph-images')).toBe('viewer');
+	});
+});

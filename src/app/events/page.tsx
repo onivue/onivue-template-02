@@ -17,7 +17,7 @@ import { formatBerlin } from '@/lib/events/berlin-time';
 import { getEventList } from '@/lib/events/event-cache';
 
 export const metadata = {
-	title: 'Events | onivue',
+	title: 'Events',
 	description: 'Events anlegen und Einladungen verwalten.',
 };
 
