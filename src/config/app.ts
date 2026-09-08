@@ -6,7 +6,7 @@ export const APP_CONFIG = {
 	},
 	auth: {
 		magicLinkExpiresInSeconds: 900,
-		passkeyRpName: 'onivue',
+		passkeyRpName: 'event.onivue',
 		resetPasswordExpiresInSeconds: 1800,
 	},
 } as const;
