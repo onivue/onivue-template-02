@@ -17,7 +17,7 @@ import { db } from '@/db/client';
 import * as schema from '@/db/schema';
 import { DrizzleOrganizationStore } from '@/lib/auth/drizzle-organization-store';
 import { ensurePersonalOrganization } from '@/lib/auth/personal-organization';
-import { createResendTransport, ResendGateway } from '@/lib/email/resend-gateway';
+import { emailGateway } from '@/lib/email/email-services';
 import { getMcpEndpointUrl } from '@/lib/mcp/mcp-config';
 import { MCP_SCOPES } from '@/lib/mcp/mcp-scopes';
 import { profanityFilter } from '@/lib/profile/profanity-filter';
@@ -34,11 +34,6 @@ import {
 
 // the one wiring point where config meets the transport
 const organizationStore = new DrizzleOrganizationStore(db);
-
-const emailGateway = new ResendGateway({
-	from: SERVER_CONFIG.mail.from,
-	transport: createResendTransport(SERVER_CONFIG.mail.resendApiKey),
-});
 
 async function sendAuthEmail(message: AuthEmail): Promise<void> {
 	const result = await emailGateway.send(message);

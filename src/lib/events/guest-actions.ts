@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
-import { connection } from 'next/server';
+import { after, connection } from 'next/server';
 
 import type { ActionResult } from '@/lib/events/action-result';
 
@@ -12,6 +12,7 @@ import { guestRateLimiter, invitationRepository, responseService } from '@/lib/e
 import { buildSubmissionSchema } from '@/lib/events/form-schema';
 import { toInvitationState } from '@/lib/events/invitation-repository';
 import { GUEST_RATE_LIMITS, guestRateLimitKey } from '@/lib/events/rate-limiter';
+import { notifyHostOfResponse } from '@/lib/events/response-notification';
 
 const UNKNOWN_CLIENT = 'unknown';
 
@@ -69,6 +70,19 @@ export async function submitInvitationResponse(token: string, raw: unknown): Pro
 
 	// the host is the one waiting to see it, so their guest list expires here
 	revalidatePath(eventPath(view.event.id));
+
+	// the guest has answered; telling the host is not their wait. after() lets the response go out
+	// first, and a mail that fails cannot turn a saved answer into an error on their screen.
+	if (result.changed) {
+		after(async () => {
+			await notifyHostOfResponse({
+				eventId: view.event.id,
+				fields: view.fields,
+				guests: view.guests,
+				submission: parsed.data,
+			});
+		});
+	}
 
 	return ok();
 }

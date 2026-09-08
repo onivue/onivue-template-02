@@ -7,6 +7,7 @@ import type { EventRecord } from '@/lib/events/event-repository';
 
 import { EventDecoration } from '@/components/events/event-decoration';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { DateTimePicker } from '@/components/ui/date-time-picker';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -35,6 +36,8 @@ export function EventDetailsForm({ event }: EventDetailsFormProps) {
 		location: event.location ?? '',
 		locationAppleMapsUrl: event.locationAppleMapsUrl ?? '',
 		locationGoogleMapsUrl: event.locationGoogleMapsUrl ?? '',
+		notificationEmail: event.notificationEmail ?? '',
+		notifyOnResponse: event.notifyOnResponse,
 		responseDeadline: toBerlinInputValue(event.responseDeadline, 'end-of-day'),
 		startsAt: toBerlinInputValue(event.startsAt),
 		title: event.title,
@@ -185,6 +188,30 @@ Hauptstraße 1
 				<span className='text-xs text-ink-soft'>
 					Alle Zeiten gelten in deutscher Zeit. Einzelne Einladungen können bei den Gästen eine spätere Frist
 					bekommen.
+				</span>
+			</div>
+
+			<div className='design-field'>
+				<span className='design-label'>Benachrichtigungen</span>
+				<label className='flex items-center gap-2 text-sm'>
+					<Checkbox
+						checked={details.notifyOnResponse}
+						data-testid='settings-notify-on-response'
+						onCheckedChange={(checked) => setDetails({ ...details, notifyOnResponse: Boolean(checked) })}
+					/>
+					E-Mail erhalten, wenn jemand antwortet oder seine Antwort ändert
+				</label>
+				<Input
+					data-testid='settings-notification-email'
+					disabled={!details.notifyOnResponse}
+					onChange={(nativeEvent) => setDetails({ ...details, notificationEmail: nativeEvent.target.value })}
+					placeholder='deine@adresse.ch'
+					type='email'
+					value={details.notificationEmail}
+				/>
+				<span className='text-xs text-ink-soft'>
+					Du bekommst pro Einladung eine Mail mit den Namen und allem, was ausgefüllt wurde. Die Adresse sehen
+					deine Gäste nie.
 				</span>
 			</div>
 

@@ -1,6 +1,6 @@
 import { Resend } from 'resend';
 
-import { renderAuthEmail, type AuthEmail, type EmailGateway, type EmailResult } from '@/lib/email/email-gateway';
+import { renderEmail, type EmailGateway, type EmailResult, type OutgoingEmail } from '@/lib/email/email-gateway';
 
 type ResendTransport = {
 	emails: {
@@ -29,8 +29,8 @@ export class ResendGateway implements EmailGateway {
 		this.transport = transport;
 	}
 
-	public async send(message: AuthEmail): Promise<EmailResult> {
-		const { html, subject, text } = await renderAuthEmail(message);
+	public async send(message: OutgoingEmail): Promise<EmailResult> {
+		const { html, subject, text } = await renderEmail(message);
 
 		try {
 			const { error } = await this.transport.emails.send({

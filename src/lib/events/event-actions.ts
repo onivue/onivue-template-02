@@ -24,21 +24,37 @@ const mapsUrlSchema = z
 	.refine((value) => value === '' || /^https:\/\//i.test(value), 'Der Link muss mit https:// beginnen.')
 	.optional();
 
-const detailsSchema = z.object({
-	// '' is "no ornament"; anything else has to be one the app actually knows how to draw
-	decoration: z
-		.string()
-		.refine((value) => value === '' || isDecorationKey(value), 'Dieses 3D-Element gibt es nicht.')
-		.optional(),
-	endsAt: z.string().optional(),
-	greeting: z.string().max(2000).optional(),
-	location: z.string().max(500).optional(),
-	locationAppleMapsUrl: mapsUrlSchema,
-	locationGoogleMapsUrl: mapsUrlSchema,
-	responseDeadline: z.string().optional(),
-	startsAt: z.string().optional(),
-	title: titleSchema,
-});
+const detailsSchema = z
+	.object({
+		// '' is "no ornament"; anything else has to be one the app actually knows how to draw
+		decoration: z
+			.string()
+			.refine((value) => value === '' || isDecorationKey(value), 'Dieses 3D-Element gibt es nicht.')
+			.optional(),
+		endsAt: z.string().optional(),
+		greeting: z.string().max(2000).optional(),
+		location: z.string().max(500).optional(),
+		locationAppleMapsUrl: mapsUrlSchema,
+		locationGoogleMapsUrl: mapsUrlSchema,
+		notificationEmail: z
+			.string()
+			.trim()
+			.max(200)
+			.refine(
+				(value) => value === '' || z.email().safeParse(value).success,
+				'Das ist keine gültige E-Mail-Adresse.'
+			)
+			.optional(),
+		notifyOnResponse: z.boolean().optional(),
+		responseDeadline: z.string().optional(),
+		startsAt: z.string().optional(),
+		title: titleSchema,
+	})
+	// a switch that is on with nowhere to send to would fail silently every time someone answers
+	.refine((details) => !details.notifyOnResponse || !!details.notificationEmail?.trim(), {
+		message: 'Für Benachrichtigungen braucht es eine E-Mail-Adresse.',
+		path: ['notificationEmail'],
+	});
 
 function emptyToNull(value: string | undefined): null | string {
 	const trimmed = value?.trim();
@@ -87,6 +103,8 @@ export async function updateEventDetails(eventId: string, input: z.input<typeof 
 		location: emptyToNull(parsed.data.location),
 		locationAppleMapsUrl: emptyToNull(parsed.data.locationAppleMapsUrl),
 		locationGoogleMapsUrl: emptyToNull(parsed.data.locationGoogleMapsUrl),
+		notificationEmail: emptyToNull(parsed.data.notificationEmail),
+		notifyOnResponse: parsed.data.notifyOnResponse ?? false,
 		responseDeadline: parseBerlinDateTime(parsed.data.responseDeadline, 'end-of-day'),
 		startsAt: parseBerlinDateTime(parsed.data.startsAt),
 		title: parsed.data.title,

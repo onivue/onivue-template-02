@@ -454,6 +454,10 @@ export const event = pgTable(
 		// event-decoration.ts can grow without a migration
 		decoration: text('decoration'),
 		status: eventStatus('status').notNull().default('active'),
+		// where a response notification goes. it is the host's own address and belongs to the admin
+		// surface only — the guest page must never carry it.
+		notificationEmail: text('notification_email'),
+		notifyOnResponse: boolean('notify_on_response').notNull().default(false),
 		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 		updatedAt: timestamp('updated_at', { withTimezone: true })
 			.notNull()

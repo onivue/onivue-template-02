@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 
-import { renderAuthEmail } from '@/lib/email/email-gateway';
+import { renderEmail } from '@/lib/email/email-gateway';
 import { InMemoryEmailGateway } from '@/lib/email/in-memory-gateway';
 import { ResendGateway } from '@/lib/email/resend-gateway';
 
@@ -8,7 +8,7 @@ const MAGIC_LINK_URL = 'https://onivue.app/api/auth/magic-link/verify?token=abc1
 
 describe('rendering by message kind', () => {
 	test('a magic link renders its own subject and preview', async () => {
-		const rendered = await renderAuthEmail({ kind: 'magic-link', to: 'du@example.com', url: MAGIC_LINK_URL });
+		const rendered = await renderEmail({ kind: 'magic-link', to: 'du@example.com', url: MAGIC_LINK_URL });
 
 		expect(rendered.subject).toBe('Dein Login-Link für onivue');
 		expect(rendered.text).toContain(MAGIC_LINK_URL);
@@ -16,13 +16,13 @@ describe('rendering by message kind', () => {
 	});
 
 	test('an email change renders a different subject', async () => {
-		const rendered = await renderAuthEmail({ kind: 'email-change', to: 'du@example.com', url: MAGIC_LINK_URL });
+		const rendered = await renderEmail({ kind: 'email-change', to: 'du@example.com', url: MAGIC_LINK_URL });
 
 		expect(rendered.subject).toBe('E-Mail-Adresse für onivue ändern');
 	});
 
 	test('the url is escaped before it reaches the href', async () => {
-		const rendered = await renderAuthEmail({
+		const rendered = await renderEmail({
 			kind: 'magic-link',
 			to: 'du@example.com',
 			url: 'https://onivue.app/verify?a=1&b="><script>alert(1)</script>',
@@ -105,5 +105,49 @@ describe('the resend adapter maps transport outcomes', () => {
 		const result = await gateway.send({ kind: 'magic-link', to: 'du@example.com', url: MAGIC_LINK_URL });
 
 		expect(result).toEqual({ success: false, error: { message: 'connection reset' } });
+	});
+});
+
+describe('the response notification', () => {
+	const message = {
+		answers: [{ label: 'Anreise', value: 'Mit dem Zug' }],
+		eventTitle: 'Hochzeit von Anna und Ben',
+		eventUrl: 'https://onivue.app/events/ev-1',
+		guests: [
+			{
+				answers: [{ label: 'Menüwunsch', value: 'Vegetarisch' }],
+				name: 'Robin Meier',
+				status: 'accepted' as const,
+			},
+			{ answers: [], name: 'Hannah', status: 'declined' as const },
+		],
+		invitationLabel: 'Robin Meier & Hannah',
+		kind: 'event-response' as const,
+		to: 'host@example.com',
+	};
+
+	test('the subject names who answered and which event it was', async () => {
+		const rendered = await renderEmail(message);
+
+		expect(rendered.subject).toBe('Robin Meier & Hannah hat geantwortet — Hochzeit von Anna und Ben');
+	});
+
+	test('every name, verdict and written answer reaches the plain-text part too', async () => {
+		const { text } = await renderEmail(message);
+
+		expect(text).toContain('Robin Meier');
+		expect(text).toContain('Zugesagt');
+		expect(text).toContain('Hannah');
+		expect(text).toContain('Abgesagt');
+		expect(text).toContain('Menüwunsch');
+		expect(text).toContain('Vegetarisch');
+		expect(text).toContain('Anreise');
+		expect(text).toContain('Mit dem Zug');
+	});
+
+	test('the host can get from the mail to the guest list', async () => {
+		const { html } = await renderEmail(message);
+
+		expect(html).toContain('https://onivue.app/events/ev-1');
 	});
 });

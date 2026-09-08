@@ -57,6 +57,8 @@ export type EventPatch = Partial<
 		| 'location'
 		| 'locationAppleMapsUrl'
 		| 'locationGoogleMapsUrl'
+		| 'notificationEmail'
+		| 'notifyOnResponse'
 		| 'responseDeadline'
 		| 'startsAt'
 		| 'title'
@@ -152,6 +154,26 @@ export class EventRepository {
 			.limit(1);
 
 		return row ?? null;
+	}
+
+	// deliberately not part of the invitation view: that shape reaches the guest page, and the host's
+	// address has no business there
+	public async findNotificationTarget(eventId: string): Promise<null | { email: string; title: string }> {
+		const [row] = await this.database
+			.select({
+				email: event.notificationEmail,
+				enabled: event.notifyOnResponse,
+				title: event.title,
+			})
+			.from(event)
+			.where(eq(event.id, eventId))
+			.limit(1);
+
+		if (!row?.enabled || !row.email) {
+			return null;
+		}
+
+		return { email: row.email, title: row.title };
 	}
 
 	public async createEvent(draft: EventDraft): Promise<string> {

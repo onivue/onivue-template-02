@@ -2,7 +2,7 @@
 
 export const APP_CONFIG = {
 	app: {
-		name: 'onivue',
+		name: 'event.onivue',
 	},
 	auth: {
 		magicLinkExpiresInSeconds: 900,

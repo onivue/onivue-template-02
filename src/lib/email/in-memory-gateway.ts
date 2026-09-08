@@ -1,4 +1,4 @@
-import type { AuthEmail, EmailGateway, EmailResult } from '@/lib/email/email-gateway';
+import type { EmailGateway, EmailResult, OutgoingEmail } from '@/lib/email/email-gateway';
 
 type InMemoryGatewayOptions = {
 	failWith?: string;
@@ -6,7 +6,7 @@ type InMemoryGatewayOptions = {
 
 // the second adapter: makes the seam real, and gives tests an inbox to assert against
 export class InMemoryEmailGateway implements EmailGateway {
-	public readonly inbox: AuthEmail[] = [];
+	public readonly inbox: OutgoingEmail[] = [];
 
 	private readonly failWith?: string;
 
@@ -14,7 +14,7 @@ export class InMemoryEmailGateway implements EmailGateway {
 		this.failWith = failWith;
 	}
 
-	public async send(message: AuthEmail): Promise<EmailResult> {
+	public async send(message: OutgoingEmail): Promise<EmailResult> {
 		if (this.failWith) {
 			return { success: false, error: { message: this.failWith } };
 		}
@@ -24,7 +24,7 @@ export class InMemoryEmailGateway implements EmailGateway {
 		return { success: true };
 	}
 
-	public lastMessage(): AuthEmail | undefined {
+	public lastMessage(): OutgoingEmail | undefined {
 		return this.inbox.at(-1);
 	}
 }
