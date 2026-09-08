@@ -20,7 +20,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { invitationPath } from '@/config/routes';
 import { formatBerlinShort } from '@/lib/events/berlin-time';
-import { setInvitationSent } from '@/lib/events/invitation-actions';
+import { removeGuest, removeInvitation, setInvitationSent } from '@/lib/events/invitation-actions';
 import { cn } from '@/lib/utils';
 
 type GuestTableProps = {
@@ -28,10 +28,10 @@ type GuestTableProps = {
 	invitations: InvitationRecord[];
 };
 
-type SentPatch = {
-	invitationId: string;
-	sentAt: Date | null;
-};
+type GuestListPatch =
+	| { guestId: string; kind: 'guest-removed' }
+	| { invitationId: string; kind: 'invitation-removed' }
+	| { invitationId: string; kind: 'sent'; sentAt: Date | null };
 
 // status lives in the colour of the name itself: at fifty guests, a badge next to every name is
 // noise, and the name is what the host is scanning for
@@ -116,9 +116,20 @@ function FilterPills<T extends string>({
 	);
 }
 
-// bookkeeping, not a decision: the mark flips at once and the server catches up. a failed write is
-// dropped by react and explained by the toast.
-function applySentAt(invitations: InvitationRecord[], patch: SentPatch): InvitationRecord[] {
+// the host has already decided by the time they confirm, so the list changes at once and the server
+// catches up. a failed write is dropped by react and explained by the toast.
+function applyPatch(invitations: InvitationRecord[], patch: GuestListPatch): InvitationRecord[] {
+	if (patch.kind === 'invitation-removed') {
+		return invitations.filter((invitation) => invitation.id !== patch.invitationId);
+	}
+
+	if (patch.kind === 'guest-removed') {
+		return invitations.map((invitation) => ({
+			...invitation,
+			guests: invitation.guests.filter((guest) => guest.id !== patch.guestId),
+		}));
+	}
+
 	return invitations.map((invitation) =>
 		invitation.id === patch.invitationId ? { ...invitation, sentAt: patch.sentAt } : invitation
 	);
@@ -147,19 +158,37 @@ function InvitationViews({ count, lastViewedAt }: { count: number; lastViewedAt:
 export function GuestTable({ eventId, invitations }: GuestTableProps) {
 	const [filter, setFilter] = useState<GuestFilter>(EMPTY_FILTER);
 	const [expanded, setExpanded] = useState<null | string>(null);
-	const [optimistic, markSent] = useOptimistic(invitations, applySentAt);
+	const [optimistic, patchList] = useOptimistic(invitations, applyPatch);
 
 	const visible = filterInvitations(optimistic, filter);
 	const unsentCount = optimistic.filter((invitation) => !invitation.sentAt).length;
 
 	const toggleSent = (invitationId: string, sent: boolean) => {
 		startTransition(async () => {
-			markSent({ invitationId, sentAt: sent ? new Date() : null });
+			patchList({ invitationId, kind: 'sent', sentAt: sent ? new Date() : null });
 
 			await report(
 				setInvitationSent(eventId, invitationId, sent),
 				sent ? 'Als versendet markiert.' : 'Als offen markiert.'
 			);
+		});
+	};
+
+	const deleteInvitation = (invitationId: string) => {
+		setExpanded(null);
+
+		startTransition(async () => {
+			patchList({ invitationId, kind: 'invitation-removed' });
+
+			await report(removeInvitation(eventId, invitationId), 'Einladung gelöscht.');
+		});
+	};
+
+	const deleteGuest = (guestId: string) => {
+		startTransition(async () => {
+			patchList({ guestId, kind: 'guest-removed' });
+
+			await report(removeGuest(eventId, guestId), 'Person entfernt.');
 		});
 	};
 
@@ -314,7 +343,12 @@ export function GuestTable({ eventId, invitations }: GuestTableProps) {
 								</div>
 
 								{expanded === invitation.id ? (
-									<InvitationDetails eventId={eventId} invitation={invitation} />
+									<InvitationDetails
+										eventId={eventId}
+										invitation={invitation}
+										onRemoveGuest={deleteGuest}
+										onRemoveInvitation={deleteInvitation}
+									/>
 								) : null}
 							</li>
 						))}

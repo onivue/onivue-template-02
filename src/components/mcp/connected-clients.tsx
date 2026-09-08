@@ -6,7 +6,7 @@ import type { McpConnectionSummary } from '@/lib/mcp/mcp-connection';
 
 import { Button } from '@/components/ui/button';
 import { useAccountActions } from '@/lib/auth/use-account-actions';
-import { describeScope } from '@/lib/mcp/mcp-scopes';
+import { labelScope } from '@/lib/mcp/mcp-scopes';
 
 type ConnectedClientsProps = {
 	connections: McpConnectionSummary[];
@@ -54,7 +54,7 @@ export function ConnectedClients({ connections }: ConnectedClientsProps) {
 										? `Verbunden seit ${connection.connectedAt.toLocaleDateString('de-DE', DATE_FORMAT)}`
 										: 'Verbunden'}
 									{connection.scopes.length > 0
-										? ` · ${connection.scopes.map(describeScope).join(' ')}`
+										? ` · ${connection.scopes.map(labelScope).join(', ')}`
 										: ''}
 								</span>
 							</span>

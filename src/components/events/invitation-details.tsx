@@ -14,8 +14,6 @@ import { invitationPath } from '@/config/routes';
 import { formatBerlinShort, toBerlinInputValue } from '@/lib/events/berlin-time';
 import {
 	addGuest,
-	removeGuest,
-	removeInvitation,
 	resetInvitationViews,
 	rotateInvitationToken,
 	setInvitationDeadline,
@@ -24,11 +22,14 @@ import {
 type InvitationDetailsProps = {
 	eventId: string;
 	invitation: InvitationRecord;
+	onRemoveGuest: (guestId: string) => void;
+	onRemoveInvitation: (invitationId: string) => void;
 };
 
 // everything a host needs rarely: replacing a link, granting a later deadline, adding or removing
 // a person. it lives behind a disclosure so the everyday view stays a list of names.
-export function InvitationDetails({ eventId, invitation }: InvitationDetailsProps) {
+// removals are handed up: the list owns the rows and is the only place that can drop one at once.
+export function InvitationDetails({ eventId, invitation, onRemoveGuest, onRemoveInvitation }: InvitationDetailsProps) {
 	const [newGuest, setNewGuest] = useState('');
 	const [deadline, setDeadline] = useState(toBerlinInputValue(invitation.responseDeadline, 'end-of-day'));
 	const [confirming, setConfirming] = useState<null | string>(null);
@@ -89,11 +90,10 @@ export function InvitationDetails({ eventId, invitation }: InvitationDetailsProp
 							{asks(guest.id) ? (
 								<Button
 									data-testid={`remove-guest-${guest.id}`}
-									onClick={() =>
-										void report(removeGuest(eventId, guest.id), 'Person entfernt.').then(() =>
-											setConfirming(null)
-										)
-									}
+									onClick={() => {
+										setConfirming(null);
+										onRemoveGuest(guest.id);
+									}}
 									size='xs'
 									variant='destructive'
 								>
@@ -197,9 +197,7 @@ export function InvitationDetails({ eventId, invitation }: InvitationDetailsProp
 					className='ms-auto @max-lg:w-full @max-lg:justify-start'
 					data-testid={`delete-invitation-${invitation.id}`}
 					onClick={() =>
-						asks(invitation.id)
-							? void report(removeInvitation(eventId, invitation.id), 'Einladung gelöscht.')
-							: setConfirming(invitation.id)
+						asks(invitation.id) ? onRemoveInvitation(invitation.id) : setConfirming(invitation.id)
 					}
 					size='sm'
 					variant={asks(invitation.id) ? 'destructive' : 'ghost'}

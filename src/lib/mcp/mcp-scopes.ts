@@ -4,17 +4,24 @@ export const MCP_SCOPE_IDS = {
 	eventsLinks: 'events:links',
 	eventsRead: 'events:read',
 	eventsWrite: 'events:write',
+	// standard oauth rather than one of ours, and required: the provider issues a refresh token
+	// only when this scope was granted, so without it every client has to run the whole
+	// authorization flow again as soon as the one-hour access token expires
+	offline: 'offline_access',
 	read: 'profile:read',
 	write: 'profile:write',
 } as const;
 
-// every scope a client may request, in the order shown on the consent screen
+// every scope a client may request, in the order shown on the consent screen. the authorization
+// server advertises exactly this list and rejects anything outside it with invalid_scope, so a
+// scope missing here cannot be granted at all — not even when a client asks for it by name.
 export const MCP_SCOPES = [
 	MCP_SCOPE_IDS.read,
 	MCP_SCOPE_IDS.write,
 	MCP_SCOPE_IDS.eventsRead,
 	MCP_SCOPE_IDS.eventsWrite,
 	MCP_SCOPE_IDS.eventsLinks,
+	MCP_SCOPE_IDS.offline,
 ] as const;
 
 // what each scope means, in plain German, for the consent screen
@@ -29,14 +36,29 @@ export const MCP_SCOPE_DESCRIPTIONS: Record<string, string> = {
 	// reading one means being able to answer as those guests
 	[MCP_SCOPE_IDS.eventsLinks]:
 		'Deine Einladungslinks auslesen. Wer einen Link hat, kann damit für die eingeladenen Gäste antworten.',
-	openid: 'Deine Identität bestätigen.',
-	profile: 'Deine Profildaten lesen.',
-	email: 'Deine E-Mail-Adresse lesen.',
-	offline_access: 'Zugriff behalten, auch wenn du gerade nicht aktiv bist.',
+	// this grant deliberately outlives the browser session: the client keeps working after you sign
+	// out of the website, until you disconnect it under Account
+	[MCP_SCOPE_IDS.offline]:
+		'Verbunden bleiben, auch wenn du dich auf der Website abmeldest. Ohne das musst du den Client jede Stunde neu verbinden.',
 };
 
 export function describeScope(scope: string): string {
 	return MCP_SCOPE_DESCRIPTIONS[scope] ?? scope;
+}
+
+// the same scopes as a short chip for the list of connected clients, where a full sentence per
+// scope is truncated away to nothing
+export const MCP_SCOPE_LABELS: Record<string, string> = {
+	[MCP_SCOPE_IDS.read]: 'Profil lesen',
+	[MCP_SCOPE_IDS.write]: 'Profil ändern',
+	[MCP_SCOPE_IDS.eventsRead]: 'Events lesen',
+	[MCP_SCOPE_IDS.eventsWrite]: 'Events pflegen',
+	[MCP_SCOPE_IDS.eventsLinks]: 'Einladungslinks',
+	[MCP_SCOPE_IDS.offline]: 'Dauerhaft verbunden',
+};
+
+export function labelScope(scope: string): string {
+	return MCP_SCOPE_LABELS[scope] ?? scope;
 }
 
 // oauth writes granted scopes as a single space-delimited string (RFC 6749 §3.3), both in the
