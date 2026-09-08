@@ -1,6 +1,6 @@
 'use client';
 
-import { CalendarDays, Clock, Map, MapPin } from 'lucide-react';
+import { CalendarDays, Map, MapPin } from 'lucide-react';
 
 import type { ActionResult } from '@/lib/events/action-result';
 import type { AnswerValue, FormFieldDefinition, Submission } from '@/lib/events/form-schema';
@@ -118,10 +118,9 @@ export function InvitationPage(props: InvitationPageProps) {
 
 				{props.closesAt && !props.closedReason ? (
 					<p
-						className='flex items-center justify-center gap-1.5 text-center text-xs text-ink-soft'
+						className='rounded grid justify-items-center gap-1.5 text-center text-xs text-ink-soft'
 						data-testid='invitation-deadline'
 					>
-						<Clock aria-hidden='true' className='size-3.5 shrink-0' />
 						Antwort bitte bis {formatBerlin(props.closesAt, 'end-of-day')}. Du kannst sie bis dahin
 						jederzeit ändern.
 					</p>

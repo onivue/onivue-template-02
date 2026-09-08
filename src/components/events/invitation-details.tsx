@@ -39,7 +39,7 @@ export function InvitationDetails({ eventId, invitation }: InvitationDetailsProp
 		void report(addGuest(eventId, invitation.id, newGuest), 'Person ergänzt.').then(() => setNewGuest(''));
 
 	return (
-		<div className='design-form rounded-2xl bg-muted/40 p-4 sm:p-5' data-testid={`details-${invitation.id}`}>
+		<div className='design-form rounded-2xl bg-muted/40 p-4 @lg:p-5' data-testid={`details-${invitation.id}`}>
 			<div className='flex flex-wrap items-center justify-between gap-x-4 gap-y-1'>
 				<p className='flex items-center gap-1.5 text-xs text-ink-soft' data-testid={`views-${invitation.id}`}>
 					<Eye aria-hidden='true' className='size-3.5 shrink-0' />
@@ -114,7 +114,9 @@ export function InvitationDetails({ eventId, invitation }: InvitationDetailsProp
 					))}
 				</ul>
 
-				<div className='flex items-center gap-2'>
+				{/* stacked on a phone: side by side, the button's fixed width left the name field
+				    too narrow to read what was being typed into it */}
+				<div className='grid gap-2 @lg:flex @lg:items-center'>
 					<Input
 						data-testid={`add-guest-${invitation.id}`}
 						onChange={(nativeEvent) => setNewGuest(nativeEvent.target.value)}
@@ -128,7 +130,7 @@ export function InvitationDetails({ eventId, invitation }: InvitationDetailsProp
 						value={newGuest}
 					/>
 					<Button
-						className='shrink-0'
+						className='@lg:shrink-0'
 						disabled={!newGuest.trim()}
 						onClick={addNewGuest}
 						size='xl'
@@ -189,8 +191,10 @@ export function InvitationDetails({ eventId, invitation }: InvitationDetailsProp
 					<RefreshCw /> {asks(`rotate-${invitation.id}`) ? 'Alten Link ungültig machen?' : 'Link ersetzen'}
 				</Button>
 
+				{/* on its own line on a phone: the confirm labels are far longer than the resting ones,
+				    and sharing a wrapping line let one of them reshuffle the other two */}
 				<Button
-					className='ms-auto'
+					className='ms-auto @max-lg:w-full @max-lg:justify-start'
 					data-testid={`delete-invitation-${invitation.id}`}
 					onClick={() =>
 						asks(invitation.id)

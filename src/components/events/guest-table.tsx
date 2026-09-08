@@ -84,7 +84,9 @@ function FilterPills<T extends string>({
 	value: T;
 }) {
 	return (
-		<div className='flex items-center gap-2'>
+		// the label moves above its pills while the column is narrow: beside them it took some
+		// eighty pixels, which was exactly what pushed the last option onto a second line
+		<div className='grid gap-1.5 @lg:flex @lg:items-center @lg:gap-2'>
 			<span className='flex items-center gap-1.5 text-xs text-ink-soft'>
 				<Icon aria-hidden='true' className='size-3.5 shrink-0' />
 				{label}
@@ -94,11 +96,12 @@ function FilterPills<T extends string>({
 					<Button
 						// a near-white "selected" tint is not a selection; the chosen filter takes the ink
 						// pill — and keeps it on hover, or the label disappears into its own background
-						className={
+						className={cn(
+							'h-9 @lg:h-7',
 							value === option.value
 								? 'bg-ink font-bold text-background hover:bg-ink/90 hover:text-background'
 								: 'text-ink-soft hover:bg-surface-elevated hover:text-ink'
-						}
+						)}
 						data-testid={`filter-${name}-${option.value}`}
 						key={option.value}
 						onClick={() => onChange(option.value)}
@@ -171,8 +174,8 @@ export function GuestTable({ eventId, invitations }: GuestTableProps) {
 	return (
 		<div className='grid gap-3' data-testid='guest-table'>
 			{/* one card: the filters are the head of this list, not a panel of their own */}
-			<div className='design-panel overflow-hidden'>
-				<div className='grid gap-3 p-5 sm:p-6'>
+			<div className='design-panel @container overflow-hidden'>
+				<div className='grid gap-3 p-5 @lg:p-6'>
 					<label className='relative block'>
 						<span className='sr-only'>Gäste durchsuchen</span>
 						<Search
@@ -189,7 +192,7 @@ export function GuestTable({ eventId, invitations }: GuestTableProps) {
 						/>
 					</label>
 
-					<div className='flex flex-wrap items-center gap-x-8 gap-y-3'>
+					<div className='flex flex-wrap items-center gap-x-8 gap-y-4'>
 						<FilterPills
 							icon={Reply}
 							label='Antwort'
@@ -228,7 +231,11 @@ export function GuestTable({ eventId, invitations }: GuestTableProps) {
 								data-testid={`invitation-${invitation.id}`}
 								key={invitation.id}
 							>
-								<div className='flex flex-wrap items-center justify-between gap-3'>
+								{/* the names own their line and the actions own theirs until the column can hold both.
+								    measured against the panel, not the viewport: the sidebar appears at md and makes this
+								    column narrower again, and sharing a line put the actions beside a short name and
+								    below a long one, so no two rows agreed on a shape. */}
+								<div className='grid gap-2 @lg:flex @lg:flex-wrap @lg:items-center @lg:justify-between @lg:gap-3'>
 									<div className='flex min-w-0 flex-wrap items-center gap-1.5'>
 										{invitation.guests.map((guest) => (
 											<span
@@ -245,27 +252,19 @@ export function GuestTable({ eventId, invitations }: GuestTableProps) {
 										))}
 									</div>
 
-									<div className='flex shrink-0 items-center gap-1'>
+									{/* the whole cluster sits at the trailing edge, under the names rather than beside
+									    them, with the disclosure last so it stays the outermost thing in the row */}
+									<div className='flex flex-wrap items-center justify-end gap-1 @lg:shrink-0'>
 										<InvitationViews
 											count={invitation.viewCount}
 											lastViewedAt={invitation.lastViewedAt}
 										/>
 
-										<Button
-											aria-label='Einladungslink kopieren'
-											data-testid={`copy-${invitation.id}`}
-											onClick={() => void copyLink(invitation.token)}
-											size='sm'
-											variant='outline'
-										>
-											<Copy /> Link
-										</Button>
-
 										{/* the host works down the list ticking off what they sent, so this is a
 										    tick box. the label never changes, so the row cannot reflow under the
 										    cursor between two clicks. */}
 										<label
-											className='flex h-7 cursor-pointer items-center gap-2 rounded-full px-2.5 text-[0.8rem] font-medium text-ink-soft transition-colors hover:bg-muted hover:text-ink'
+											className='flex h-9 cursor-pointer items-center gap-2 rounded-full px-2.5 text-[0.8rem] font-medium text-ink-soft transition-colors hover:bg-muted hover:text-ink @lg:h-7'
 											title={
 												invitation.sentAt
 													? `Versendet am ${formatBerlinShort(invitation.sentAt)}`
@@ -283,12 +282,24 @@ export function GuestTable({ eventId, invitations }: GuestTableProps) {
 										</label>
 
 										<Button
+											aria-label='Einladungslink kopieren'
+											data-testid={`copy-${invitation.id}`}
+											onClick={() => void copyLink(invitation.token)}
+											className='h-9 @lg:h-7'
+											size='sm'
+											variant='outline'
+										>
+											<Copy /> Link
+										</Button>
+
+										<Button
 											aria-expanded={expanded === invitation.id}
 											aria-label='Weitere Einstellungen'
 											data-testid={`expand-${invitation.id}`}
 											onClick={() =>
 												setExpanded(expanded === invitation.id ? null : invitation.id)
 											}
+											className='size-9 @lg:size-7'
 											size='icon-sm'
 											variant='ghost'
 										>
