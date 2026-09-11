@@ -1,0 +1,252 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "MCP-Verbindung: wie ein Agent an sein Token kommt",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [
+      1080,
+      560
+    ],
+    "views": [
+      {
+        "id": "discovery",
+        "label": "Discovery",
+        "focus": [
+          "agent",
+          "resource",
+          "authz"
+        ],
+        "note": "Der 401 trägt selbst die Adresse, an der sich der Client autorisieren kann."
+      },
+      {
+        "id": "zustimmung",
+        "label": "Registrierung + Consent",
+        "focus": [
+          "agent",
+          "browser",
+          "authz",
+          "db"
+        ],
+        "note": "Der Client registriert sich selbst; Zugriff gibt erst die Zustimmung des Nutzers."
+      },
+      {
+        "id": "token",
+        "label": "Token-Tausch",
+        "focus": [
+          "agent",
+          "authz"
+        ],
+        "note": "Authorization Code + PKCE — das Geheimnis verlässt den Client nie."
+      }
+    ]
+  },
+  "participants": [
+    {
+      "id": "agent",
+      "type": "external",
+      "label": "MCP-Client",
+      "sublabel": "Claude Code / Desktop"
+    },
+    {
+      "id": "browser",
+      "type": "frontend",
+      "label": "Browser",
+      "sublabel": "Nutzer auf /consent"
+    },
+    {
+      "id": "authz",
+      "type": "security",
+      "label": "OAuth 2.1 Server",
+      "sublabel": "@better-auth/mcp"
+    },
+    {
+      "id": "resource",
+      "type": "backend",
+      "label": "MCP-Endpoint",
+      "sublabel": "POST /api/mcp"
+    },
+    {
+      "id": "db",
+      "type": "database",
+      "label": "Postgres",
+      "sublabel": "Neon + Drizzle"
+    }
+  ],
+  "segments": [
+    {
+      "from": 150,
+      "to": 256,
+      "label": "1 · Discovery"
+    },
+    {
+      "from": 266,
+      "to": 400,
+      "label": "2 · Registrierung + Consent"
+    },
+    {
+      "from": 410,
+      "to": 490,
+      "label": "3 · Token mit PKCE"
+    }
+  ],
+  "messages": [
+    {
+      "id": "v1",
+      "from": "agent",
+      "to": "resource",
+      "y": 160,
+      "label": "POST /api/mcp — ohne Bearer-Token",
+      "variant": "emphasis"
+    },
+    {
+      "id": "v2",
+      "from": "resource",
+      "to": "agent",
+      "y": 188,
+      "label": "401 · WWW-Authenticate: resource_metadata=…",
+      "variant": "return",
+      "note": "RFC 9728: die Ablehnung sagt selbst, wo autorisiert wird — nichts wird von Hand konfiguriert."
+    },
+    {
+      "id": "v3",
+      "from": "agent",
+      "to": "authz",
+      "y": 216,
+      "label": "GET /.well-known/oauth-protected-resource/api/mcp"
+    },
+    {
+      "id": "v4",
+      "from": "authz",
+      "to": "agent",
+      "y": 244,
+      "label": "{ resource, authorization_servers[], scopes_supported[] }",
+      "variant": "return"
+    },
+    {
+      "id": "v5",
+      "from": "agent",
+      "to": "authz",
+      "y": 276,
+      "label": "POST /oauth2/register · application_type: \"native\""
+    },
+    {
+      "id": "v6",
+      "from": "authz",
+      "to": "agent",
+      "y": 304,
+      "label": "client_id — Dynamic Client Registration (RFC 7591)",
+      "variant": "return"
+    },
+    {
+      "id": "v7",
+      "from": "agent",
+      "to": "browser",
+      "y": 332,
+      "label": "öffnet /oauth2/authorize · code_challenge (S256) + scope",
+      "variant": "emphasis"
+    },
+    {
+      "id": "v8",
+      "from": "browser",
+      "to": "authz",
+      "y": 360,
+      "label": "Login + Zustimmung auf /consent",
+      "variant": "security",
+      "note": "Die signierte Query geht byte-genau zurück (ba_param), sonst verifiziert die Signatur nicht mehr."
+    },
+    {
+      "id": "v9",
+      "from": "authz",
+      "to": "db",
+      "y": 388,
+      "label": "speichert oauth_client · oauth_consent"
+    },
+    {
+      "id": "v10",
+      "from": "authz",
+      "to": "agent",
+      "y": 420,
+      "label": "302 redirect_uri?code=… · Code, einmalig",
+      "variant": "return"
+    },
+    {
+      "id": "v11",
+      "from": "agent",
+      "to": "authz",
+      "y": 448,
+      "label": "POST /oauth2/token · code + code_verifier",
+      "variant": "emphasis"
+    },
+    {
+      "id": "v12",
+      "from": "authz",
+      "to": "agent",
+      "y": 476,
+      "label": "access_token (JWT: sub, aud=/api/mcp, scope) + refresh_token",
+      "variant": "security"
+    }
+  ],
+  "activations": [
+    {
+      "participant": "resource",
+      "from": 154,
+      "to": 196,
+      "type": "backend"
+    },
+    {
+      "participant": "authz",
+      "from": 210,
+      "to": 312,
+      "type": "security"
+    },
+    {
+      "participant": "browser",
+      "from": 326,
+      "to": 368,
+      "type": "frontend"
+    },
+    {
+      "participant": "authz",
+      "from": 354,
+      "to": 484,
+      "type": "security"
+    },
+    {
+      "participant": "db",
+      "from": 382,
+      "to": 396,
+      "type": "database"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Anforderungen an den Client",
+      "items": [
+        "Streamable HTTP auf /api/mcp — in Claude Code zwingend \"type\": \"http\"",
+        "PKCE mit S256; kein API-Key, kein Cookie, kein Header von Hand",
+        "CLI-Clients registrieren sich als application_type: \"native\""
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Was ausgetauscht wird",
+      "items": [
+        "Metadaten nach RFC 9728 (Resource) und RFC 8414 (Auth Server)",
+        "client_id aus der Selbstregistrierung, RFC 7591 — nichts wird abgesprochen",
+        "Token = signiertes JWT mit sub, aud=/api/mcp und scope"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Wer entscheidet",
+      "items": [
+        "Registrierung ist offen — Zugriff gibt erst die Zustimmung auf /consent",
+        "Ohne offline_access kein Refresh Token: nach einer Stunde neu verbinden",
+        "Trennen unter /account wirkt sofort, das Access Token läuft bis zu 1 h nach"
+      ]
+    }
+  ]
+}

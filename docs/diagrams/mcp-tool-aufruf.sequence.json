@@ -1,0 +1,250 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "MCP-Tool-Aufruf: vom tools/call bis in die Datenbank",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [
+      1080,
+      560
+    ],
+    "views": [
+      {
+        "id": "handshake",
+        "label": "Handshake",
+        "focus": [
+          "agent",
+          "resource"
+        ],
+        "note": "initialize und tools/list sagen dem Agenten, welche Tool-Oberfläche dieser Server hält."
+      },
+      {
+        "id": "verifikation",
+        "label": "Token verifizieren",
+        "focus": [
+          "agent",
+          "resource",
+          "authz",
+          "session"
+        ],
+        "note": "Das JWT wird zustandslos gegen die JWKS geprüft, bevor irgendein Tool existiert."
+      },
+      {
+        "id": "ausfuehrung",
+        "label": "Scope prüfen und ausführen",
+        "focus": [
+          "session",
+          "service",
+          "db",
+          "resource",
+          "agent"
+        ],
+        "note": "Die Session prüft den Scope; erst dann läuft der Schreibpfad durch die databaseHooks."
+      }
+    ]
+  },
+  "participants": [
+    {
+      "id": "agent",
+      "type": "external",
+      "label": "MCP-Client",
+      "sublabel": "Claude Code / Desktop"
+    },
+    {
+      "id": "resource",
+      "type": "backend",
+      "label": "MCP-Endpoint",
+      "sublabel": "POST /api/mcp"
+    },
+    {
+      "id": "authz",
+      "type": "security",
+      "label": "OAuth 2.1 Server",
+      "sublabel": "JWKS-Verifikation"
+    },
+    {
+      "id": "session",
+      "type": "backend",
+      "label": "Session",
+      "sublabel": "Agent- / EventSession"
+    },
+    {
+      "id": "service",
+      "type": "backend",
+      "label": "Gateway",
+      "sublabel": "Adapter + EventService"
+    },
+    {
+      "id": "db",
+      "type": "database",
+      "label": "Postgres",
+      "sublabel": "Neon + Drizzle"
+    }
+  ],
+  "messages": [
+    {
+      "id": "t1",
+      "from": "agent",
+      "to": "resource",
+      "y": 160,
+      "label": "initialize · protocolVersion + clientInfo"
+    },
+    {
+      "id": "t2",
+      "from": "resource",
+      "to": "agent",
+      "y": 188,
+      "label": "serverInfo: onivue-mcp 0.2.0 · capabilities.tools",
+      "variant": "return"
+    },
+    {
+      "id": "t3",
+      "from": "agent",
+      "to": "resource",
+      "y": 216,
+      "label": "tools/list"
+    },
+    {
+      "id": "t4",
+      "from": "resource",
+      "to": "agent",
+      "y": 244,
+      "label": "12 Tools mit Zod-Schema für Ein- und Ausgabe",
+      "variant": "return",
+      "note": "Pro Request entsteht ein frischer McpServer; registriert wird nur, wofür die Claims eine Session hergeben."
+    },
+    {
+      "id": "t5",
+      "from": "agent",
+      "to": "resource",
+      "y": 276,
+      "label": "tools/call · { name: \"update_profile\", arguments: { username } }",
+      "variant": "emphasis"
+    },
+    {
+      "id": "t6",
+      "from": "resource",
+      "to": "authz",
+      "y": 304,
+      "label": "requireMcpAuth: JWT gegen /api/auth/jwks",
+      "variant": "security",
+      "note": "Geprüft werden Signatur, Aussteller, Audience und Ablauf — ohne Datenbank-Zugriff."
+    },
+    {
+      "id": "t7",
+      "from": "authz",
+      "to": "resource",
+      "y": 332,
+      "label": "claims { sub, scope, client_id, exp }",
+      "variant": "return"
+    },
+    {
+      "id": "t8",
+      "from": "resource",
+      "to": "session",
+      "y": 360,
+      "label": "AgentSession.fromClaims() · EventSession.fromClaims()"
+    },
+    {
+      "id": "t9",
+      "from": "session",
+      "to": "agent",
+      "y": 392,
+      "label": "fehlender Scope → CallToolResult { isError: true }",
+      "variant": "dashed"
+    },
+    {
+      "id": "t10",
+      "from": "session",
+      "to": "service",
+      "y": 420,
+      "label": "Scope vorhanden → updateProfile(userId aus sub, params)",
+      "variant": "emphasis"
+    },
+    {
+      "id": "t11",
+      "from": "service",
+      "to": "db",
+      "y": 448,
+      "label": "internalAdapter.updateUser → databaseHooks: Zod, Profanity, Unique",
+      "variant": "emphasis"
+    },
+    {
+      "id": "t14",
+      "from": "resource",
+      "to": "agent",
+      "y": 476,
+      "label": "CallToolResult { content[], structuredContent }",
+      "variant": "return",
+      "note": "Der Gateway antwortet als Discriminated Union { success: true, data } | { success: false, error }; mcp-tools.ts übersetzt sie in CallToolResult."
+    }
+  ],
+  "activations": [
+    {
+      "participant": "resource",
+      "from": 154,
+      "to": 252,
+      "type": "backend"
+    },
+    {
+      "participant": "resource",
+      "from": 270,
+      "to": 484,
+      "type": "backend"
+    },
+    {
+      "participant": "authz",
+      "from": 298,
+      "to": 340,
+      "type": "security"
+    },
+    {
+      "participant": "session",
+      "from": 354,
+      "to": 460,
+      "type": "backend"
+    },
+    {
+      "participant": "service",
+      "from": 414,
+      "to": 460,
+      "type": "backend"
+    },
+    {
+      "participant": "db",
+      "from": 442,
+      "to": 456,
+      "type": "database"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Was über die Leitung geht",
+      "items": [
+        "JSON-RPC 2.0 über Streamable HTTP: initialize, tools/list, tools/call",
+        "Tool-Ein- und -Ausgaben sind Zod-4-Schemas — dieselben wie im Formular",
+        "Antwort ist immer ein CallToolResult: content[] plus structuredContent"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Wo die Scope-Prüfung sitzt",
+      "items": [
+        "In der Session, nicht im Tool — kein Tool kann sie vergessen",
+        "Die userId stammt aus dem sub-Claim, nie aus den Argumenten des Agenten",
+        "Ohne Scope antwortet die Session mit isError, der Gateway läuft gar nicht"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Wo die Grenze gezogen ist",
+      "items": [
+        "Schreiben läuft durch dieselben databaseHooks wie die Account-Seite",
+        "Löschen, archivieren, Links ersetzen, für Gäste antworten: kein Tool dafür",
+        "Einladungslinks hängen an events:links, nicht an events:read"
+      ]
+    }
+  ]
+}
