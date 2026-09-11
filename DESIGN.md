@@ -99,6 +99,28 @@ two things — never both, because each says the same date and the same address:
   party said yes. A reader still deciding, or one who just declined, is not handed a date to save
   and directions they did not ask for.
 
+Once — and only once — an answer has actually been saved, the page gets an ambient background that
+answers back (`InvitationMood`): a soft `--accent-strong` wash with a subtle, ongoing confetti
+shower (`canvas-confetti`) when at least one guest on the invitation said yes, a slow warm wash of
+`--destructive` when nobody is coming — both washes share one breathing keyframe
+(`invitation-mood-breathe`), only the colour differs. Nobody coming also gets a red panel above the
+title, before anything else on the page (`InvitationDeclinedNote`) — the one thing a guest who
+declined should read first, phrased for one person or for the whole invitation. While the response
+window is still open it carries the reminder that the answer can still change, naming the same
+deadline as the read-only summary below; the generic deadline line further down the page is
+suppressed in this case rather than repeating it. It appears the moment the reply is stored and
+greets the guest again on every return, because it is derived from the saved answer
+(`resolveResponseMood`) rather than from the act of submitting; an open form, or one being edited
+again, has a plain canvas. Both the panel and the background are decoration — the panel's message
+stands on its own without one, the background layer is `aria-hidden`, never a pointer target, and
+low enough in contrast that the panels above it keep their readability. `canvas-confetti` parses
+its own colour strings rather than reading CSS custom properties, so `InvitationMood` is the one
+place the lime, readable-accent and ink tokens are written out as hex — the same exception
+`map-style.ts` makes for MapLibre, and for the same reason: the app renders light only, so there is
+one palette to keep in step with `globals.css`. The shower runs on its own physics loop, so a
+reader who asked for less motion gets no shower at all rather than a still frame; the red wash
+still comes to rest instead of disappearing under `prefers-reduced-motion`.
+
 `InvitationPage` owns that swap, so the `AnswerState` it turns on — has the guest replied, is
 anybody coming — lives there rather than inside `InvitationForm`; the form reports each transition
 back through `onAnswerChange`. Anything else would have the form deciding what the page above it

@@ -300,3 +300,52 @@
 		height: 1px;
 	}
 }
+
+/* the invitation's ambient answer background (src/components/events/invitation-mood.tsx): a bold
+   green wash once somebody is coming — canvas-confetti draws the falling pieces there, deliberately
+   without green so the wash stays the one place that colour reads — a warm red wash once nobody
+   is. both are decoration, so a reader who asked for less motion gets the same picture standing
+   still rather than nothing at all. */
+@utility invitation-celebrate-glow {
+	animation: invitation-mood-breathe 11s ease-in-out infinite;
+	background:
+		radial-gradient(
+			130% 55% at 50% 0%,
+			color-mix(in oklch, var(--accent-strong) 32%, transparent),
+			transparent 70%
+		),
+		radial-gradient(
+			150% 60% at 50% 100%,
+			color-mix(in oklch, var(--accent-strong) 24%, transparent),
+			transparent 74%
+		);
+
+	@media (prefers-reduced-motion: reduce) {
+		animation: none;
+		opacity: 0.7;
+	}
+}
+
+@utility invitation-regret-glow {
+	animation: invitation-mood-breathe 11s ease-in-out infinite;
+	background:
+		radial-gradient(130% 55% at 50% 0%, color-mix(in oklch, var(--destructive) 20%, transparent), transparent 68%),
+		radial-gradient(150% 60% at 50% 100%, color-mix(in oklch, var(--destructive) 14%, transparent), transparent 72%);
+
+	@media (prefers-reduced-motion: reduce) {
+		animation: none;
+		opacity: 0.7;
+	}
+}
+
+/* shared by both mood washes — the color differs per utility above, the pulse doesn't */
+@keyframes invitation-mood-breathe {
+	0%,
+	100% {
+		opacity: 0.5;
+	}
+
+	50% {
+		opacity: 0.95;
+	}
+}

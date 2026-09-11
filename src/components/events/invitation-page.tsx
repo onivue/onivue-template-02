@@ -9,6 +9,7 @@ import type { AnswerValue, FormFieldDefinition, Submission } from '@/lib/events/
 import { EventCalendarCard } from '@/components/events/event-calendar-card';
 import { EventDecoration } from '@/components/events/event-decoration';
 import { EventLocationCard } from '@/components/events/event-location-card';
+import { InvitationDeclinedNote } from '@/components/events/invitation-declined-note';
 import { InvitationFacts } from '@/components/events/invitation-facts';
 import {
 	initialAnswerState,
@@ -16,11 +17,13 @@ import {
 	type InvitationFormGuest,
 	isAnswerReadOnly,
 } from '@/components/events/invitation-form';
+import { InvitationMood } from '@/components/events/invitation-mood';
 import { invitationCalendarPath } from '@/config/routes';
 import { formatBerlin } from '@/lib/events/berlin-time';
 import { isDecorationKey } from '@/lib/events/event-decoration';
 import { toEventAddress } from '@/lib/events/event-location';
 import { describeSchedule } from '@/lib/events/event-schedule';
+import { resolveResponseMood } from '@/lib/events/response-mood';
 
 type InvitationPageProps = {
 	answers: { fieldId: string; guestId: null | string; value: AnswerValue }[];
@@ -50,13 +53,22 @@ export function InvitationPage(props: InvitationPageProps) {
 	// them — whichever is on screen, it is never both
 	const showsTiles =
 		(isAnswerReadOnly(props.closedReason, props.onSubmit) || answer.isAnswered) && answer.isAttending;
+	// the background answers back the moment the reply is saved, and greets them with it on every
+	// return — it is keyed off the saved answer, so an open form never gets one
+	const mood = resolveResponseMood(answer);
 
 	return (
-		<div className='min-h-dvh bg-background px-4 py-10 text-foreground' data-testid='invitation-page'>
-			<div className='mx-auto grid w-full max-w-2xl gap-6'>
+		<div className='relative min-h-dvh bg-background px-4 py-10 text-foreground' data-testid='invitation-page'>
+			{mood ? <InvitationMood mood={mood} /> : null}
+
+			<div className='relative z-10 mx-auto grid w-full max-w-2xl gap-6'>
 				<header className='grid justify-items-center gap-6 text-center'>
 					{isDecorationKey(event.decoration) ? (
 						<EventDecoration className='h-72 max-w-md sm:h-80' decoration={event.decoration} />
+					) : null}
+
+					{mood === 'declined' ? (
+						<InvitationDeclinedNote closesAt={props.closesAt} guestCount={props.guests.length} />
 					) : null}
 
 					<h1 className='design-page-title text-[clamp(2rem,6vw,3.25rem)]'>{event.title}</h1>
@@ -75,7 +87,7 @@ export function InvitationPage(props: InvitationPageProps) {
 					</div>
 				) : null}
 
-				{props.closesAt && !props.closedReason ? (
+				{props.closesAt && !props.closedReason && mood !== 'declined' ? (
 					<p
 						className='rounded grid justify-items-center gap-1.5 text-center text-xs text-ink-soft'
 						data-testid='invitation-deadline'
