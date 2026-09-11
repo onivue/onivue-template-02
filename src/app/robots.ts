@@ -9,14 +9,7 @@ export default function robots(): MetadataRoute.Robots {
 	return {
 		rules: {
 			allow: '/',
-			disallow: [
-				APP_ROUTES.EVENTS,
-				APP_ROUTES.ACCOUNT,
-				APP_ROUTES.SETTINGS,
-				APP_ROUTES.CONSENT,
-				'/api/',
-				'/.well-known/',
-			],
+			disallow: [APP_ROUTES.EVENTS, APP_ROUTES.SETTINGS, APP_ROUTES.CONSENT, '/api/', '/.well-known/'],
 			userAgent: '*',
 		},
 	};

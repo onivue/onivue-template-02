@@ -5,7 +5,6 @@ const PATH_SEPARATOR = '/';
 export type RouteAccess = 'guest' | 'public' | 'viewer';
 
 export type RouteName =
-	| 'ACCOUNT'
 	| 'CONSENT'
 	| 'EVENTS'
 	| 'FORGOT_PASSWORD'
@@ -28,11 +27,6 @@ type RouteDefinition = {
 
 // one declaration per route: where it lives, who may see it, whether it appears in navigation
 export const ROUTES = {
-	ACCOUNT: {
-		access: 'viewer',
-		nav: { label: 'Account', testId: 'navigation-account-link' },
-		path: '/account',
-	},
 	// oauth consent screen; the provider redirects here with client_id/scope/code
 	CONSENT: {
 		access: 'viewer',
@@ -86,8 +80,9 @@ export const APP_ROUTES = {
 	EVENTS: ROUTES.EVENTS.path,
 	INVITATION: ROUTES.INVITATION.path,
 	LANDING: ROUTES.LANDING.path,
-	ACCOUNT: ROUTES.ACCOUNT.path,
 	SETTINGS: ROUTES.SETTINGS.path,
+	SETTINGS_PROFILE: `${ROUTES.SETTINGS.path}/profile`,
+	SETTINGS_SECURITY: `${ROUTES.SETTINGS.path}/security`,
 	LOGIN: ROUTES.LOGIN.path,
 	REGISTER: ROUTES.REGISTER.path,
 	FORGOT_PASSWORD: ROUTES.FORGOT_PASSWORD.path,
@@ -129,7 +124,7 @@ export function getAccessFor(pathname: string): RouteAccess {
 	return route?.access ?? 'viewer';
 }
 
-const NAVIGATION_ORDER = ['EVENTS', 'ACCOUNT', 'SETTINGS'] as const satisfies readonly RouteName[];
+const NAVIGATION_ORDER = ['EVENTS', 'SETTINGS'] as const satisfies readonly RouteName[];
 
 export const NAVIGATION_ROUTES = NAVIGATION_ORDER.map((name) => ({
 	href: ROUTES[name].path,
@@ -152,3 +147,7 @@ export const eventCalendarPath = (eventId: string): string => `${ROUTES.EVENTS.p
 export const invitationPath = (token: string): string => `${ROUTES.INVITATION.path}/${token}`;
 
 export const invitationCalendarPath = (token: string): string => `${ROUTES.INVITATION.path}/${token}/calendar`;
+
+export const settingsProfilePath = (): typeof APP_ROUTES.SETTINGS_PROFILE => APP_ROUTES.SETTINGS_PROFILE;
+
+export const settingsSecurityPath = (): typeof APP_ROUTES.SETTINGS_SECURITY => APP_ROUTES.SETTINGS_SECURITY;

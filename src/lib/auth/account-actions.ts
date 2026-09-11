@@ -1,4 +1,4 @@
-import { APP_ROUTES, getAccessFor, type AppRoute } from '@/config/routes';
+import { APP_ROUTES, getAccessFor, settingsProfilePath, type AppRoute } from '@/config/routes';
 import { AuthErrorHelper } from '@/lib/auth/auth-error-helper';
 
 // narrow structural port over the better-auth client, so its types stay out of callers and tests
@@ -249,8 +249,8 @@ const ACTION_EFFECTS: Record<AccountActionName, SuccessEffect> = {
 	'reset-password': { redirect: APP_ROUTES.LOGIN },
 	'revoke-connection': { refresh: true },
 	'send-login-link': {},
-	'sign-in-passkey': { redirect: APP_ROUTES.ACCOUNT },
-	'sign-in-password': { redirect: APP_ROUTES.ACCOUNT },
+	'sign-in-passkey': { redirect: settingsProfilePath() },
+	'sign-in-password': { redirect: settingsProfilePath() },
 	'sign-out': { redirect: APP_ROUTES.LANDING },
 	'sign-up-password': {},
 	'update-name': { refresh: true },
@@ -281,7 +281,7 @@ export class AccountActions {
 					callbackURL: this.resolveCallbackUrl(requestedCallbackUrl),
 					email,
 					errorCallbackURL: APP_ROUTES.LOGIN,
-					newUserCallbackURL: APP_ROUTES.ACCOUNT,
+					newUserCallbackURL: settingsProfilePath(),
 				})
 		);
 	}
@@ -295,11 +295,11 @@ export class AccountActions {
 			'register',
 			async () =>
 				await this.gateway.sendMagicLink({
-					callbackURL: APP_ROUTES.ACCOUNT,
+					callbackURL: settingsProfilePath(),
 					email,
 					errorCallbackURL: APP_ROUTES.REGISTER,
 					name: this.deriveDefaultName(email),
-					newUserCallbackURL: APP_ROUTES.ACCOUNT,
+					newUserCallbackURL: settingsProfilePath(),
 				})
 		);
 	}
@@ -319,7 +319,7 @@ export class AccountActions {
 			'change-email',
 			async () =>
 				await this.gateway.changeEmail({
-					callbackURL: APP_ROUTES.ACCOUNT,
+					callbackURL: settingsProfilePath(),
 					newEmail,
 				})
 		);
@@ -467,16 +467,16 @@ export class AccountActions {
 	// rejects open redirects and bounces back to auth pages
 	private resolveCallbackUrl(requested: string | null): string {
 		if (!requested?.startsWith('/')) {
-			return APP_ROUTES.ACCOUNT;
+			return settingsProfilePath();
 		}
 
 		if (requested.startsWith(PROTOCOL_RELATIVE_PREFIX) || requested.startsWith(BACKSLASH_RELATIVE_PREFIX)) {
-			return APP_ROUTES.ACCOUNT;
+			return settingsProfilePath();
 		}
 
 		// bouncing a signed-in viewer back to an auth page would immediately redirect again
 		if (getAccessFor(requested) === 'guest') {
-			return APP_ROUTES.ACCOUNT;
+			return settingsProfilePath();
 		}
 
 		return requested;

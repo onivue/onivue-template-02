@@ -13,8 +13,8 @@ export function Layout({ children }: LayoutProps) {
 	return (
 		<AppShell
 			account={
-				<Suspense fallback={<AuthStatusSkeleton placement='sidebar' />}>
-					<AuthStatus placement='sidebar' />
+				<Suspense fallback={<AuthStatusSkeleton placement='navigation' />}>
+					<AuthStatus placement='navigation' />
 				</Suspense>
 			}
 		>

@@ -4,15 +4,15 @@ import { APP_ROUTES, NAVIGATION_ROUTES, getAccessFor, matchesRoute } from '@/con
 
 describe('route matching', () => {
 	test('an exact path matches', () => {
-		expect(matchesRoute('/account', '/account')).toBe(true);
+		expect(matchesRoute('/settings', '/settings')).toBe(true);
 	});
 
 	test('a nested path matches its parent route', () => {
-		expect(matchesRoute('/account/passkeys', '/account')).toBe(true);
+		expect(matchesRoute('/settings/security', '/settings')).toBe(true);
 	});
 
 	test('a path that merely shares a prefix does not match', () => {
-		expect(matchesRoute('/accounts', '/account')).toBe(false);
+		expect(matchesRoute('/setting', '/settings')).toBe(false);
 	});
 
 	test('the root route matches only itself', () => {
@@ -37,17 +37,16 @@ describe('access classification', () => {
 		expect(getAccessFor('/i/abc123')).toBe('public');
 	});
 
-	test('home, events, account, settings and consent need a viewer', () => {
+	test('home, events, settings and consent need a viewer', () => {
 		expect(getAccessFor(APP_ROUTES.HOME)).toBe('viewer');
 		expect(getAccessFor(APP_ROUTES.EVENTS)).toBe('viewer');
 		expect(getAccessFor('/events/ev-1/guests')).toBe('viewer');
-		expect(getAccessFor(APP_ROUTES.ACCOUNT)).toBe('viewer');
 		expect(getAccessFor(APP_ROUTES.SETTINGS)).toBe('viewer');
 		expect(getAccessFor(APP_ROUTES.CONSENT)).toBe('viewer');
 	});
 
 	test('a nested path inherits its route access', () => {
-		expect(getAccessFor('/account/passkeys')).toBe('viewer');
+		expect(getAccessFor('/settings/security')).toBe('viewer');
 		expect(getAccessFor('/landing/pricing')).toBe('public');
 	});
 
@@ -57,8 +56,8 @@ describe('access classification', () => {
 });
 
 describe('navigation routes', () => {
-	test('order is events, account, settings', () => {
-		expect(NAVIGATION_ROUTES.map((route) => route.name)).toEqual(['EVENTS', 'ACCOUNT', 'SETTINGS']);
+	test('order is events, settings', () => {
+		expect(NAVIGATION_ROUTES.map((route) => route.name)).toEqual(['EVENTS', 'SETTINGS']);
 	});
 
 	test('every navigation route carries a label and a test id', () => {

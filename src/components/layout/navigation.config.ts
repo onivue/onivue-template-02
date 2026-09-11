@@ -1,10 +1,9 @@
-import { CalendarDays, Settings, UserRound, type LucideIcon } from 'lucide-react';
+import { CalendarDays, Settings, type LucideIcon } from 'lucide-react';
 
 import { NAVIGATION_ROUTES, type RouteName } from '@/config/routes';
 
 // icons stay out of the route registry so the proxy never pulls the icon library into its bundle
 const NAVIGATION_ICONS = {
-	ACCOUNT: UserRound,
 	EVENTS: CalendarDays,
 	SETTINGS: Settings,
 } as const satisfies Partial<Record<RouteName, LucideIcon>>;

@@ -3,6 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AtSign, UserRound } from 'lucide-react';
 import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
@@ -14,13 +15,25 @@ import {
 	type UsernameFormValues,
 } from '@/lib/profile/profile-schema';
 
+const emailChangeSchema = z.object({
+	email: z.string().trim().email('Bitte gib eine gültige E-Mail-Adresse ein.'),
+});
+
 type ProfileSettingsProps = {
 	currentFirstName: string | null;
 	currentLastName: string | null;
+	currentEmail: string;
 	currentUsername: string | null;
 };
 
-export function ProfileSettings({ currentFirstName, currentLastName, currentUsername }: ProfileSettingsProps) {
+type EmailChangeFormValues = z.infer<typeof emailChangeSchema>;
+
+export function ProfileSettings({
+	currentEmail,
+	currentFirstName,
+	currentLastName,
+	currentUsername,
+}: ProfileSettingsProps) {
 	// one hook for both forms: the two writes hit the same user record, so they never run at once
 	const { actions, isBusy, isRunning } = useAccountActions();
 	const usernameForm = useForm<UsernameFormValues>({
@@ -36,6 +49,10 @@ export function ProfileSettings({ currentFirstName, currentLastName, currentUser
 		},
 		resolver: zodResolver(nameFormSchema),
 	});
+	const emailForm = useForm<EmailChangeFormValues>({
+		defaultValues: { email: currentEmail },
+		resolver: zodResolver(emailChangeSchema),
+	});
 
 	async function handleSaveUsername(values: UsernameFormValues): Promise<void> {
 		await actions.updateUsername(values.username);
@@ -43,6 +60,10 @@ export function ProfileSettings({ currentFirstName, currentLastName, currentUser
 
 	async function handleSaveName(values: NameFormValues): Promise<void> {
 		await actions.updateName(values);
+	}
+
+	async function handleChangeEmail(values: EmailChangeFormValues): Promise<void> {
+		await actions.changeEmail(values.email);
 	}
 
 	return (
@@ -115,6 +136,37 @@ export function ProfileSettings({ currentFirstName, currentLastName, currentUser
 					<Button type='submit' variant='strong' size='xl' disabled={isBusy} data-testid='save-name-button'>
 						<UserRound data-icon='inline-start' aria-hidden='true' />
 						{isRunning('update-name') ? 'Speichere...' : 'Name speichern'}
+					</Button>
+				</form>
+			</section>
+
+			<section className='design-panel grid content-start gap-5 p-5 sm:p-6' data-testid='profile-email-section'>
+				<div className='grid gap-2'>
+					<p className='design-section-label w-fit px-3 py-1.5'>E-Mail</p>
+					<h2 className='text-xl font-bold text-foreground'>Adresse ändern</h2>
+					<p className='design-page-description'>
+						Aktuelle E-Mail: <span className='font-semibold break-all text-foreground'>{currentEmail}</span>
+					</p>
+				</div>
+
+				<form className='design-form' onSubmit={emailForm.handleSubmit(handleChangeEmail)}>
+					<FormField
+						id='profile-email'
+						label='Neue E-Mail'
+						type='email'
+						autoComplete='email'
+						error={emailForm.formState.errors.email?.message}
+						disabled={isBusy}
+						{...emailForm.register('email')}
+					/>
+					<Button
+						type='submit'
+						variant='strong'
+						size='xl'
+						disabled={isBusy}
+						data-testid='change-email-button'
+					>
+						{isRunning('change-email') ? 'Änderung bestätigen...' : 'Änderung bestätigen'}
 					</Button>
 				</form>
 			</section>

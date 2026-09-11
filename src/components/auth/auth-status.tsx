@@ -21,12 +21,16 @@ export function AuthStatusSkeleton({ placement }: AuthStatusProps) {
 		<div
 			className={cn(
 				'flex h-12 items-center gap-3 px-3',
-				placement === 'sidebar' ? 'w-full rounded-2xl' : 'rounded-full border border-border'
+				placement === 'sidebar'
+					? 'w-full rounded-2xl'
+					: placement === 'navigation'
+						? 'size-12 rounded-full'
+						: 'rounded-full border border-border'
 			)}
 			data-testid='auth-status-skeleton'
 		>
 			<Skeleton className='size-8 shrink-0 rounded-full' />
-			<div className='grid min-w-0 flex-1 gap-1.5'>
+			<div className={cn('grid min-w-0 flex-1 gap-1.5', placement === 'navigation' ? 'hidden' : null)}>
 				<Skeleton className='h-3 w-24' />
 				<Skeleton className='h-2.5 w-32' />
 			</div>

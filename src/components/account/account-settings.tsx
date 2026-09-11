@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Fingerprint, LogOut, Mail, Plus, Trash2 } from 'lucide-react';
+import { Fingerprint, Plus, Trash2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -16,18 +16,9 @@ const passkeySchema = z.object({
 	name: z.string().trim().min(2, 'Bitte gib mindestens 2 Zeichen ein.').max(48, 'Der Name ist zu lang.'),
 });
 
-const emailChangeSchema = z.object({
-	email: z.string().trim().email('Bitte gib eine gültige E-Mail-Adresse ein.'),
-});
-
-type AccountSettingsProps = {
-	currentEmail: string;
-};
-
 type PasskeyFormValues = z.infer<typeof passkeySchema>;
-type EmailChangeFormValues = z.infer<typeof emailChangeSchema>;
 
-export function AccountSettings({ currentEmail }: AccountSettingsProps) {
+export function AccountSettings() {
 	const passkeyQuery = authClient.useListPasskeys();
 	const { actions, isBusy, isRunning } = useAccountActions({
 		onDataChanged: async () => {
@@ -41,12 +32,6 @@ export function AccountSettings({ currentEmail }: AccountSettingsProps) {
 		},
 		resolver: zodResolver(passkeySchema),
 	});
-	const emailForm = useForm<EmailChangeFormValues>({
-		defaultValues: {
-			email: currentEmail,
-		},
-		resolver: zodResolver(emailChangeSchema),
-	});
 
 	async function handleAddPasskey(values: PasskeyFormValues): Promise<void> {
 		const outcome = await actions.addPasskey(values.name);
@@ -54,10 +39,6 @@ export function AccountSettings({ currentEmail }: AccountSettingsProps) {
 		if (outcome.ok) {
 			passkeyForm.reset({ name: DEFAULT_PASSKEY_NAME });
 		}
-	}
-
-	async function handleChangeEmail(values: EmailChangeFormValues): Promise<void> {
-		await actions.changeEmail(values.email);
 	}
 
 	return (
@@ -152,51 +133,6 @@ export function AccountSettings({ currentEmail }: AccountSettingsProps) {
 						</div>
 					))}
 				</div>
-			</section>
-
-			<section className='design-panel grid content-start gap-5 p-5 sm:p-6' data-testid='account-email-section'>
-				<div className='grid gap-2'>
-					<p className='design-section-label w-fit px-3 py-1.5'>E-Mail</p>
-					<h2 className='text-xl font-bold text-foreground'>Adresse ändern</h2>
-					<p className='design-page-description'>
-						Aktuelle E-Mail: <span className='font-semibold break-all text-foreground'>{currentEmail}</span>
-					</p>
-				</div>
-
-				<form className='grid gap-3' onSubmit={emailForm.handleSubmit(handleChangeEmail)}>
-					<FormField
-						id='account-email'
-						label='Neue E-Mail'
-						type='email'
-						autoComplete='email'
-						error={emailForm.formState.errors.email?.message}
-						disabled={isBusy}
-						{...emailForm.register('email')}
-					/>
-					<Button
-						type='submit'
-						variant='strong'
-						size='xl'
-						disabled={isBusy}
-						data-testid='change-email-button'
-					>
-						<Mail data-icon='inline-start' aria-hidden='true' />
-						{isRunning('change-email') ? 'Sende...' : 'Änderung bestätigen'}
-					</Button>
-				</form>
-
-				<Button
-					type='button'
-					variant='outline'
-					size='xl'
-					className='mt-auto'
-					disabled={isBusy}
-					onClick={() => void actions.signOut()}
-					data-testid='sign-out-button'
-				>
-					<LogOut data-icon='inline-start' aria-hidden='true' />
-					{isRunning('sign-out') ? 'Melde ab...' : 'Abmelden'}
-				</Button>
 			</section>
 		</div>
 	);

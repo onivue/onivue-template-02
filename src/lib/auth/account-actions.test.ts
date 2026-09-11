@@ -169,7 +169,7 @@ describe('success effects are applied per action', () => {
 
 		await harness.actions.signInWithPasskey();
 
-		expect(harness.navigations).toEqual([APP_ROUTES.ACCOUNT]);
+		expect(harness.navigations).toEqual([APP_ROUTES.SETTINGS_PROFILE]);
 		expect(harness.refreshCount).toBe(1);
 	});
 
@@ -213,7 +213,7 @@ describe('callback urls cannot leave the app', () => {
 
 			await harness.actions.sendLoginLink('du@example.com', callbackUrl);
 
-			expect(harness.magicLinkParams().callbackURL).toBe(APP_ROUTES.ACCOUNT);
+			expect(harness.magicLinkParams().callbackURL).toBe(APP_ROUTES.SETTINGS_PROFILE);
 		});
 	}
 
@@ -309,7 +309,7 @@ describe('password authentication', () => {
 			email: 'du@example.com',
 			password: 'correct-horse-battery',
 		});
-		expect(harness.navigations).toEqual([APP_ROUTES.ACCOUNT]);
+		expect(harness.navigations).toEqual([APP_ROUTES.SETTINGS_PROFILE]);
 		expect(harness.refreshCount).toBe(1);
 	});
 

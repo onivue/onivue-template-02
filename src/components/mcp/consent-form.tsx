@@ -19,7 +19,7 @@ import { useState } from 'react';
 
 import { ConsentNotice } from '@/components/mcp/consent-notice';
 import { Button } from '@/components/ui/button';
-import { APP_ROUTES } from '@/config/routes';
+import { settingsSecurityPath } from '@/config/routes';
 import { useAccountActions } from '@/lib/auth/use-account-actions';
 import { describeScope, labelScope, MCP_SCOPE_IDS } from '@/lib/mcp/mcp-scopes';
 
@@ -94,7 +94,7 @@ export function ConsentForm({ clientName, clientUri, scopes, viewerEmail }: Cons
 						className='mt-2'
 						data-testid='consent-result-account-link'
 						nativeButton={false}
-						render={<Link href={APP_ROUTES.ACCOUNT} />}
+						render={<Link href={settingsSecurityPath()} />}
 						size='xl'
 						variant='outline'
 					>
@@ -181,9 +181,9 @@ export function ConsentForm({ clientName, clientUri, scopes, viewerEmail }: Cons
 					<Link
 						className='font-bold text-accent-strong underline-offset-4 hover:underline'
 						data-testid='consent-account-link'
-						href={APP_ROUTES.ACCOUNT}
+						href={settingsSecurityPath()}
 					>
-						Account
+						Sicherheit
 					</Link>{' '}
 					wieder trennen.
 				</p>

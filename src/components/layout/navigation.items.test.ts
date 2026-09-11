@@ -13,12 +13,11 @@ describe('navigation item resolution', () => {
 	test('every registry route is resolved, in order, with an icon', () => {
 		const items = resolveNavigationItems(APP_ROUTES.HOME);
 
-		expect(items.map((item) => item.label)).toEqual(['Events', 'Account', 'Settings']);
+		expect(items.map((item) => item.label)).toEqual(['Events', 'Settings']);
 		expect(items.every((item) => typeof item.icon === 'function' || typeof item.icon === 'object')).toBe(true);
 	});
 
 	test('exactly one item is active on a navigation route', () => {
-		expect(activeHrefs(APP_ROUTES.ACCOUNT)).toEqual([APP_ROUTES.ACCOUNT]);
 		expect(activeHrefs(APP_ROUTES.SETTINGS)).toEqual([APP_ROUTES.SETTINGS]);
 	});
 
@@ -28,8 +27,8 @@ describe('navigation item resolution', () => {
 		expect(activeHrefs(APP_ROUTES.SETTINGS)).not.toContain(APP_ROUTES.EVENTS);
 	});
 
-	test('a nested path keeps its parent item active', () => {
-		expect(activeHrefs('/account/passkeys')).toEqual([APP_ROUTES.ACCOUNT]);
+	test('a nested settings path keeps its parent item active', () => {
+		expect(activeHrefs('/settings/security')).toEqual([APP_ROUTES.SETTINGS]);
 	});
 
 	test('a path outside the navigation leaves every item inactive', () => {

@@ -1,5 +1,6 @@
-import { Layout } from '@/components/layout/layout';
-import { PagePlaceholder } from '@/components/layout/page-placeholder';
+import { redirect } from 'next/navigation';
+
+import { settingsProfilePath } from '@/config/routes';
 
 export const metadata = {
 	title: 'Settings',
@@ -7,9 +8,5 @@ export const metadata = {
 };
 
 export default function SettingsPage() {
-	return (
-		<Layout>
-			<PagePlaceholder label='settings' title='Settings' description='lorem ipsum' testId='settings-page' />
-		</Layout>
-	);
+	redirect(settingsProfilePath());
 }

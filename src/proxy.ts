@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
-import { APP_ROUTES, getAccessFor } from '@/config/routes';
+import { APP_ROUTES, getAccessFor, settingsProfilePath } from '@/config/routes';
 import { getViewerFrom } from '@/lib/auth/viewer';
 
 function createLoginRedirect(request: NextRequest): NextResponse {
@@ -24,7 +24,7 @@ export async function proxy(request: NextRequest) {
 
 	if (access === 'guest') {
 		if (viewer) {
-			return NextResponse.redirect(new URL(APP_ROUTES.ACCOUNT, request.url));
+			return NextResponse.redirect(new URL(settingsProfilePath(), request.url));
 		}
 
 		return NextResponse.next();
