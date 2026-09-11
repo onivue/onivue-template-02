@@ -112,6 +112,7 @@ async function GuestInvitation({ params }: InvitationPageProps) {
 				fields={view.fields}
 				guests={view.guests}
 				onSubmit={window.open ? submit : undefined}
+				token={token}
 			/>
 			<InvitationViewTracker token={token} />
 		</>

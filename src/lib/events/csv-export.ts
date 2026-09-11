@@ -1,5 +1,7 @@
 import type { AnswerValue } from '@/lib/events/form-schema';
 
+import { slugifyEventTitle } from '@/lib/events/filename-slug';
+
 // catering and seating happen in a spreadsheet, so the export is the point where this app hands
 // over. one row per person, every field as its own column, retired fields included.
 
@@ -139,15 +141,5 @@ export function toCsv(input: CsvExportInput): string {
 }
 
 export function toCsvFilename(title: string): string {
-	const slug =
-		title
-			.toLowerCase()
-			.replaceAll('ä', 'ae')
-			.replaceAll('ö', 'oe')
-			.replaceAll('ü', 'ue')
-			.replaceAll('ß', 'ss')
-			.replace(/[^a-z0-9]+/g, '-')
-			.replace(/^-+|-+$/g, '') || 'event';
-
-	return `${slug}-gaesteliste.csv`;
+	return `${slugifyEventTitle(title)}-gaesteliste.csv`;
 }
