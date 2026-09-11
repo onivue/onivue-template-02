@@ -1,3 +1,4 @@
+import type { AddressInput } from '@/lib/events/event-address-patch';
 import type { EventPatch } from '@/lib/events/event-repository';
 import type { NotificationPatch, NotificationSettings } from '@/lib/events/notification-settings';
 import type {
@@ -75,12 +76,16 @@ export class EventSession {
 		return await this.service.createEvent(this.userId, title);
 	}
 
-	public async updateEvent(eventId: string, patch: EventPatch): Promise<McpEventResult<{ eventId: string }>> {
+	public async updateEvent(
+		eventId: string,
+		patch: EventPatch,
+		address: Partial<AddressInput>
+	): Promise<McpEventResult<{ eventId: string }>> {
 		if (!this.canWrite()) {
 			return missingScope(MCP_SCOPE_IDS.eventsWrite);
 		}
 
-		return await this.service.updateEvent(this.userId, eventId, patch);
+		return await this.service.updateEvent(this.userId, eventId, patch, address);
 	}
 
 	public async setNotifications(

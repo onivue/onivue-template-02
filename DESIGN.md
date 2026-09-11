@@ -86,24 +86,45 @@ Auth cards stay compact and focused: narrow max width, moderate padding, pill co
 
 ## Guest Pages
 
-The invitation page at `/i/<token>` is the one surface a host may restyle, and the only one that
-leaves the token system above. Its palette arrives as four custom properties on the page's own
-wrapper (`--invitation-accent`, `--invitation-background`, `--invitation-panel`,
-`--invitation-text`), set by `toThemeStyle` in `src/lib/events/event-theme.ts`:
+The invitation page at `/i/<token>` carries the app's own design — there is no per-event theme, and
+nothing on it reads one. The title comes first, the host's greeting right under it, and then one of
+two things — never both, because each says the same date and the same address:
 
-- The **accent** is free — a host picks it with a colour picker. The text on top of it is *not*
-  free: `readableForeground` computes the WCAG relative luminance and returns near-black or white,
-  so a pale lime and a deep blue both stay readable. Never hard-code a foreground next to a
-  user-chosen colour.
-- The **surfaces** are two curated sets (light and dark), never a free background. A free
-  background plus a free accent produces unreadable pages, and no amount of care at the call site
-  fixes it.
-- The **font** is one of a curated few, loaded per page with `next/font`. Anything unknown falls
-  back to the app's own Space Grotesk.
+- **When and where** (`InvitationFacts`) while the answer is still open: the weekday and full date
+  on one side, the street and postal line on the other, each behind a bordered icon tile, separated
+  by a hairline rule on wide screens and stacked on a phone. They are not metadata and must not be
+  styled as such.
+- **The two tiles** — the calendar download (`EventCalendarCard`) and the location card
+  (`EventLocationCard`) — take their place once the guest has replied and at least one of their
+  party said yes. A reader still deciding, or one who just declined, is not handed a date to save
+  and directions they did not ask for.
 
-The admin surface never follows an event theme. A host styling a wedding must not restyle the tool
-they are working in, and the contrast rules above are guaranteed only for the two curated surface
-sets.
+`InvitationPage` owns that swap, so the `AnswerState` it turns on — has the guest replied, is
+anybody coming — lives there rather than inside `InvitationForm`; the form reports each transition
+back through `onAnswerChange`. Anything else would have the form deciding what the page above it
+lays out.
 
-The design tab renders the real `InvitationPage` component with the draft theme rather than a
-mock-up, so a preview cannot drift from what the guest receives.
+Both are full-width tiles at panel weight, not text links: what somebody who said yes does next is
+put the date in their calendar and find the way there, and a link between two cards is the one thing
+they would miss. The location tile carries the map, the address, and the two map apps — nothing
+else. There is no route button: each link opens the place in Apple Karten or Google Maps, where the
+reader's own starting point is what a route needs anyway. Every link is derived from the stored
+address (`src/lib/events/event-location.ts`); a host never pastes one in, so correcting a street can
+never leave a stale pin behind. The host's own event page shows the same location card, so the two
+can never drift.
+
+The settings form (`EventDetailsForm`) asks for those fields in the order the guest reads them —
+title, greeting, when, where — so a host is never editing one page in the shape of another.
+
+The map is MapLibre GL JS on OpenFreeMap's OpenStreetMap tiles, drawn with a style of our own
+(`src/lib/events/map-style.ts`) rather than a stock one: warm off-white ground, white streets, soft
+grey buildings, matching the canvas it sits on. MapLibre parses its own colour strings and knows
+nothing of the CSS custom properties, so that file is the one place where the tokens appear as hex —
+keep it in step with `globals.css` and put map colours nowhere else. The map is `interactive: false`:
+it is a picture of where to go, not a map to explore, and a grabbing map inside a scrolling
+invitation traps a thumb on a phone. Attribution to OpenStreetMap stays on it; the licence requires
+it.
+
+Coordinates are filled in by the geocoder when the address is saved. When it cannot place an
+address, the card simply appears without its map — the address and both links still work, so a
+failed lookup never costs a guest the directions.

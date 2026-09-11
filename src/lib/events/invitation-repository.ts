@@ -31,9 +31,12 @@ export type InvitationEvent = {
 	id: string;
 	organizationId: string;
 	greeting: null | string;
-	location: null | string;
-	locationAppleMapsUrl: null | string;
-	locationGoogleMapsUrl: null | string;
+	locationCity: null | string;
+	locationLatitude: null | number;
+	locationLongitude: null | number;
+	locationName: null | string;
+	locationPostalCode: null | string;
+	locationStreet: null | string;
 	responseDeadline: Date | null;
 	startsAt: Date | null;
 	status: EventStatus;
@@ -65,9 +68,12 @@ export class InvitationRepository {
 				greeting: event.greeting,
 				invitationDeadline: eventInvitation.responseDeadline,
 				invitationId: eventInvitation.id,
-				location: event.location,
-				locationAppleMapsUrl: event.locationAppleMapsUrl,
-				locationGoogleMapsUrl: event.locationGoogleMapsUrl,
+				locationCity: event.locationCity,
+				locationLatitude: event.locationLatitude,
+				locationLongitude: event.locationLongitude,
+				locationName: event.locationName,
+				locationPostalCode: event.locationPostalCode,
+				locationStreet: event.locationStreet,
 				organizationId: event.organizationId,
 				responseDeadline: event.responseDeadline,
 				startsAt: event.startsAt,
@@ -111,9 +117,12 @@ export class InvitationRepository {
 				endsAt: row.endsAt,
 				id: row.eventId,
 				greeting: row.greeting,
-				location: row.location,
-				locationAppleMapsUrl: row.locationAppleMapsUrl,
-				locationGoogleMapsUrl: row.locationGoogleMapsUrl,
+				locationCity: row.locationCity,
+				locationLatitude: row.locationLatitude,
+				locationLongitude: row.locationLongitude,
+				locationName: row.locationName,
+				locationPostalCode: row.locationPostalCode,
+				locationStreet: row.locationStreet,
 				organizationId: row.organizationId,
 				responseDeadline: row.responseDeadline,
 				startsAt: row.startsAt,

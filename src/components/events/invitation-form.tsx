@@ -20,13 +20,40 @@ export type InvitationFormGuest = {
 	response: GuestResponse;
 };
 
+// where the guest stands, held by the page because the page lays out around it: the date and the
+// way there replace the bare facts once somebody is coming, and that is not the form's to decide.
+export type AnswerState = {
+	// at least one guest on this invitation said yes
+	isAttending: boolean;
+	// the answer is in and is read back, rather than being filled in
+	isAnswered: boolean;
+};
+
 type InvitationFormProps = {
+	answer: AnswerState;
 	answers: { fieldId: string; guestId: null | string; value: AnswerValue }[];
 	closedReason?: 'archived' | 'deadline-passed';
 	fields: FormFieldDefinition[];
 	guests: InvitationFormGuest[];
+	onAnswerChange: (answer: AnswerState) => void;
 	onSubmit?: (submission: Submission) => Promise<ActionResult>;
 };
+
+// somebody who has already answered lands on their answer, not on an empty form again
+export function initialAnswerState(guests: InvitationFormGuest[]): AnswerState {
+	return {
+		isAttending: guests.some((guest) => guest.response === 'accepted'),
+		isAnswered: guests.some((guest) => guest.respondedAt !== null),
+	};
+}
+
+// the answer can only be read, never changed: the window is shut, or there is nothing to submit to
+export function isAnswerReadOnly(
+	closedReason: InvitationFormProps['closedReason'],
+	onSubmit: InvitationFormProps['onSubmit']
+): boolean {
+	return Boolean(closedReason) || !onSubmit;
+}
 
 const CLOSED_MESSAGES = {
 	archived: 'Dieses Event ist abgeschlossen. Deine Antwort bleibt sichtbar, lässt sich aber nicht mehr ändern.',
@@ -73,10 +100,7 @@ function guestName(guest: InvitationFormGuest): string {
 export function InvitationForm(props: InvitationFormProps) {
 	const [submission, setSubmission] = useState<Submission>(() => initialState(props));
 	const [isSaving, setIsSaving] = useState(false);
-	// somebody who has already answered lands on their answer, not on an empty form again
-	const [isEditing, setIsEditing] = useState(() => !props.guests.some((guest) => guest.respondedAt !== null));
-	const isClosed = Boolean(props.closedReason);
-	const isReadOnly = isClosed || !props.onSubmit;
+	const isReadOnly = isAnswerReadOnly(props.closedReason, props.onSubmit);
 
 	const setResponse = (guestId: string, response: GuestResponse) => {
 		setSubmission((current) => ({
@@ -116,7 +140,10 @@ export function InvitationForm(props: InvitationFormProps) {
 		if (result.success) {
 			toast.success('Danke! Deine Antwort ist gespeichert.');
 			// the answer is in — read it back instead of leaving the form open
-			setIsEditing(false);
+			props.onAnswerChange({
+				isAttending: Object.values(submission.guests).some((guest) => guest.response === 'accepted'),
+				isAnswered: true,
+			});
 
 			return;
 		}
@@ -124,13 +151,13 @@ export function InvitationForm(props: InvitationFormProps) {
 		toast.error(result.message);
 	};
 
-	if (isReadOnly || !isEditing) {
+	if (isReadOnly || props.answer.isAnswered) {
 		return (
 			<InvitationSummary
 				closedNote={props.closedReason ? CLOSED_MESSAGES[props.closedReason] : null}
 				fields={props.fields}
 				guests={props.guests}
-				onEdit={isReadOnly ? undefined : () => setIsEditing(true)}
+				onEdit={isReadOnly ? undefined : () => props.onAnswerChange({ ...props.answer, isAnswered: false })}
 				submission={submission}
 			/>
 		);

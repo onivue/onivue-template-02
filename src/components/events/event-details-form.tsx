@@ -33,9 +33,10 @@ export function EventDetailsForm({ event }: EventDetailsFormProps) {
 		decoration: event.decoration ?? '',
 		endsAt: toBerlinInputValue(event.endsAt),
 		greeting: event.greeting ?? '',
-		location: event.location ?? '',
-		locationAppleMapsUrl: event.locationAppleMapsUrl ?? '',
-		locationGoogleMapsUrl: event.locationGoogleMapsUrl ?? '',
+		locationCity: event.locationCity ?? '',
+		locationName: event.locationName ?? '',
+		locationPostalCode: event.locationPostalCode ?? '',
+		locationStreet: event.locationStreet ?? '',
 		notificationEmail: event.notificationEmail ?? '',
 		notifyOnResponse: event.notifyOnResponse,
 		responseDeadline: toBerlinInputValue(event.responseDeadline, 'end-of-day'),
@@ -71,6 +72,16 @@ export function EventDetailsForm({ event }: EventDetailsFormProps) {
 				/>
 			</label>
 
+			<label className='design-field'>
+				<span className='design-label'>Begrüßungstext</span>
+				<Textarea
+					onChange={(nativeEvent) => setDetails({ ...details, greeting: nativeEvent.target.value })}
+					placeholder='Wir feiern und würden uns freuen, wenn du dabei bist.'
+					rows={4}
+					value={details.greeting}
+				/>
+			</label>
+
 			<div className='design-field'>
 				<span className='design-label'>Beginn</span>
 				<DateTimePicker
@@ -91,55 +102,49 @@ export function EventDetailsForm({ event }: EventDetailsFormProps) {
 			</div>
 
 			<label className='design-field'>
-				<span className='design-label'>Ort</span>
-				<Textarea
-					onChange={(nativeEvent) => setDetails({ ...details, location: nativeEvent.target.value })}
-					placeholder='z. B. Gasthaus Krone
-Hauptstraße 1
-12345 Musterstadt'
-					rows={3}
-					value={details.location}
+				<span className='design-label'>Ort / Lokal (optional)</span>
+				<Input
+					data-testid='settings-location-name'
+					onChange={(nativeEvent) => setDetails({ ...details, locationName: nativeEvent.target.value })}
+					placeholder='z. B. Gasthaus Krone'
+					value={details.locationName}
 				/>
 			</label>
 
 			<label className='design-field'>
-				<span className='design-label'>Link zu Apple Karten (optional)</span>
+				<span className='design-label'>Strasse und Nummer</span>
 				<Input
-					data-testid='settings-location-apple-maps-url'
-					onChange={(nativeEvent) =>
-						setDetails({ ...details, locationAppleMapsUrl: nativeEvent.target.value })
-					}
-					placeholder='https://maps.apple.com/…'
-					type='url'
-					value={details.locationAppleMapsUrl}
+					data-testid='settings-location-street'
+					onChange={(nativeEvent) => setDetails({ ...details, locationStreet: nativeEvent.target.value })}
+					placeholder='Bachwiesenstrasse 9A'
+					value={details.locationStreet}
 				/>
 			</label>
 
 			<label className='design-field'>
-				<span className='design-label'>Link zu Google Maps (optional)</span>
+				<span className='design-label'>PLZ</span>
 				<Input
-					data-testid='settings-location-google-maps-url'
-					onChange={(nativeEvent) =>
-						setDetails({ ...details, locationGoogleMapsUrl: nativeEvent.target.value })
-					}
-					placeholder='https://maps.google.com/…'
-					type='url'
-					value={details.locationGoogleMapsUrl}
+					data-testid='settings-location-postal-code'
+					inputMode='numeric'
+					onChange={(nativeEvent) => setDetails({ ...details, locationPostalCode: nativeEvent.target.value })}
+					placeholder='9200'
+					value={details.locationPostalCode}
+				/>
+			</label>
+
+			<label className='design-field'>
+				<span className='design-label'>Ortschaft</span>
+				<Input
+					data-testid='settings-location-city'
+					onChange={(nativeEvent) => setDetails({ ...details, locationCity: nativeEvent.target.value })}
+					placeholder='Gossau'
+					value={details.locationCity}
 				/>
 			</label>
 			<p className='-mt-4 text-xs text-ink-soft'>
-				Der Ort wird für Gäste anklickbar, sobald einer der beiden Links hinterlegt ist.
+				Aus Strasse, PLZ und Ortschaft entstehen die Karte auf der Einladung und die Links zu Apple Karten und
+				Google Maps — es braucht keinen Link von Hand.
 			</p>
-
-			<label className='design-field'>
-				<span className='design-label'>Begrüßungstext</span>
-				<Textarea
-					onChange={(nativeEvent) => setDetails({ ...details, greeting: nativeEvent.target.value })}
-					placeholder='Wir feiern und würden uns freuen, wenn du dabei bist.'
-					rows={4}
-					value={details.greeting}
-				/>
-			</label>
 
 			<div className='design-field'>
 				<span className='design-label'>3D-Element (optional)</span>

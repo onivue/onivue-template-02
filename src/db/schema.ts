@@ -8,6 +8,7 @@ import {
 	timestamp,
 	boolean,
 	integer,
+	doublePrecision,
 	index,
 	uniqueIndex,
 	jsonb,
@@ -441,11 +442,17 @@ export const event = pgTable(
 		createdByUserId: text('created_by_user_id').references(() => user.id, { onDelete: 'set null' }),
 		title: text('title').notNull(),
 		greeting: text('greeting'),
-		location: text('location'),
-		// two separate deep links, since a guest on ios reaches for apple maps and one on android for
-		// google maps — either, both, or neither may be set
-		locationAppleMapsUrl: text('location_apple_maps_url'),
-		locationGoogleMapsUrl: text('location_google_maps_url'),
+		// the address is kept in parts rather than as one block of text: the map links and the
+		// geocoder are both built from street and postal code, and a free-text field would have to be
+		// taken apart again at every call site
+		locationName: text('location_name'),
+		locationStreet: text('location_street'),
+		locationPostalCode: text('location_postal_code'),
+		locationCity: text('location_city'),
+		// filled by the geocoder when the address resolves; without them the guest page shows the
+		// address and its map links, just no map
+		locationLatitude: doublePrecision('location_latitude'),
+		locationLongitude: doublePrecision('location_longitude'),
 		startsAt: timestamp('starts_at', { withTimezone: true }),
 		endsAt: timestamp('ends_at', { withTimezone: true }),
 		// the deadline for every invitation of this event; a single invitation may be granted a later one

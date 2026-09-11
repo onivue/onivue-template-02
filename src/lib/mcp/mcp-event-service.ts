@@ -1,13 +1,16 @@
 import { revalidateTag } from 'next/cache';
 
 import type { Membership } from '@/lib/auth/personal-organization';
+import type { AddressInput } from '@/lib/events/event-address-patch';
 import type { EventPatch } from '@/lib/events/event-repository';
 import type { NotificationPatch, NotificationSettings } from '@/lib/events/notification-settings';
 
 import { db } from '@/db/client';
 import { DrizzleOrganizationStore } from '@/lib/auth/drizzle-organization-store';
 import { ensurePersonalOrganization } from '@/lib/auth/personal-organization';
+import { resolveAddressPatch } from '@/lib/events/event-address-patch';
 import { eventDetailsTag, eventGuestsTag, eventListTag } from '@/lib/events/event-cache';
+import { addressSingleLine, toEventAddress } from '@/lib/events/event-location';
 import { eventAccess, eventRepository } from '@/lib/events/event-services';
 import { parseGuestList } from '@/lib/events/guest-list-parser';
 import { invitationUrl } from '@/lib/events/invitation-url';
@@ -164,7 +167,7 @@ export class McpEventService {
 						id: invitation.id,
 						sentAt: invitation.sentAt?.toISOString() ?? null,
 					})),
-					location: event.location,
+					location: addressSingleLine(toEventAddress(event)),
 					notifications: { email: event.notificationEmail, enabled: event.notifyOnResponse },
 					responseDeadline: event.responseDeadline?.toISOString() ?? null,
 					startsAt: event.startsAt?.toISOString() ?? null,
@@ -189,10 +192,13 @@ export class McpEventService {
 		return { data: { eventId }, success: true };
 	}
 
+	// the address arrives in parts and only the named ones change, so an agent can correct one line
+	// without repeating the rest — and the map pin is re-read whenever the result is a new address
 	public async updateEvent(
 		userId: string,
 		eventId: string,
-		patch: EventPatch
+		patch: EventPatch,
+		address: Partial<AddressInput>
 	): Promise<McpEventResult<{ eventId: string }>> {
 		const scope = await this.manage(userId, eventId);
 
@@ -200,7 +206,24 @@ export class McpEventService {
 			return scope;
 		}
 
-		await eventRepository.updateEvent(eventId, patch);
+		const current = await eventRepository.findEvent(eventId, scope.data.organizationId);
+
+		if (!current) {
+			return failed(MESSAGES.notFound);
+		}
+
+		const stored = toEventAddress(current);
+		const resolved = await resolveAddressPatch(
+			{
+				city: address.city ?? stored.city,
+				name: address.name ?? stored.name,
+				postalCode: address.postalCode ?? stored.postalCode,
+				street: address.street ?? stored.street,
+			},
+			stored
+		);
+
+		await eventRepository.updateEvent(eventId, { ...patch, ...resolved });
 
 		// the title and date show on the card too, so the list goes with it
 		expire(eventDetailsTag(eventId), eventListTag(scope.data.organizationId));

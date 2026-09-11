@@ -1,3 +1,6 @@
+import type { AddressColumns } from '@/lib/events/event-location';
+
+import { addressSingleLine, toEventAddress } from '@/lib/events/event-location';
 import { slugifyEventTitle } from '@/lib/events/filename-slug';
 
 // the "im Kalender speichern" feature: one vevent per event, since an invitation never covers more
@@ -6,10 +9,9 @@ import { slugifyEventTitle } from '@/lib/events/filename-slug';
 const CRLF = '\r\n';
 const DEFAULT_DURATION_MS = 60 * 60 * 1000;
 
-export type CalendarExportEvent = {
+export type CalendarExportEvent = AddressColumns & {
 	endsAt: Date | null;
 	greeting: null | string;
-	location: null | string;
 	startsAt: Date | null;
 	title: string;
 };
@@ -45,6 +47,9 @@ export function toIcs(input: IcsInput): string | null {
 		return null;
 	}
 
+	// one line, as calendars expect it — the guest page is where the address gets its own lines
+	const location = addressSingleLine(toEventAddress(event));
+
 	const lines = [
 		'BEGIN:VCALENDAR',
 		'VERSION:2.0',
@@ -56,7 +61,7 @@ export function toIcs(input: IcsInput): string | null {
 		`DTSTART:${toUtcStamp(event.startsAt)}`,
 		`DTEND:${toUtcStamp(resolveEnd(event.startsAt, event.endsAt))}`,
 		`SUMMARY:${escapeText(event.title)}`,
-		...(event.location ? [`LOCATION:${escapeText(event.location)}`] : []),
+		...(location ? [`LOCATION:${escapeText(location)}`] : []),
 		...(event.greeting ? [`DESCRIPTION:${escapeText(event.greeting)}`] : []),
 		'END:VEVENT',
 		'END:VCALENDAR',

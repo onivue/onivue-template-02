@@ -79,7 +79,7 @@ describe('writing needs events:write', () => {
 		const { calls, session } = createSession(MCP_SCOPE_IDS.eventsWrite);
 
 		await session.createEvent('Sommerfest');
-		await session.updateEvent(EVENT_ID, { title: 'Sommerfest' });
+		await session.updateEvent(EVENT_ID, { title: 'Sommerfest' }, {});
 		await session.setNotifications(EVENT_ID, { enabled: false });
 		await session.addInvitations(EVENT_ID, 'Anna Meier');
 		await session.markInvitationSent(EVENT_ID, INVITATION_ID, true);

@@ -1,8 +1,9 @@
-import { CalendarClock, CalendarPlus, Download, ListChecks, Map, MapPin, Send } from 'lucide-react';
+import { CalendarClock, CalendarPlus, Download, ListChecks, MapPin, Send } from 'lucide-react';
 import Link from 'next/link';
 import { Suspense } from 'react';
 
 import { BulkInviteForm } from '@/components/events/bulk-invite-form';
+import { EventLocationCard } from '@/components/events/event-location-card';
 import { GuestTable } from '@/components/events/guest-table';
 import { ResponseCounts } from '@/components/events/response-counts';
 import { ResponseWindowStatus } from '@/components/events/response-window-status';
@@ -11,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { CardSkeleton } from '@/components/ui/skeleton';
 import { eventCalendarPath, eventExportPath, eventPath } from '@/config/routes';
 import { formatBerlin } from '@/lib/events/berlin-time';
+import { hasAddress, toEventAddress } from '@/lib/events/event-location';
 import { loadEvent, loadEventFormFields, loadEventInvitations } from '@/lib/events/event-page-data';
 import { countGuests, countInvitations } from '@/lib/events/invitation-counts';
 
@@ -40,6 +42,7 @@ async function EventFacts({ params }: { params: Params }) {
 	const { eventId } = await params;
 	const { event } = await loadEvent(eventId);
 	const fields = await loadEventFormFields(eventId);
+	const address = toEventAddress(event);
 
 	return (
 		<section className='design-panel grid gap-4 p-5 sm:p-6'>
@@ -76,31 +79,11 @@ async function EventFacts({ params }: { params: Params }) {
 				</Fact>
 
 				<Fact icon={MapPin} label='Wo'>
-					<span className='whitespace-pre-line'>{event.location ?? 'Noch nicht festgelegt'}</span>
-					{event.locationAppleMapsUrl || event.locationGoogleMapsUrl ? (
-						<span className='mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs'>
-							{event.locationAppleMapsUrl ? (
-								<a
-									className='inline-flex items-center gap-1 underline-offset-2 hover:underline'
-									href={event.locationAppleMapsUrl}
-									rel='noopener noreferrer'
-									target='_blank'
-								>
-									<MapPin aria-hidden='true' className='size-3.5' /> Apple Karten
-								</a>
-							) : null}
-							{event.locationGoogleMapsUrl ? (
-								<a
-									className='inline-flex items-center gap-1 underline-offset-2 hover:underline'
-									href={event.locationGoogleMapsUrl}
-									rel='noopener noreferrer'
-									target='_blank'
-								>
-									<Map aria-hidden='true' className='size-3.5' /> Google Maps
-								</a>
-							) : null}
-						</span>
-					) : null}
+					{hasAddress(address) ? (
+						<EventLocationCard address={address} className='mt-1' />
+					) : (
+						'Noch nicht festgelegt'
+					)}
 				</Fact>
 
 				<Fact icon={Send} label='Antworten'>

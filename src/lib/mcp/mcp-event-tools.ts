@@ -72,30 +72,55 @@ export function registerEventTools(server: McpServer, session: EventSession): vo
 		MCP_CONFIG.tools.updateEvent,
 		{
 			annotations: { idempotentHint: true },
-			description: 'Ändert Titel, Zeiten, Ort, Begrüßungstext oder Antwort-Frist eines Events.',
+			description:
+				'Ändert Titel, Zeiten, Adresse, Begrüßungstext oder Antwort-Frist eines Events. Aus der Adresse entstehen Karte und Kartenlinks automatisch.',
 			inputSchema: {
 				endsAt: dateSchema.optional(),
 				eventId: eventIdSchema,
 				greeting: z.string().max(2000).optional(),
-				location: z.string().max(200).optional(),
+				locationCity: z.string().max(120).optional().describe('Ortschaft, z. B. "Gossau".'),
+				locationName: z.string().max(200).optional().describe('Name des Lokals, z. B. "Gasthaus Krone".'),
+				locationPostalCode: z.string().max(20).optional().describe('PLZ, z. B. "9200".'),
+				locationStreet: z.string().max(200).optional().describe('Strasse und Nummer.'),
 				responseDeadline: dateSchema.optional(),
 				startsAt: dateSchema.optional(),
 				title: z.string().min(1).max(120).optional(),
 			},
 			title: 'Event ändern',
 		},
-		async ({ endsAt, eventId, greeting, location, responseDeadline, startsAt, title }) =>
+		async ({
+			endsAt,
+			eventId,
+			greeting,
+			locationCity,
+			locationName,
+			locationPostalCode,
+			locationStreet,
+			responseDeadline,
+			startsAt,
+			title,
+		}) =>
 			toResult(
-				await session.updateEvent(eventId, {
-					...(endsAt === undefined ? {} : { endsAt: parseBerlinDateTime(endsAt) }),
-					...(greeting === undefined ? {} : { greeting: greeting || null }),
-					...(location === undefined ? {} : { location: location || null }),
-					...(responseDeadline === undefined
-						? {}
-						: { responseDeadline: parseBerlinDateTime(responseDeadline, 'end-of-day') }),
-					...(startsAt === undefined ? {} : { startsAt: parseBerlinDateTime(startsAt) }),
-					...(title === undefined ? {} : { title }),
-				})
+				await session.updateEvent(
+					eventId,
+					{
+						...(endsAt === undefined ? {} : { endsAt: parseBerlinDateTime(endsAt) }),
+						...(greeting === undefined ? {} : { greeting: greeting || null }),
+						...(responseDeadline === undefined
+							? {}
+							: { responseDeadline: parseBerlinDateTime(responseDeadline, 'end-of-day') }),
+						...(startsAt === undefined ? {} : { startsAt: parseBerlinDateTime(startsAt) }),
+						...(title === undefined ? {} : { title }),
+					},
+					// the address is resolved against what is stored, so an agent can correct the street
+					// without repeating the town — and the map pin follows either way
+					{
+						...(locationCity === undefined ? {} : { city: locationCity || null }),
+						...(locationName === undefined ? {} : { name: locationName || null }),
+						...(locationPostalCode === undefined ? {} : { postalCode: locationPostalCode || null }),
+						...(locationStreet === undefined ? {} : { street: locationStreet || null }),
+					}
+				)
 			)
 	);
 

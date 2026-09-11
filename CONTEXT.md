@@ -211,6 +211,18 @@ without breaking anything already sent: Invitation Links keep resolving, but onl
 is final and takes the guest list with it — there is no restore, so it is the one action the app
 guards hardest.
 
+## Address
+
+Where an Event happens, held in parts rather than as one block of text: an optional venue name, a
+street, a postal code and a town. The parts matter because two other things are built from them —
+the links to Apple Karten and Google Maps, and the coordinates the map on the Invitation is centred
+on. A host never pastes a maps link; correcting the street is what moves the pin.
+
+The coordinates are looked up when the Address is saved and stored with the Event, so a guest
+opening their Invitation never waits on a third party. An Address that cannot be placed simply has
+none: the Invitation then shows the address and both map links without a map, which is a smaller
+loss than a wrong pin.
+
 ## Organization
 
 Who an Event belongs to. Every person gets one the moment they register, and for a single user it

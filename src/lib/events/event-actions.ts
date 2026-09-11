@@ -10,19 +10,13 @@ import { getActiveMembership } from '@/lib/auth/active-organization';
 import { requireViewer } from '@/lib/auth/viewer';
 import { accessFailure, ACTION_MESSAGES, failure, ok } from '@/lib/events/action-result';
 import { parseBerlinDateTime } from '@/lib/events/berlin-time';
+import { resolveAddressPatch } from '@/lib/events/event-address-patch';
 import { eventDetailsTag, eventFormTag, eventGuestsTag, eventListTag } from '@/lib/events/event-cache';
 import { isDecorationKey } from '@/lib/events/event-decoration';
+import { toEventAddress } from '@/lib/events/event-location';
 import { eventAccess, eventRepository } from '@/lib/events/event-services';
 
 const titleSchema = z.string().trim().min(1, 'Ein Titel fehlt.').max(120, 'Der Titel ist zu lang.');
-
-// a maps deep link, pasted in as-is — either app, both, or neither
-const mapsUrlSchema = z
-	.string()
-	.trim()
-	.max(1000)
-	.refine((value) => value === '' || /^https:\/\//i.test(value), 'Der Link muss mit https:// beginnen.')
-	.optional();
 
 const detailsSchema = z
 	.object({
@@ -33,9 +27,10 @@ const detailsSchema = z
 			.optional(),
 		endsAt: z.string().optional(),
 		greeting: z.string().max(2000).optional(),
-		location: z.string().max(500).optional(),
-		locationAppleMapsUrl: mapsUrlSchema,
-		locationGoogleMapsUrl: mapsUrlSchema,
+		locationCity: z.string().max(120).optional(),
+		locationName: z.string().max(200).optional(),
+		locationPostalCode: z.string().max(20).optional(),
+		locationStreet: z.string().max(200).optional(),
 		notificationEmail: z
 			.string()
 			.trim()
@@ -96,13 +91,27 @@ export async function updateEventDetails(eventId: string, input: z.input<typeof 
 		return failure(parsed.error.issues[0]?.message ?? ACTION_MESSAGES.invalid);
 	}
 
+	const current = await eventRepository.findEvent(eventId, access.data.organizationId);
+
+	if (!current) {
+		return failure(ACTION_MESSAGES.notFound);
+	}
+
+	const address = await resolveAddressPatch(
+		{
+			city: emptyToNull(parsed.data.locationCity),
+			name: emptyToNull(parsed.data.locationName),
+			postalCode: emptyToNull(parsed.data.locationPostalCode),
+			street: emptyToNull(parsed.data.locationStreet),
+		},
+		toEventAddress(current)
+	);
+
 	const patch: EventPatch = {
+		...address,
 		decoration: emptyToNull(parsed.data.decoration),
 		endsAt: parseBerlinDateTime(parsed.data.endsAt),
 		greeting: emptyToNull(parsed.data.greeting),
-		location: emptyToNull(parsed.data.location),
-		locationAppleMapsUrl: emptyToNull(parsed.data.locationAppleMapsUrl),
-		locationGoogleMapsUrl: emptyToNull(parsed.data.locationGoogleMapsUrl),
 		notificationEmail: emptyToNull(parsed.data.notificationEmail),
 		notifyOnResponse: parsed.data.notifyOnResponse ?? false,
 		responseDeadline: parseBerlinDateTime(parsed.data.responseDeadline, 'end-of-day'),

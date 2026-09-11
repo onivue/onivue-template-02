@@ -1,17 +1,19 @@
+import type { AddressColumns } from '@/lib/events/event-location';
+
 import { formatBerlin } from '@/lib/events/berlin-time';
+import { addressSingleLine, toEventAddress } from '@/lib/events/event-location';
 
 const SEPARATOR = ' · ';
 const MAX_LENGTH = 200;
 const ELLIPSIS = '…';
 const FALLBACK = 'Du bist eingeladen. Öffne den Link, um zu- oder abzusagen.';
 
-export type InvitationPreviewEvent = {
+export type InvitationPreviewEvent = AddressColumns & {
 	greeting: null | string;
-	location: null | string;
 	startsAt: Date | null;
 };
 
-// an address runs over several lines; a preview gets one
+// a greeting runs over several lines; a preview gets one
 function firstLine(value: string): string {
 	return value.split('\n')[0]?.trim() ?? '';
 }
@@ -23,7 +25,7 @@ function shorten(value: string): string {
 // the line a messenger prints under the event title. when and where answer the guest's first
 // question, so they come before the host's own words.
 export function invitationPreviewDescription(event: InvitationPreviewEvent): string {
-	const facts = [event.startsAt ? formatBerlin(event.startsAt) : '', event.location ? firstLine(event.location) : '']
+	const facts = [event.startsAt ? formatBerlin(event.startsAt) : '', addressSingleLine(toEventAddress(event)) ?? '']
 		.filter(Boolean)
 		.join(SEPARATOR);
 

@@ -4,7 +4,17 @@ import { parseBerlinDateTime } from '@/lib/events/berlin-time';
 import { invitationPreviewDescription } from '@/lib/events/invitation-preview';
 
 function event(overrides: Partial<Parameters<typeof invitationPreviewDescription>[0]> = {}) {
-	return { greeting: null, location: null, startsAt: null, ...overrides };
+	return {
+		greeting: null,
+		locationCity: null,
+		locationLatitude: null,
+		locationLongitude: null,
+		locationName: null,
+		locationPostalCode: null,
+		locationStreet: null,
+		startsAt: null,
+		...overrides,
+	};
 }
 
 describe('invitationPreviewDescription', () => {
@@ -12,11 +22,14 @@ describe('invitationPreviewDescription', () => {
 		expect(
 			invitationPreviewDescription(
 				event({
-					location: 'Gasthaus Krone\nHauptstraße 1\n12345 Musterstadt',
+					locationCity: 'Musterstadt',
+					locationName: 'Gasthaus Krone',
+					locationPostalCode: '12345',
+					locationStreet: 'Hauptstraße 1',
 					startsAt: parseBerlinDateTime('2026-07-15T18:30'),
 				})
 			)
-		).toBe('15. Juli 2026, 18:30 Uhr · Gasthaus Krone');
+		).toBe('15. Juli 2026, 18:30 Uhr · Gasthaus Krone, Hauptstraße 1, 12345 Musterstadt');
 	});
 
 	test('a day without a time keeps its date and drops the hour', () => {
@@ -26,7 +39,7 @@ describe('invitationPreviewDescription', () => {
 	});
 
 	test('either fact alone still makes a line', () => {
-		expect(invitationPreviewDescription(event({ location: 'Krone' }))).toBe('Krone');
+		expect(invitationPreviewDescription(event({ locationName: 'Krone' }))).toBe('Krone');
 		expect(invitationPreviewDescription(event({ startsAt: parseBerlinDateTime('2026-07-15T18:30') }))).toBe(
 			'15. Juli 2026, 18:30 Uhr'
 		);

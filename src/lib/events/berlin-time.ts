@@ -12,6 +12,9 @@ const DATE_PATTERN = 'yyyy-MM-dd';
 const INPUT_PATTERN = 'yyyy-MM-dd HH:mm';
 const DISPLAY_PATTERN = "d. MMMM yyyy, HH:mm 'Uhr'";
 const DATE_DISPLAY_PATTERN = 'd. MMMM yyyy';
+// the invitation puts the day and the hour on two lines, so each gets its own pattern
+const WEEKDAY_DISPLAY_PATTERN = 'EEEE, d. MMMM yyyy';
+const TIME_DISPLAY_PATTERN = "HH:mm 'Uhr'";
 const SHORT_PATTERN = 'dd.MM.yyyy, HH:mm';
 const SHORT_DATE_PATTERN = 'dd.MM.yyyy';
 
@@ -84,6 +87,26 @@ export function formatBerlin(date: Date | null, moment: TimelessMoment = 'start-
 	const zoned = new TZDate(date, EVENT_TIME_ZONE);
 
 	return format(zoned, isTimeless(zoned, moment) ? DATE_DISPLAY_PATTERN : DISPLAY_PATTERN, { locale: de });
+}
+
+// "Samstag, 24. Oktober 2026" — the weekday is what a guest checks first
+export function formatBerlinWeekday(date: Date | null): string {
+	if (!date) {
+		return '';
+	}
+
+	return format(new TZDate(date, EVENT_TIME_ZONE), WEEKDAY_DISPLAY_PATTERN, { locale: de });
+}
+
+// "19:30 Uhr", or empty for a day that was given without an hour
+export function formatBerlinTime(date: Date | null, moment: TimelessMoment = 'start-of-day'): string {
+	if (!date) {
+		return '';
+	}
+
+	const zoned = new TZDate(date, EVENT_TIME_ZONE);
+
+	return isTimeless(zoned, moment) ? '' : format(zoned, TIME_DISPLAY_PATTERN, { locale: de });
 }
 
 export function formatBerlinShort(date: Date | null, moment: TimelessMoment = 'start-of-day'): string {

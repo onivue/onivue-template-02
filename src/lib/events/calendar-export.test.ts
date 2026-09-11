@@ -10,7 +10,12 @@ function event(overrides: Partial<CalendarExportEvent> = {}): CalendarExportEven
 	return {
 		endsAt: null,
 		greeting: null,
-		location: null,
+		locationCity: null,
+		locationLatitude: null,
+		locationLongitude: null,
+		locationName: null,
+		locationPostalCode: null,
+		locationStreet: null,
 		startsAt: new Date('2026-07-15T18:00:00.000Z'),
 		title: 'Hochzeit von Anna & Ben',
 		...overrides,
@@ -53,7 +58,7 @@ describe('the add-to-calendar file', () => {
 		expect(withoutThem).not.toContain('DESCRIPTION:');
 
 		const withThem = toIcs({
-			event: event({ greeting: 'Wir freuen uns auf euch!', location: 'Schlossgarten 1' }),
+			event: event({ greeting: 'Wir freuen uns auf euch!', locationStreet: 'Schlossgarten 1' }),
 			now: NOW,
 			uid: 'e1@event.onivue',
 		});
@@ -63,12 +68,12 @@ describe('the add-to-calendar file', () => {
 
 	test('semicolons, commas and newlines cannot break a field apart', () => {
 		const ics = toIcs({
-			event: event({ location: 'Saal 1; Etage 2, links\nHintereingang' }),
+			event: event({ locationName: 'Saal 1; Etage 2, links', locationStreet: 'Hintereingang' }),
 			now: NOW,
 			uid: 'e1@event.onivue',
 		});
 
-		expect(ics).toContain('LOCATION:Saal 1\\; Etage 2\\, links\\nHintereingang');
+		expect(ics).toContain('LOCATION:Saal 1\\; Etage 2\\, links\\, Hintereingang');
 	});
 
 	test('the file is named after the event', () => {
