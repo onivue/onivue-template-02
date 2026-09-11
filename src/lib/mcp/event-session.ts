@@ -130,6 +130,18 @@ export class EventSession {
 		return await this.service.deleteInvitation(this.userId, eventId, invitationId);
 	}
 
+	public async renameGuest(
+		eventId: string,
+		guestId: string,
+		name: string
+	): Promise<McpEventResult<{ guestId: string }>> {
+		if (!this.canWrite()) {
+			return missingScope(MCP_SCOPE_IDS.eventsWrite);
+		}
+
+		return await this.service.renameGuest(this.userId, eventId, guestId, name);
+	}
+
 	private canRead(): boolean {
 		return this.scopes.includes(MCP_SCOPE_IDS.eventsRead);
 	}

@@ -251,7 +251,7 @@ const ACTION_EFFECTS: Record<AccountActionName, SuccessEffect> = {
 	'send-login-link': {},
 	'sign-in-passkey': { redirect: settingsProfilePath() },
 	'sign-in-password': { redirect: settingsProfilePath() },
-	'sign-out': { redirect: APP_ROUTES.LANDING },
+	'sign-out': { redirect: APP_ROUTES.HOME },
 	'sign-up-password': {},
 	'update-name': { refresh: true },
 	'update-username': { refresh: true },

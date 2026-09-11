@@ -253,7 +253,7 @@ export function GuestTable({ eventId, invitations }: GuestTableProps) {
 						</Button>
 					</p>
 				) : (
-					<ul className='divide-y divide-border border-t border-border' data-testid='invitation-list'>
+					<ul className='grid gap-1 border-t border-border' data-testid='invitation-list'>
 						{visible.map((invitation) => (
 							<li
 								className='grid gap-3 px-5 py-4'

@@ -116,7 +116,7 @@ export function EventDetailsForm({ event }: EventDetailsFormProps) {
 				<Input
 					data-testid='settings-location-street'
 					onChange={(nativeEvent) => setDetails({ ...details, locationStreet: nativeEvent.target.value })}
-					placeholder='Bachwiesenstrasse 9A'
+					placeholder='Musterstrasse 12'
 					value={details.locationStreet}
 				/>
 			</label>
@@ -127,7 +127,7 @@ export function EventDetailsForm({ event }: EventDetailsFormProps) {
 					data-testid='settings-location-postal-code'
 					inputMode='numeric'
 					onChange={(nativeEvent) => setDetails({ ...details, locationPostalCode: nativeEvent.target.value })}
-					placeholder='9200'
+					placeholder='1234'
 					value={details.locationPostalCode}
 				/>
 			</label>
@@ -137,7 +137,7 @@ export function EventDetailsForm({ event }: EventDetailsFormProps) {
 				<Input
 					data-testid='settings-location-city'
 					onChange={(nativeEvent) => setDetails({ ...details, locationCity: nativeEvent.target.value })}
-					placeholder='Gossau'
+					placeholder='Musterstadt'
 					value={details.locationCity}
 				/>
 			</label>

@@ -59,7 +59,7 @@ Anything interactive is a `Button` (`src/components/ui/button.tsx`) rather than 
 
 Sidebar navigation uses `bg-sidebar-accent` for the active item and `text-sidebar-accent` for supporting icon emphasis. Inactive items stay muted on the dark surface and reveal a subtle accent tint on hover. The mobile bar reuses the same sidebar tokens, so both navigation surfaces stay in step.
 
-The account control belongs to a shell, not to the window: the app shell renders it at the foot of its navigation (desktop sidebar and mobile drawer alike), the landing page renders it in its header. Auth screens live in the `(auth)` route group, stay visually separate from the app navigation, and render no account control at all — those pages carry their own sign-in and sign-up actions.
+The account control belongs to a shell, not to the window: the app shell renders it at the foot of its navigation (desktop sidebar and mobile drawer alike). Auth screens live in the `(auth)` route group, stay visually separate from the app navigation, and render no account control at all — those pages carry their own sign-in and sign-up actions. The landing page at `/` carries none either: it is guest-only, so its header shows the same two actions instead.
 Auth cards stay compact and focused: narrow max width, moderate padding, pill controls, and restrained dialog-scale typography.
 
 ## Readability
@@ -83,6 +83,21 @@ Auth cards stay compact and focused: narrow max width, moderate padding, pill co
 - Do not change application structure solely to match mockups; apply this design language through tokens and utilities first.
 - Keep mobile safe-area handling on fixed bottom elements.
 - Use `data-testid` on visible layout and navigation elements.
+
+## Landing Page
+
+The landing page is the app's root (`/`) and is guest-only: the proxy sends a reader who already has
+a session to the event list, so the page reads no session itself and stays a static shell. Its
+sections live in `src/components/landing/` and all share one shape — `LandingSection` with its
+label, display title and one line of description — so a new section never invents its own heading
+scale. It reuses the app's own language rather than a second, louder one: `design-panel` cards on
+the canvas, `bg-sidebar-primary` for the two dark blocks (the guest-page section and the closing
+call to action), `design-section-label` for the section labels, and `Button` at `size='xl'` for
+every call to action. On the dark blocks the high-emphasis action is `variant='default'` — the
+near-black `strong` pill would disappear there.
+
+The hero's invitation preview (`LandingInvitationPreview`) is an illustration, not real data: it is
+`aria-hidden`, and every fact it shows is also stated as text in the sections below it.
 
 ## Guest Pages
 

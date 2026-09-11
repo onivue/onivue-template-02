@@ -1,5 +1,6 @@
 const ROOT_PATH = '/';
 const PATH_SEPARATOR = '/';
+const EVENTS_PATH = '/events';
 
 // public: no session needed · guest: only without a session · viewer: session required
 export type RouteAccess = 'guest' | 'public' | 'viewer';
@@ -10,7 +11,6 @@ export type RouteName =
 	| 'FORGOT_PASSWORD'
 	| 'HOME'
 	| 'INVITATION'
-	| 'LANDING'
 	| 'LOGIN'
 	| 'REGISTER'
 	| 'RESET_PASSWORD'
@@ -23,6 +23,8 @@ type RouteDefinition = {
 		testId: string;
 	};
 	path: string;
+	// where a signed-in reader is sent instead of a guest-only route
+	signedInPath?: string;
 };
 
 // one declaration per route: where it lives, who may see it, whether it appears in navigation
@@ -32,28 +34,26 @@ export const ROUTES = {
 		access: 'viewer',
 		path: '/consent',
 	},
-	// the working surface of the app; the root redirects here
+	// the working surface of the app; the landing page redirects here
 	EVENTS: {
 		access: 'viewer',
 		nav: { label: 'Events', testId: 'navigation-events-link' },
-		path: '/events',
+		path: EVENTS_PATH,
 	},
 	FORGOT_PASSWORD: {
 		access: 'guest',
 		path: '/forgot-password',
 	},
+	// the landing page: it explains the app, so only a reader without a session has use for it
 	HOME: {
-		access: 'viewer',
-		path: '/',
+		access: 'guest',
+		path: ROOT_PATH,
+		signedInPath: EVENTS_PATH,
 	},
 	// the guest link. public by design: possession of the token is the authorization (ADR-0004)
 	INVITATION: {
 		access: 'public',
 		path: '/i',
-	},
-	LANDING: {
-		access: 'public',
-		path: '/landing',
 	},
 	LOGIN: {
 		access: 'guest',
@@ -79,7 +79,6 @@ export const APP_ROUTES = {
 	HOME: ROUTES.HOME.path,
 	EVENTS: ROUTES.EVENTS.path,
 	INVITATION: ROUTES.INVITATION.path,
-	LANDING: ROUTES.LANDING.path,
 	SETTINGS: ROUTES.SETTINGS.path,
 	SETTINGS_PROFILE: `${ROUTES.SETTINGS.path}/profile`,
 	SETTINGS_SECURITY: `${ROUTES.SETTINGS.path}/security`,
@@ -113,15 +112,28 @@ export function isPublicMetadataFile(pathname: string): boolean {
 	return PUBLIC_METADATA_FILES.has(segment.replace(/-\d+$/, ''));
 }
 
+function findRoute(pathname: string) {
+	return Object.values(ROUTES).find((candidate) => matchesRoute(pathname, candidate.path));
+}
+
 // unknown paths are treated as viewer-only, keeping the proxy deny-by-default
 export function getAccessFor(pathname: string): RouteAccess {
 	if (isPublicMetadataFile(pathname)) {
 		return 'public';
 	}
 
-	const route = Object.values(ROUTES).find((candidate) => matchesRoute(pathname, candidate.path));
+	return findRoute(pathname)?.access ?? 'viewer';
+}
 
-	return route?.access ?? 'viewer';
+// a guest-only route names where the reader who already has a session belongs instead
+export function getSignedInRedirectFor(pathname: string): string {
+	const route = findRoute(pathname);
+
+	if (route && 'signedInPath' in route) {
+		return route.signedInPath;
+	}
+
+	return APP_ROUTES.SETTINGS_PROFILE;
 }
 
 const NAVIGATION_ORDER = ['EVENTS', 'SETTINGS'] as const satisfies readonly RouteName[];

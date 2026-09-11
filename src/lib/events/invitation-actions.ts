@@ -12,7 +12,7 @@ import { accessFailure, ACTION_MESSAGES, failure, ok } from '@/lib/events/action
 import { parseBerlinDateTime } from '@/lib/events/berlin-time';
 import { eventGuestsTag, eventListTag } from '@/lib/events/event-cache';
 import { eventAccess, eventRepository } from '@/lib/events/event-services';
-import { parseGuestList } from '@/lib/events/guest-list-parser';
+import { parseGuestList, toGuest } from '@/lib/events/guest-list-parser';
 
 const nameSchema = z.string().trim().min(1, 'Ein Name fehlt.').max(80, 'Der Name ist zu lang.');
 
@@ -150,12 +150,40 @@ export async function addGuest(eventId: string, invitationId: string, name: stri
 		return failure(parsed.error.issues[0]?.message ?? ACTION_MESSAGES.invalid);
 	}
 
-	const [firstName, ...rest] = parsed.data.split(/\s+/);
+	const guest = toGuest(parsed.data);
 
-	await eventRepository.addGuest(invitationId, {
-		firstName: firstName ?? parsed.data,
-		lastName: rest.length > 0 ? rest.join(' ') : null,
-	});
+	if (!guest) {
+		return failure(ACTION_MESSAGES.invalid);
+	}
+
+	await eventRepository.addGuest(invitationId, guest);
+
+	expireGuests(access.data);
+
+	return ok();
+}
+
+// the name changes, the answers and the history stay with the same person
+export async function renameGuest(eventId: string, guestId: string, name: string): Promise<ActionResult> {
+	const access = await guard(eventId);
+
+	if (!access.success) {
+		return accessFailure(access.error);
+	}
+
+	const parsed = nameSchema.safeParse(name);
+
+	if (!parsed.success) {
+		return failure(parsed.error.issues[0]?.message ?? ACTION_MESSAGES.invalid);
+	}
+
+	const guest = toGuest(parsed.data);
+
+	if (!guest) {
+		return failure(ACTION_MESSAGES.invalid);
+	}
+
+	await eventRepository.updateGuest(guestId, { firstName: guest.firstName, lastName: guest.lastName });
 
 	expireGuests(access.data);
 

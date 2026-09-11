@@ -78,9 +78,9 @@ export function registerEventTools(server: McpServer, session: EventSession): vo
 				endsAt: dateSchema.optional(),
 				eventId: eventIdSchema,
 				greeting: z.string().max(2000).optional(),
-				locationCity: z.string().max(120).optional().describe('Ortschaft, z. B. "Gossau".'),
+				locationCity: z.string().max(120).optional().describe('Ortschaft, z. B. "Musterstadt".'),
 				locationName: z.string().max(200).optional().describe('Name des Lokals, z. B. "Gasthaus Krone".'),
-				locationPostalCode: z.string().max(20).optional().describe('PLZ, z. B. "9200".'),
+				locationPostalCode: z.string().max(20).optional().describe('PLZ, z. B. "1234".'),
 				locationStreet: z.string().max(200).optional().describe('Strasse und Nummer.'),
 				responseDeadline: dateSchema.optional(),
 				startsAt: dateSchema.optional(),
@@ -165,6 +165,22 @@ export function registerEventTools(server: McpServer, session: EventSession): vo
 			title: 'Einladung löschen',
 		},
 		async ({ eventId, invitationId }) => toResult(await session.deleteInvitation(eventId, invitationId))
+	);
+
+	server.registerTool(
+		MCP_CONFIG.tools.renameGuest,
+		{
+			annotations: { idempotentHint: true },
+			description:
+				'Benennt eine bestehende Person auf einer Einladung um. Ändert nur den Namen, nicht die Antwort oder sonstige Angaben.',
+			inputSchema: {
+				eventId: eventIdSchema,
+				guestId: z.string().min(1).describe('Die id der Person, aus get_event.'),
+				name: z.string().min(1).max(80).describe('Neuer Vor- und Nachname, z. B. "Anna Meier".'),
+			},
+			title: 'Person umbenennen',
+		},
+		async ({ eventId, guestId, name }) => toResult(await session.renameGuest(eventId, guestId, name))
 	);
 
 	server.registerTool(

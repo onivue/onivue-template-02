@@ -48,12 +48,6 @@ export function ResponseCounts({ className, counts, variant = 'panel' }: Respons
 		<section className={cn('design-panel grid gap-4 p-5 sm:p-6', className)}>
 			<div className='flex flex-wrap items-baseline justify-between gap-2'>
 				<h2 className='design-label'>Antworten</h2>
-				{counts.invitations === undefined ? null : (
-					<p className='text-xs text-ink-soft' data-testid='count-invitations'>
-						{counts.invitations} Einladung{counts.invitations === 1 ? '' : 'en'}
-						{counts.unsent ? ` · ${counts.unsent} noch nicht versendet` : ''}
-					</p>
-				)}
 			</div>
 
 			<div className='grid grid-cols-3 gap-3' data-testid='response-counts'>

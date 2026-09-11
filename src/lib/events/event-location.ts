@@ -48,7 +48,7 @@ export function toEventAddress(columns: AddressColumns): EventAddress {
 	};
 }
 
-// the postal line as it is written on an envelope: "9200 Gossau", or either half alone
+// the postal line as it is written on an envelope: "1234 Musterstadt", or either half alone
 export function addressCityLine(address: EventAddress): null | string {
 	return clean([clean(address.postalCode), clean(address.city)].filter(Boolean).join(' '));
 }

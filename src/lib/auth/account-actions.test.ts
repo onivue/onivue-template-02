@@ -154,13 +154,13 @@ describe('both error channels produce the same copy', () => {
 });
 
 describe('success effects are applied per action', () => {
-	test('sign-out lands on landing and refreshes', async () => {
+	test('sign-out lands on the landing page and refreshes', async () => {
 		const harness = createHarness();
 
 		const outcome = await harness.actions.signOut();
 
 		expect(outcome).toEqual({ ok: true });
-		expect(harness.navigations).toEqual([APP_ROUTES.LANDING]);
+		expect(harness.navigations).toEqual([APP_ROUTES.HOME]);
 		expect(harness.refreshCount).toBe(1);
 	});
 
@@ -416,7 +416,7 @@ describe('busy state is raised and cleared by the module', () => {
 		await harness.actions.signOut();
 
 		// the redirect is fired while still busy, so nothing can be clicked in between
-		expect(harness.navigations).toEqual([APP_ROUTES.LANDING]);
+		expect(harness.navigations).toEqual([APP_ROUTES.HOME]);
 		expect(harness.busyEvents.at(-1)).toEqual({ kind: 'finish' });
 	});
 

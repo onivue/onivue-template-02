@@ -22,7 +22,7 @@ function Fact({ children, icon: Icon, label }: { children: React.ReactNode; icon
 	return (
 		<div className='flex items-start gap-2.5'>
 			<Icon aria-hidden='true' className='mt-0.5 size-4 shrink-0 text-ink-soft' />
-			<div className='min-w-0'>
+			<div className='min-w-0 w-full'>
 				<dt className='text-xs text-ink-soft'>{label}</dt>
 				<dd className='mt-0.5'>{children}</dd>
 			</div>

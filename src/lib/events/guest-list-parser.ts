@@ -28,7 +28,7 @@ export type ParsedGuestList = {
 };
 
 // 'Anna Meier' → Anna / Meier; 'Anna von der Heide' → Anna / von der Heide; 'Oma' → Oma / null
-function toGuest(name: string): null | ParsedGuest {
+export function toGuest(name: string): null | ParsedGuest {
 	const parts = name.split(/\s+/).filter(Boolean);
 	const [firstName, ...rest] = parts;
 

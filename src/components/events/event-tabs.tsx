@@ -12,7 +12,7 @@ const SECTIONS = [
 ] as const;
 
 const TAB_CLASS = 'rounded-full px-4 py-2 text-sm font-medium transition-colors';
-const NAV_CLASS = 'flex flex-wrap gap-1 border-b border-border pb-2';
+const NAV_CLASS = 'flex flex-wrap gap-1 pb-2';
 
 // real routes rather than client-side tabs, so each section is linkable and loads its own data. the
 // id comes from the url, not a prop, so the tabs owe nothing to a query.

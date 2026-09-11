@@ -1,6 +1,6 @@
 'use client';
 
-import { ExternalLink, Eye, RefreshCw, RotateCcw, Trash2, UserPlus, X } from 'lucide-react';
+import { Check, ExternalLink, Eye, Pencil, RefreshCw, RotateCcw, Trash2, UserPlus, X } from 'lucide-react';
 import { useState } from 'react';
 
 import type { InvitationRecord } from '@/lib/events/event-repository';
@@ -14,6 +14,7 @@ import { invitationPath } from '@/config/routes';
 import { formatBerlinShort, toBerlinInputValue } from '@/lib/events/berlin-time';
 import {
 	addGuest,
+	renameGuest,
 	resetInvitationViews,
 	rotateInvitationToken,
 	setInvitationDeadline,
@@ -26,11 +27,16 @@ type InvitationDetailsProps = {
 	onRemoveInvitation: (invitationId: string) => void;
 };
 
-// everything a host needs rarely: replacing a link, granting a later deadline, adding or removing
-// a person. it lives behind a disclosure so the everyday view stays a list of names.
+// everything a host needs rarely: replacing a link, granting a later deadline, adding, renaming or
+// removing a person. it lives behind a disclosure so the everyday view stays a list of names.
 // removals are handed up: the list owns the rows and is the only place that can drop one at once.
+// the deadline is a draft like the rest of the app's forms — it only writes once "Frist speichern"
+// is clicked, so an in-progress pick (a day with no time yet) is never what ends up stored.
 export function InvitationDetails({ eventId, invitation, onRemoveGuest, onRemoveInvitation }: InvitationDetailsProps) {
+	const [isAddingGuest, setIsAddingGuest] = useState(false);
 	const [newGuest, setNewGuest] = useState('');
+	const [renaming, setRenaming] = useState<null | string>(null);
+	const [renameValue, setRenameValue] = useState('');
 	const [deadline, setDeadline] = useState(toBerlinInputValue(invitation.responseDeadline, 'end-of-day'));
 	const [confirming, setConfirming] = useState<null | string>(null);
 
@@ -38,6 +44,14 @@ export function InvitationDetails({ eventId, invitation, onRemoveGuest, onRemove
 
 	const addNewGuest = () =>
 		void report(addGuest(eventId, invitation.id, newGuest), 'Person ergänzt.').then(() => setNewGuest(''));
+
+	const startRenaming = (guestId: string, currentName: string) => {
+		setRenaming(guestId);
+		setRenameValue(currentName);
+	};
+
+	const confirmRenaming = (guestId: string) =>
+		void report(renameGuest(eventId, guestId, renameValue), 'Person umbenannt.').then(() => setRenaming(null));
 
 	return (
 		<div className='design-form rounded-2xl bg-muted/40 p-4 @lg:p-5' data-testid={`details-${invitation.id}`}>
@@ -71,74 +85,160 @@ export function InvitationDetails({ eventId, invitation, onRemoveGuest, onRemove
 			<section className='design-field'>
 				<span className='design-label'>Personen</span>
 
-				{/* a row per person, separated by a rule rather than by the weight of a labelled button
-				    beside every name */}
-				<ul className='grid divide-y divide-border/60 border-y border-border/60'>
+				{/* one row per person, spaced rather than ruled off — the panel around the whole
+				    accordion already sets this apart from the rest of the list */}
+				<ul className='grid gap-1'>
 					{invitation.guests.map((guest) => (
-						<li className='flex items-center justify-between gap-3 py-2.5 text-sm' key={guest.id}>
-							<span className='min-w-0'>
-								{guestFullName(guest)}
-								{guest.isMainGuest ? <span className='text-ink-soft'> · Hauptperson</span> : null}
-								{guest.respondedAt ? (
-									<span className='text-ink-soft'>
-										{' '}
-										· geantwortet {formatBerlinShort(guest.respondedAt)}
-									</span>
-								) : null}
-							</span>
+						<li className='flex items-center justify-between gap-3 py-1.5 text-sm' key={guest.id}>
+							{renaming === guest.id ? (
+								<>
+									<Input
+										className='h-9'
+										data-testid={`rename-guest-${guest.id}`}
+										ref={(node) => node?.focus()}
+										onChange={(nativeEvent) => setRenameValue(nativeEvent.target.value)}
+										onKeyDown={(nativeEvent) => {
+											if (nativeEvent.key === 'Enter' && renameValue.trim()) {
+												nativeEvent.preventDefault();
+												confirmRenaming(guest.id);
+											}
 
-							{asks(guest.id) ? (
-								<Button
-									data-testid={`remove-guest-${guest.id}`}
-									onClick={() => {
-										setConfirming(null);
-										onRemoveGuest(guest.id);
-									}}
-									size='xs'
-									variant='destructive'
-								>
-									Endgültig entfernen?
-								</Button>
+											if (nativeEvent.key === 'Escape') {
+												setRenaming(null);
+											}
+										}}
+										value={renameValue}
+									/>
+									<div className='flex shrink-0 items-center gap-1'>
+										<Button
+											aria-label='Umbenennen speichern'
+											data-testid={`confirm-rename-${guest.id}`}
+											disabled={!renameValue.trim()}
+											onClick={() => confirmRenaming(guest.id)}
+											size='icon-sm'
+											variant='ghost'
+										>
+											<Check />
+										</Button>
+										<Button
+											aria-label='Umbenennen abbrechen'
+											data-testid={`cancel-rename-${guest.id}`}
+											onClick={() => setRenaming(null)}
+											size='icon-sm'
+											variant='ghost'
+										>
+											<X />
+										</Button>
+									</div>
+								</>
 							) : (
-								<Button
-									aria-label={`${guestFullName(guest)} entfernen`}
-									data-testid={`remove-guest-${guest.id}`}
-									onClick={() => setConfirming(guest.id)}
-									size='icon-sm'
-									variant='ghost'
-								>
-									<X />
-								</Button>
+								<>
+									<span className='min-w-0'>
+										{guestFullName(guest)}
+										{guest.respondedAt ? (
+											<span className='text-ink-soft'>
+												{' '}
+												· geantwortet {formatBerlinShort(guest.respondedAt)}
+											</span>
+										) : null}
+									</span>
+
+									{asks(guest.id) ? (
+										<Button
+											data-testid={`remove-guest-${guest.id}`}
+											onClick={() => {
+												setConfirming(null);
+												onRemoveGuest(guest.id);
+											}}
+											size='xs'
+											variant='destructive'
+										>
+											Endgültig entfernen?
+										</Button>
+									) : (
+										<div className='flex shrink-0 items-center gap-1'>
+											<Button
+												aria-label={`${guestFullName(guest)} umbenennen`}
+												data-testid={`rename-guest-toggle-${guest.id}`}
+												onClick={() => startRenaming(guest.id, guestFullName(guest))}
+												size='icon-sm'
+												variant='ghost'
+											>
+												<Pencil />
+											</Button>
+											<Button
+												aria-label={`${guestFullName(guest)} entfernen`}
+												data-testid={`remove-guest-${guest.id}`}
+												onClick={() => setConfirming(guest.id)}
+												size='icon-sm'
+												variant='ghost'
+											>
+												<X />
+											</Button>
+										</div>
+									)}
+								</>
 							)}
 						</li>
 					))}
 				</ul>
 
-				{/* stacked on a phone: side by side, the button's fixed width left the name field
-				    too narrow to read what was being typed into it */}
-				<div className='grid gap-2 @lg:flex @lg:items-center'>
-					<Input
-						data-testid={`add-guest-${invitation.id}`}
-						onChange={(nativeEvent) => setNewGuest(nativeEvent.target.value)}
-						onKeyDown={(nativeEvent) => {
-							if (nativeEvent.key === 'Enter' && newGuest.trim()) {
-								nativeEvent.preventDefault();
-								addNewGuest();
-							}
-						}}
-						placeholder='Vor- und Nachname'
-						value={newGuest}
-					/>
+				{isAddingGuest ? (
+					// stacked on a phone: side by side, the button's fixed width left the name field
+					// too narrow to read what was being typed into it
+					<div className='grid gap-2 @lg:flex @lg:items-center'>
+						<Input
+							data-testid={`add-guest-${invitation.id}`}
+							ref={(node) => node?.focus()}
+							onChange={(nativeEvent) => setNewGuest(nativeEvent.target.value)}
+							onKeyDown={(nativeEvent) => {
+								if (nativeEvent.key === 'Enter' && newGuest.trim()) {
+									nativeEvent.preventDefault();
+									addNewGuest();
+								}
+
+								if (nativeEvent.key === 'Escape') {
+									setIsAddingGuest(false);
+									setNewGuest('');
+								}
+							}}
+							placeholder='Vor- und Nachname'
+							value={newGuest}
+						/>
+						<div className='flex gap-1 @lg:shrink-0'>
+							<Button
+								className='@lg:shrink-0'
+								disabled={!newGuest.trim()}
+								onClick={addNewGuest}
+								size='xl'
+								variant='outline'
+							>
+								<UserPlus /> Hinzufügen
+							</Button>
+							<Button
+								aria-label='Abbrechen'
+								onClick={() => {
+									setIsAddingGuest(false);
+									setNewGuest('');
+								}}
+								size='xl'
+								variant='ghost'
+							>
+								<X />
+							</Button>
+						</div>
+					</div>
+				) : (
 					<Button
-						className='@lg:shrink-0'
-						disabled={!newGuest.trim()}
-						onClick={addNewGuest}
-						size='xl'
+						className='w-fit'
+						data-testid={`add-guest-toggle-${invitation.id}`}
+						onClick={() => setIsAddingGuest(true)}
+						size='sm'
 						variant='outline'
 					>
-						<UserPlus /> Hinzufügen
+						<UserPlus /> Weitere Person hinzufügen
 					</Button>
-				</div>
+				)}
 			</section>
 
 			<section className='design-field'>
@@ -146,19 +246,27 @@ export function InvitationDetails({ eventId, invitation, onRemoveGuest, onRemove
 				<DateTimePicker
 					data-testid={`deadline-${invitation.id}`}
 					label='Eigene Frist'
-					onChange={(next) => {
-						setDeadline(next);
-						void report(setInvitationDeadline(eventId, invitation.id, next), 'Frist gespeichert.');
-					}}
+					onChange={setDeadline}
 					placeholder='Keine eigene Frist'
 					value={deadline}
 				/>
 				<span className='text-xs text-ink-soft'>
 					Leer lassen, damit die Frist des Events gilt. Eine eigene Frist übersteuert sie.
 				</span>
+				<Button
+					className='w-fit'
+					data-testid={`save-deadline-${invitation.id}`}
+					onClick={() =>
+						void report(setInvitationDeadline(eventId, invitation.id, deadline), 'Frist gespeichert.')
+					}
+					size='sm'
+					variant='outline'
+				>
+					Frist speichern
+				</Button>
 			</section>
 
-			<div className='flex flex-wrap gap-1 border-t border-border pt-4'>
+			<div className='flex flex-wrap gap-1'>
 				<Button
 					nativeButton={false}
 					render={

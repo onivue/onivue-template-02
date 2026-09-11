@@ -12,7 +12,7 @@ import { resolveAddressPatch } from '@/lib/events/event-address-patch';
 import { eventDetailsTag, eventGuestsTag, eventListTag } from '@/lib/events/event-cache';
 import { addressSingleLine, toEventAddress } from '@/lib/events/event-location';
 import { eventAccess, eventRepository } from '@/lib/events/event-services';
-import { parseGuestList } from '@/lib/events/guest-list-parser';
+import { parseGuestList, toGuest } from '@/lib/events/guest-list-parser';
 import { invitationUrl } from '@/lib/events/invitation-url';
 import { resolveNotificationSettings } from '@/lib/events/notification-settings';
 import { guestName } from '@/lib/events/response-summary';
@@ -27,6 +27,7 @@ export type McpEventResult<T> = { data: T; success: true } | { error: string; su
 const organizationStore = new DrizzleOrganizationStore(db);
 
 const MESSAGES = {
+	emptyName: 'Der Name darf nicht leer sein.',
 	invitationNotFound: 'Diese Einladung gehört nicht zu diesem Event.',
 	noNames: 'In der Liste steht kein Name.',
 	notFound: 'Dieses Event gibt es nicht, oder es gehört zu einer anderen Organisation.',
@@ -336,6 +337,32 @@ export class McpEventService {
 		expire(eventGuestsTag(eventId), eventListTag(scope.data.organizationId));
 
 		return { data: { invitationId }, success: true };
+	}
+
+	// the answers and the history stay with the same person; only the name changes
+	public async renameGuest(
+		userId: string,
+		eventId: string,
+		guestId: string,
+		name: string
+	): Promise<McpEventResult<{ guestId: string }>> {
+		const scope = await this.manage(userId, eventId);
+
+		if (!scope.success) {
+			return scope;
+		}
+
+		const guest = toGuest(name);
+
+		if (!guest) {
+			return failed(MESSAGES.emptyName);
+		}
+
+		await eventRepository.updateGuest(guestId, { firstName: guest.firstName, lastName: guest.lastName });
+
+		expire(eventGuestsTag(eventId));
+
+		return { data: { guestId }, success: true };
 	}
 
 	public async listInvitationLinks(

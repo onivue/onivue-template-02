@@ -25,6 +25,7 @@ function createPort() {
 		listEvents: async () => record('listEvents', { events: [] }),
 		listInvitationLinks: async () => record('listInvitationLinks', { invitations: [] }),
 		markInvitationSent: async () => record('markInvitationSent', { invitationId: INVITATION_ID }),
+		renameGuest: async () => record('renameGuest', { guestId: 'guest-1' }),
 		setNotifications: async () => record('setNotifications', { email: null, enabled: false }),
 		updateEvent: async () => record('updateEvent', { eventId: EVENT_ID }),
 	};
@@ -83,6 +84,7 @@ describe('writing needs events:write', () => {
 		await session.setNotifications(EVENT_ID, { enabled: false });
 		await session.addInvitations(EVENT_ID, 'Anna Meier');
 		await session.markInvitationSent(EVENT_ID, INVITATION_ID, true);
+		await session.renameGuest(EVENT_ID, 'guest-1', 'Anna Musterfrau');
 		await session.deleteInvitation(EVENT_ID, INVITATION_ID);
 
 		expect(calls).toEqual([
@@ -91,6 +93,7 @@ describe('writing needs events:write', () => {
 			'setNotifications',
 			'addInvitations',
 			'markInvitationSent',
+			'renameGuest',
 			'deleteInvitation',
 		]);
 	});
@@ -98,6 +101,17 @@ describe('writing needs events:write', () => {
 	test('a read-only client cannot delete an invitation', async () => {
 		const { calls, session } = createSession(MCP_SCOPE_IDS.eventsRead);
 		const result = await session.deleteInvitation(EVENT_ID, INVITATION_ID);
+
+		expect(result).toEqual({
+			error: `Diesem Client fehlt der Scope "${MCP_SCOPE_IDS.eventsWrite}".`,
+			success: false,
+		});
+		expect(calls).toEqual([]);
+	});
+
+	test('a read-only client cannot rename a guest', async () => {
+		const { calls, session } = createSession(MCP_SCOPE_IDS.eventsRead);
+		const result = await session.renameGuest(EVENT_ID, 'guest-1', 'Anna Musterfrau');
 
 		expect(result).toEqual({
 			error: `Diesem Client fehlt der Scope "${MCP_SCOPE_IDS.eventsWrite}".`,

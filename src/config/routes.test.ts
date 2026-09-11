@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 
-import { APP_ROUTES, NAVIGATION_ROUTES, getAccessFor, matchesRoute } from '@/config/routes';
+import { APP_ROUTES, NAVIGATION_ROUTES, getAccessFor, getSignedInRedirectFor, matchesRoute } from '@/config/routes';
 
 describe('route matching', () => {
 	test('an exact path matches', () => {
@@ -18,13 +18,13 @@ describe('route matching', () => {
 	test('the root route matches only itself', () => {
 		expect(matchesRoute('/', '/')).toBe(true);
 		expect(matchesRoute('/settings', '/')).toBe(false);
-		expect(matchesRoute('/landing', '/')).toBe(false);
+		expect(matchesRoute('/events', '/')).toBe(false);
 	});
 });
 
 describe('access classification', () => {
-	test('landing is public', () => {
-		expect(getAccessFor(APP_ROUTES.LANDING)).toBe('public');
+	test('the landing page is guest-only, so a signed-in reader never sees it', () => {
+		expect(getAccessFor(APP_ROUTES.HOME)).toBe('guest');
 	});
 
 	test('the auth pages are guest-only', () => {
@@ -37,8 +37,7 @@ describe('access classification', () => {
 		expect(getAccessFor('/i/abc123')).toBe('public');
 	});
 
-	test('home, events, settings and consent need a viewer', () => {
-		expect(getAccessFor(APP_ROUTES.HOME)).toBe('viewer');
+	test('events, settings and consent need a viewer', () => {
 		expect(getAccessFor(APP_ROUTES.EVENTS)).toBe('viewer');
 		expect(getAccessFor('/events/ev-1/guests')).toBe('viewer');
 		expect(getAccessFor(APP_ROUTES.SETTINGS)).toBe('viewer');
@@ -47,11 +46,22 @@ describe('access classification', () => {
 
 	test('a nested path inherits its route access', () => {
 		expect(getAccessFor('/settings/security')).toBe('viewer');
-		expect(getAccessFor('/landing/pricing')).toBe('public');
+		expect(getAccessFor('/i/abc123/calendar')).toBe('public');
 	});
 
 	test('an unknown path denies by default', () => {
 		expect(getAccessFor('/not-a-route')).toBe('viewer');
+	});
+});
+
+describe('signed-in redirects', () => {
+	test('the landing page hands a signed-in reader to the events list', () => {
+		expect(getSignedInRedirectFor(APP_ROUTES.HOME)).toBe(APP_ROUTES.EVENTS);
+	});
+
+	test('the auth pages keep handing them to their profile', () => {
+		expect(getSignedInRedirectFor(APP_ROUTES.LOGIN)).toBe(APP_ROUTES.SETTINGS_PROFILE);
+		expect(getSignedInRedirectFor(APP_ROUTES.REGISTER)).toBe(APP_ROUTES.SETTINGS_PROFILE);
 	});
 });
 

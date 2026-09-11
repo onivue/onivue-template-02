@@ -105,7 +105,7 @@ export function InvitationSummary({ closedNote, fields, guests, onEdit, submissi
 						</div>
 
 						{answers.length > 0 ? (
-							<dl className='grid gap-3 border-t border-border pt-3'>
+							<dl className='grid gap-3'>
 								{answers.map((entry) => (
 									<AnswerRow key={entry.field.id} label={entry.field.label} value={entry.text!} />
 								))}
