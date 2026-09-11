@@ -1,4 +1,4 @@
-import { CalendarClock, Download, ListChecks, Map, MapPin, Send } from 'lucide-react';
+import { CalendarClock, CalendarPlus, Download, ListChecks, Map, MapPin, Send } from 'lucide-react';
 import Link from 'next/link';
 import { Suspense } from 'react';
 
@@ -9,7 +9,7 @@ import { ResponseWindowStatus } from '@/components/events/response-window-status
 import { Section, SectionDescription, SectionHeader, SectionHeading, SectionTitle } from '@/components/layout/section';
 import { Button } from '@/components/ui/button';
 import { CardSkeleton } from '@/components/ui/skeleton';
-import { eventExportPath, eventPath } from '@/config/routes';
+import { eventCalendarPath, eventExportPath, eventPath } from '@/config/routes';
 import { formatBerlin } from '@/lib/events/berlin-time';
 import { loadEvent, loadEventFormFields, loadEventInvitations } from '@/lib/events/event-page-data';
 import { countGuests, countInvitations } from '@/lib/events/invitation-counts';
@@ -62,6 +62,16 @@ async function EventFacts({ params }: { params: Params }) {
 					{event.startsAt ? formatBerlin(event.startsAt) : 'Noch nicht festgelegt'}
 					{event.startsAt && event.endsAt ? (
 						<span className='text-ink-soft'> – {formatBerlin(event.endsAt)}</span>
+					) : null}
+					{event.startsAt ? (
+						<a
+							className='mt-1 flex w-fit items-center gap-1 text-xs underline-offset-2 hover:underline'
+							data-testid='event-add-to-calendar'
+							download
+							href={eventCalendarPath(event.id)}
+						>
+							<CalendarPlus aria-hidden='true' className='size-3.5' /> Zum Kalender hinzufügen
+						</a>
 					) : null}
 				</Fact>
 

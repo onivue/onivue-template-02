@@ -147,4 +147,8 @@ export const eventPath = (eventId: string, section?: 'settings'): string =>
 
 export const eventExportPath = (eventId: string): string => `${ROUTES.EVENTS.path}/${eventId}/export`;
 
+export const eventCalendarPath = (eventId: string): string => `${ROUTES.EVENTS.path}/${eventId}/calendar`;
+
 export const invitationPath = (token: string): string => `${ROUTES.INVITATION.path}/${token}`;
+
+export const invitationCalendarPath = (token: string): string => `${ROUTES.INVITATION.path}/${token}/calendar`;

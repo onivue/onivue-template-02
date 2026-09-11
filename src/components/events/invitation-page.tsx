@@ -1,12 +1,13 @@
 'use client';
 
-import { CalendarDays, Map, MapPin } from 'lucide-react';
+import { CalendarDays, CalendarPlus, Map, MapPin } from 'lucide-react';
 
 import type { ActionResult } from '@/lib/events/action-result';
 import type { AnswerValue, FormFieldDefinition, Submission } from '@/lib/events/form-schema';
 
 import { EventDecoration } from '@/components/events/event-decoration';
 import { InvitationForm, type InvitationFormGuest } from '@/components/events/invitation-form';
+import { invitationCalendarPath } from '@/config/routes';
 import { formatBerlin } from '@/lib/events/berlin-time';
 import { isDecorationKey } from '@/lib/events/event-decoration';
 
@@ -27,15 +28,18 @@ type InvitationPageProps = {
 	fields: FormFieldDefinition[];
 	guests: InvitationFormGuest[];
 	onSubmit?: (submission: Submission) => Promise<ActionResult>;
+	token: string;
 };
 
-function MapLink({
+function PillLink({
 	children,
+	download,
 	href,
 	icon: Icon,
 	testId,
 }: {
 	children: React.ReactNode;
+	download?: boolean;
 	href: string;
 	icon: typeof MapPin;
 	testId: string;
@@ -44,9 +48,10 @@ function MapLink({
 		<a
 			className='inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium transition-colors hover:bg-muted'
 			data-testid={testId}
+			download={download}
 			href={href}
-			rel='noopener noreferrer'
-			target='_blank'
+			rel={download ? undefined : 'noopener noreferrer'}
+			target={download ? undefined : '_blank'}
 		>
 			<Icon aria-hidden='true' className='size-3.5' />
 			{children}
@@ -71,13 +76,24 @@ export function InvitationPage(props: InvitationPageProps) {
 
 					<div className='grid justify-items-center gap-2 text-sm text-ink-soft'>
 						{event.startsAt ? (
-							<p className='flex items-center gap-2' data-testid='invitation-when'>
-								<CalendarDays aria-hidden='true' className='size-4 shrink-0' />
-								<span>
-									{formatBerlin(event.startsAt)}
-									{event.endsAt ? ` – ${formatBerlin(event.endsAt)}` : ''}
-								</span>
-							</p>
+							<>
+								<p className='flex items-center gap-2' data-testid='invitation-when'>
+									<CalendarDays aria-hidden='true' className='size-4 shrink-0' />
+									<span>
+										{formatBerlin(event.startsAt)}
+										{event.endsAt ? ` – ${formatBerlin(event.endsAt)}` : ''}
+									</span>
+								</p>
+
+								<PillLink
+									download
+									href={invitationCalendarPath(props.token)}
+									icon={CalendarPlus}
+									testId='invitation-add-to-calendar'
+								>
+									Zum Kalender hinzufügen
+								</PillLink>
+							</>
 						) : null}
 
 						{event.location ? (
@@ -90,22 +106,22 @@ export function InvitationPage(props: InvitationPageProps) {
 						{event.locationAppleMapsUrl || event.locationGoogleMapsUrl ? (
 							<div className='mt-1 flex flex-wrap justify-center gap-2'>
 								{event.locationAppleMapsUrl ? (
-									<MapLink
+									<PillLink
 										href={event.locationAppleMapsUrl}
 										icon={MapPin}
 										testId='invitation-where-apple-maps'
 									>
 										Apple Karten
-									</MapLink>
+									</PillLink>
 								) : null}
 								{event.locationGoogleMapsUrl ? (
-									<MapLink
+									<PillLink
 										href={event.locationGoogleMapsUrl}
 										icon={Map}
 										testId='invitation-where-google-maps'
 									>
 										Google Maps
-									</MapLink>
+									</PillLink>
 								) : null}
 							</div>
 						) : null}
