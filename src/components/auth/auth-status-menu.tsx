@@ -120,11 +120,11 @@ export function AuthStatusMenu({ placement, user }: AuthStatusMenuProps) {
 				// the sidebar popup takes the trigger's width, so it sits evenly inset in the navigation
 				className={cn('rounded-2xl p-1.5', isSidebar ? null : 'w-64')}
 			>
-				<DropdownMenuLabel className='truncate px-2 py-2 text-[0.7rem] font-medium text-muted-foreground'>
-					{user.email}
-				</DropdownMenuLabel>
-				<DropdownMenuSeparator />
 				<DropdownMenuGroup>
+					<DropdownMenuLabel className='truncate px-2 py-2 text-[0.7rem] font-medium text-muted-foreground'>
+						{user.email}
+					</DropdownMenuLabel>
+					<DropdownMenuSeparator />
 					<DropdownMenuItem
 						className={MENU_ITEM_CLASS}
 						variant='destructive'
