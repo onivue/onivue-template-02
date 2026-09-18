@@ -1,6 +1,7 @@
 import { requireMcpAuth } from '@better-auth/mcp';
 import { createMcpHandler, McpServer } from '@modelcontextprotocol/server';
 
+import { registerMcpApp } from '@/features/mcp-app/mcp-app-resource';
 import { auth } from '@/lib/auth/auth';
 import { AgentSession } from '@/lib/mcp/agent-session';
 import { betterAuthMcpGateway } from '@/lib/mcp/better-auth-mcp-gateway';
@@ -25,6 +26,7 @@ const mcpHttpHandler = createMcpHandler((ctx) => {
 	}
 
 	if (eventSession) {
+		registerMcpApp(server);
 		registerEventTools(server, eventSession);
 	}
 

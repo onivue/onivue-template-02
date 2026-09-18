@@ -1,10 +1,12 @@
 import type { CallToolResult, McpServer } from '@modelcontextprotocol/server';
 
+import { registerAppTool } from '@modelcontextprotocol/ext-apps/server';
 import { z } from 'zod';
 
 import type { EventSession } from '@/lib/mcp/event-session';
 import type { McpEventResult } from '@/lib/mcp/mcp-event-service';
 
+import { MCP_APP_TOOL_META } from '@/features/mcp-app/mcp-app-resource';
 import { parseBerlinDateTime } from '@/lib/events/berlin-time';
 import { MCP_CONFIG } from '@/lib/mcp/mcp-config';
 import { toolError, toolSuccess } from '@/lib/mcp/mcp-result';
@@ -35,12 +37,20 @@ function toResult<T extends Record<string, unknown>>(result: McpEventResult<T>):
 // what is irreversible: deleting or archiving an event, replacing a token and answering for a
 // guest are not offered at all, so an agent cannot reach them even with the write scope.
 export function registerEventTools(server: McpServer, session: EventSession): void {
-	server.registerTool(
+	// the one tool that carries UI metadata: a host with MCP Apps support renders the event app for
+	// its result, a host without one reads the same text and structuredContent as before. the app
+	// then drives get_event and delete_invitation below through the host, so there is no second
+	// surface and no tool here answers differently because a view is on screen.
+	registerAppTool(
+		server,
 		MCP_CONFIG.tools.listEvents,
 		{
+			_meta: MCP_APP_TOOL_META,
 			annotations: { readOnlyHint: true },
 			description: 'Listet die Events des Nutzers mit Zu-, Ab- und offenen Antworten.',
-			inputSchema: { includeArchived: z.boolean().optional().describe('Auch archivierte Events einschließen.') },
+			inputSchema: z.object({
+				includeArchived: z.boolean().optional().describe('Auch archivierte Events einschließen.'),
+			}),
 			title: 'Events auflisten',
 		},
 		async ({ includeArchived }) => toResult(await session.listEvents(includeArchived ?? false))

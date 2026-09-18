@@ -7,7 +7,7 @@ export const MCP_CONFIG = {
 	server: {
 		name: `${APP_CONFIG.app.name}-mcp`,
 		// bumped when the tool surface changes, so a client's handshake reports which set it holds
-		version: '0.3.0',
+		version: '0.4.0',
 	},
 	endpointPath: '/api/mcp',
 	// oauth scopes the authorization server issues for this resource

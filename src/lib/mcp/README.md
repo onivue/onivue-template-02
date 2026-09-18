@@ -28,19 +28,51 @@ Verfügbarkeit des Benutzernamens (`username`-Plugin) sowie die Vor-/Nachnamen-P
 
 Event-Tools:
 
-| Tool                   | Macht                                                                        | Benötigter Scope |
-| ---------------------- | ---------------------------------------------------------------------------- | ---------------- |
-| `list_events`          | Listet die Events des Nutzers mit Zu-, Ab- und offenen Antworten.            | `events:read`    |
-| `get_event`            | Liest ein Event mit Einladungen, Personen, Antwortstand und Formularfeldern. | `events:read`    |
-| `create_event`         | Legt ein neues Event an.                                                     | `events:write`   |
-| `update_event`         | Ändert Titel, Zeiten, Ort, Begrüßungstext oder Antwort-Frist.                | `events:write`   |
-| `add_invitations`      | Legt Einladungen aus einer Gästeliste an.                                    | `events:write`   |
-| `mark_invitation_sent` | Vermerkt, ob eine Einladung verschickt wurde (reine Buchführung).            | `events:write`   |
+| Tool                   | Macht                                                                                                                                     | Benötigter Scope |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
+| `list_events`          | Listet die Events des Nutzers mit Zu-, Ab- und offenen Antworten. Rendert in einem Host mit MCP-Apps-Unterstützung die App (siehe unten). | `events:read`    |
+| `get_event`            | Liest ein Event mit Einladungen, Personen, Antwortstand und Formularfeldern.                                                              | `events:read`    |
+| `create_event`         | Legt ein neues Event an.                                                                                                                  | `events:write`   |
+| `update_event`         | Ändert Titel, Zeiten, Ort, Begrüßungstext oder Antwort-Frist.                                                                             | `events:write`   |
+| `add_invitations`      | Legt Einladungen aus einer Gästeliste an.                                                                                                 | `events:write`   |
+| `mark_invitation_sent` | Vermerkt, ob eine Einladung verschickt wurde (reine Buchführung).                                                                         | `events:write`   |
+| `delete_invitation`    | Löscht eine Einladung endgültig, mit ihren Personen und deren Antworten.                                                                  | `events:write`   |
+| `rename_guest`         | Benennt eine Person auf einer Einladung um.                                                                                               | `events:write`   |
+| `set_notifications`    | Schaltet die E-Mail-Benachrichtigung bei Antworten ein oder aus.                                                                          | `events:write`   |
+| `get_invitation_links` | Liest die Einladungslinks eines Events, je Einladung einen.                                                                               | `events:links`   |
+| `get_event_views`      | Liest, wie oft die Einladungen geöffnet wurden.                                                                                           | `events:read`    |
 
-Die Grenze der Event-Tools ist bewusst gezogen: **löschen, archivieren, einen Einladungslink
-ersetzen und für einen Gast antworten** werden gar nicht erst angeboten. Ein Agent kann sie also
-auch mit `events:write` nicht auslösen. `get_event` gibt zudem keine Einladungs-Tokens heraus —
-ein Link gehört dem Gast, für den er gemacht wurde.
+Die Grenze der Event-Tools ist bewusst gezogen: **ein Event löschen oder archivieren, einen
+Einladungslink ersetzen und für einen Gast antworten** werden gar nicht erst angeboten. Ein Agent
+kann sie also auch mit `events:write` nicht auslösen. Eine einzelne Einladung darf er dagegen
+löschen — `delete_invitation` trägt dafür `destructiveHint`. `get_event` gibt keine
+Einladungs-Tokens heraus; dafür gibt es `get_invitation_links` mit seinem eigenen Scope, denn ein
+Link gehört dem Gast, für den er gemacht wurde.
+
+## MCP App
+
+`list_events` trägt UI-Metadaten (`_meta.ui.resourceUri`) und zeigt damit auf die Resource
+`ui://onivue/events`. Ein Host mit Unterstützung für
+[MCP Apps](https://github.com/modelcontextprotocol/ext-apps/blob/main/specification/2026-01-26/apps.mdx)
+(SEP-1865, Extension `io.modelcontextprotocol/ui`) rendert das Ergebnis als interaktive Oberfläche
+im Chat, ein Host ohne liest denselben Text und dasselbe `structuredContent` wie zuvor — die Tools
+selbst haben sich nicht verändert.
+
+Die Oberfläche liegt als eigener Ordner unter `src/features/mcp-app/`; das lokale Test-Setup und die
+Anleitung für weitere Tools mit UI stehen in der [README im Wurzelverzeichnis](../../../README.md).
+
+Drei Dinge gelten hier dauerhaft:
+
+- **Die App hat keinen eigenen Datenweg.** Sie ruft `list_events`, `get_event` und
+  `delete_invitation` über den Host auf — dieselben Tools, dieselben Scopes, dieselbe Zustimmung.
+  Ein Tool ist aus einer App heraus nur aufrufbar, solange seine `_meta.ui.visibility` `"app"`
+  enthält; das ist der Default und wurde hier für keines abgeschaltet.
+- **Das Dokument ist self-contained.** Skript und Stylesheet stecken inline, es wird nichts
+  nachgeladen. Deshalb deklariert die Resource keine CSP-Domains, und der Host wendet seinen
+  restriktiven Default an: die Ansicht erreicht niemanden ausser ihrem Host.
+- **Löschen bleibt destruktiv.** `delete_invitation` behält `destructiveHint`, und die Oberfläche
+  fragt vorher nach und benennt, was verschwindet. Beide Nachfragen sind gewollt — die des Hosts
+  ersetzt die der App nicht.
 
 ## Wie man sich verbindet
 
@@ -208,14 +240,16 @@ OAuth-Flow selbstständig.
 
 Dazu, außerhalb dieses Ordners:
 
-| Datei                                      | Zweck                                         |
-| ------------------------------------------ | --------------------------------------------- |
-| `src/app/api/mcp/route.ts`                 | Route-Handler des MCP-Endpoints.              |
-| `src/app/(mcp)/consent/page.tsx`           | Zustimmungsseite (Server-Teil).               |
-| `src/app/.well-known/…`                    | Discovery-Weiterleitungen auf den Root-Pfad.  |
-| `src/components/mcp/consent-form.tsx`      | Zustimmungsformular.                          |
-| `src/components/mcp/connected-clients.tsx` | Verbundene Clients auf der Account-Seite.     |
-| `src/lib/account/account-overview.ts`      | Liest die Zustimmungen für die Account-Seite. |
+| Datei                                      | Zweck                                            |
+| ------------------------------------------ | ------------------------------------------------ |
+| `src/app/api/mcp/route.ts`                 | Route-Handler des MCP-Endpoints.                 |
+| `src/app/(mcp)/consent/page.tsx`           | Zustimmungsseite (Server-Teil).                  |
+| `src/app/.well-known/…`                    | Discovery-Weiterleitungen auf den Root-Pfad.     |
+| `src/components/mcp/consent-form.tsx`      | Zustimmungsformular.                             |
+| `src/components/mcp/connected-clients.tsx` | Verbundene Clients auf der Account-Seite.        |
+| `src/lib/account/account-overview.ts`      | Liest die Zustimmungen für die Account-Seite.    |
+| `src/features/mcp-app/`                    | Die MCP App: Vertrag, `ui://`-Resource, Ansicht. |
+| `scripts/build-mcp-app.ts`                 | Baut die Ansicht zu einem HTML-Dokument.         |
 
 Die UI-Komponenten liegen gebündelt unter `src/components/mcp/`, die Seiten in der Route-Gruppe
 `src/app/(mcp)/` — beides spiegelbildlich zu diesem `src/lib/mcp/`-Ordner. Route-Gruppen ändern die

@@ -43,3 +43,6 @@ next-env.d.ts
 
 # copied from node_modules by the maplibre:worker script before dev and build
 /public/maplibre
+
+# temporary output of the mcp app build
+/.mcp-app-build
