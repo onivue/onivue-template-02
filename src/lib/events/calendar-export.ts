@@ -2,6 +2,7 @@ import type { AddressColumns } from '@/lib/events/event-location';
 
 import { addressSingleLine, toEventAddress } from '@/lib/events/event-location';
 import { slugifyEventTitle } from '@/lib/events/filename-slug';
+import { parseRichText, richTextToPlainText } from '@/lib/events/rich-text';
 
 // the "im Kalender speichern" feature: one vevent per event, since an invitation never covers more
 // than the one occasion it was sent for. rfc 5545, kept to the fields every calendar app reads.
@@ -49,6 +50,8 @@ export function toIcs(input: IcsInput): string | null {
 
 	// one line, as calendars expect it — the guest page is where the address gets its own lines
 	const location = addressSingleLine(toEventAddress(event));
+	// a calendar entry has no formatting to give the greeting, so it gets the words alone
+	const description = richTextToPlainText(parseRichText(event.greeting));
 
 	const lines = [
 		'BEGIN:VCALENDAR',
@@ -62,7 +65,7 @@ export function toIcs(input: IcsInput): string | null {
 		`DTEND:${toUtcStamp(resolveEnd(event.startsAt, event.endsAt))}`,
 		`SUMMARY:${escapeText(event.title)}`,
 		...(location ? [`LOCATION:${escapeText(location)}`] : []),
-		...(event.greeting ? [`DESCRIPTION:${escapeText(event.greeting)}`] : []),
+		...(description ? [`DESCRIPTION:${escapeText(description)}`] : []),
 		'END:VEVENT',
 		'END:VCALENDAR',
 	];

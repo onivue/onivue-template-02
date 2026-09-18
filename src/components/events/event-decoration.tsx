@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import type { DecorationScene } from '@/lib/events/cake-scene';
 import type { DecorationKey } from '@/lib/events/event-decoration';
@@ -24,6 +24,9 @@ const PRESS_POKE = 1;
 export function EventDecoration({ className, decoration }: EventDecorationProps) {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const sceneRef = useRef<DecorationScene | null>(null);
+	// the model is a few hundred kilobytes over the network: until it lands the canvas draws nothing
+	// at all, and an empty box that suddenly fills is the flicker this replaces
+	const [isReady, setIsReady] = useState(false);
 
 	// webgl is an external system with its own lifecycle: it has to be created against a real
 	// canvas, driven by a frame loop, and torn down by hand. that is what an effect is for.
@@ -54,7 +57,11 @@ export function EventDecoration({ className, decoration }: EventDecorationProps)
 			}
 
 			const size = measure();
-			const scene = createCakeScene(MODEL_URLS[decoration], canvas, size.width, size.height);
+			const scene = createCakeScene(MODEL_URLS[decoration], canvas, size.width, size.height, () => {
+				if (!cancelled) {
+					setIsReady(true);
+				}
+			});
 
 			sceneRef.current = scene;
 
@@ -108,13 +115,27 @@ export function EventDecoration({ className, decoration }: EventDecorationProps)
 		// readers are spared a canvas they cannot read anyway. the poke is play, never a control.
 		<div
 			aria-hidden='true'
-			className={cn('relative h-44 w-full cursor-pointer touch-manipulation select-none sm:h-52', className)}
+			className={cn(
+				'group relative h-44 w-full cursor-pointer touch-manipulation select-none sm:h-52',
+				className
+			)}
+			data-ready={isReady}
 			data-testid={`event-decoration-${decoration}`}
 			onPointerDown={() => sceneRef.current?.poke(PRESS_POKE)}
 		>
 			{/* a soft lime pool under the ornament, so it sits on the page instead of floating on it */}
 			<div className='absolute inset-x-1/4 bottom-4 h-10 rounded-[50%] bg-lime-glow/25 blur-2xl' />
-			<canvas className='relative size-full' ref={canvasRef} />
+
+			{/* the placeholder is the same pool, held a little brighter and breathing, so the space is
+			    already lit when the ornament arrives rather than empty */}
+			<div className='absolute inset-0 grid place-items-center transition-opacity duration-500 group-data-[ready=true]:opacity-0'>
+				<div className='size-28 animate-pulse rounded-full bg-lime-glow/20 blur-2xl sm:size-32' />
+			</div>
+
+			<canvas
+				className='relative size-full opacity-0 transition-opacity duration-700 group-data-[ready=true]:opacity-100'
+				ref={canvasRef}
+			/>
 		</div>
 	);
 }

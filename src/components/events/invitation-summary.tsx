@@ -5,6 +5,8 @@ import { Check, Pencil, X } from 'lucide-react';
 import type { InvitationFormGuest } from '@/components/events/invitation-form';
 import type { AnswerValue, FormFieldDefinition, Submission } from '@/lib/events/form-schema';
 
+import { InvitationDeadline } from '@/components/events/invitation-deadline';
+import { Divided } from '@/components/layout/divided';
 import { Button } from '@/components/ui/button';
 import { formatBerlinShort } from '@/lib/events/berlin-time';
 import { isFieldVisible } from '@/lib/events/form-schema';
@@ -12,6 +14,7 @@ import { cn } from '@/lib/utils';
 
 type InvitationSummaryProps = {
 	closedNote?: null | string;
+	closesAt?: Date | null;
 	fields: FormFieldDefinition[];
 	guests: InvitationFormGuest[];
 	onEdit?: () => void;
@@ -63,14 +66,32 @@ function AnswerRow({ label, value }: { label: string; value: string }) {
 
 // what the guest sees once they have answered: their own reply, read back to them, with the way
 // into editing it again one click away
-export function InvitationSummary({ closedNote, fields, guests, onEdit, submission }: InvitationSummaryProps) {
+export function InvitationSummary({
+	closedNote,
+	closesAt,
+	fields,
+	guests,
+	onEdit,
+	submission,
+}: InvitationSummaryProps) {
 	const invitationAnswers = fields
 		.filter((field) => field.scope === 'invitation')
 		.map((field) => ({ field, text: answerText(field, submission.answers[field.id]) }))
 		.filter((entry) => entry.text !== null);
 
 	return (
-		<div className='grid gap-4' data-testid='invitation-summary'>
+		<Divided className='design-panel p-5 sm:p-6' data-testid='invitation-summary'>
+			{closesAt ? <InvitationDeadline closesAt={closesAt} isAnswered /> : null}
+
+			{closedNote ? (
+				<p
+					className='rounded-2xl bg-muted px-4 py-3 text-sm text-ink-soft'
+					data-testid='invitation-closed-note'
+				>
+					{closedNote}
+				</p>
+			) : null}
+
 			{guests.map((guest) => {
 				const state = submission.guests[guest.id];
 
@@ -84,11 +105,7 @@ export function InvitationSummary({ closedNote, fields, guests, onEdit, submissi
 					.filter((entry) => entry.text !== null);
 
 				return (
-					<section
-						className='design-panel grid gap-3 p-5 sm:p-6'
-						data-testid={`summary-guest-${guest.id}`}
-						key={guest.id}
-					>
+					<div className='grid gap-3' data-testid={`summary-guest-${guest.id}`} key={guest.id}>
 						<div className='flex flex-wrap items-center justify-between gap-2'>
 							<h2 className='text-lg font-bold'>{guestName(guest)}</h2>
 							<span
@@ -117,31 +134,23 @@ export function InvitationSummary({ closedNote, fields, guests, onEdit, submissi
 								Zuletzt geändert am {formatBerlinShort(guest.respondedAt)}
 							</p>
 						) : null}
-					</section>
+					</div>
 				);
 			})}
 
 			{invitationAnswers.length > 0 ? (
-				<section className='design-panel grid gap-3 p-5 sm:p-6' data-testid='summary-invitation-fields'>
-					<dl className='grid gap-3'>
-						{invitationAnswers.map((entry) => (
-							<AnswerRow key={entry.field.id} label={entry.field.label} value={entry.text!} />
-						))}
-					</dl>
-				</section>
-			) : null}
-
-			{closedNote ? (
-				<p className='design-panel px-5 py-4 text-sm' data-testid='invitation-closed-note'>
-					{closedNote}
-				</p>
+				<dl className='grid gap-3' data-testid='summary-invitation-fields'>
+					{invitationAnswers.map((entry) => (
+						<AnswerRow key={entry.field.id} label={entry.field.label} value={entry.text!} />
+					))}
+				</dl>
 			) : null}
 
 			{onEdit ? (
-				<Button data-testid='edit-response' onClick={onEdit} size='xl' variant='outline'>
+				<Button className='w-full' data-testid='edit-response' onClick={onEdit} size='xl' variant='outline'>
 					<Pencil data-icon='inline-start' /> Antwort ändern
 				</Button>
 			) : null}
-		</div>
+		</Divided>
 	);
 }

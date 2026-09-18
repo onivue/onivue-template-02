@@ -170,7 +170,8 @@ disconnecting is an Account Action.
 
 The interface an MCP host renders in the conversation when a tool result carries one
 (SEP-1865, extension `io.modelcontextprotocol/ui`). One App exists: the events, the invitations of
-the event that is open, and the deletion of a single invitation.
+the event that is open, and — for that open event — creating new invitations, copying an
+Invitation Link, marking one Sent, and deleting one.
 
 It is a **view over the tools, not a second way in**. Every read and every write it performs is a
 `tools/call` the host makes on its behalf, against the same tools the model uses — so an App can
@@ -219,9 +220,9 @@ schedule that triggers it is in `vercel.json`.
 
 ## Event
 
-An occasion someone invites people to: a title, optionally when it happens, where, and a greeting
-for the guests. An Event owns everything the invitation flow needs — its Invitations, its Invitation
-Form, its Theme, and the RSVP Deadline that applies to all of them.
+An occasion someone invites people to: a title, optionally when it happens, where, a greeting for
+the guests, and its Notes. An Event owns everything the invitation flow needs — its Invitations, its
+Invitation Form, its Theme, and the RSVP Deadline that applies to all of them.
 
 An Event is either **active**, **archived**, or gone. Archiving retires it from the working list
 without breaking anything already sent: Invitation Links keep resolving, but only to read. Deletion
@@ -239,6 +240,43 @@ The coordinates are looked up when the Address is saved and stored with the Even
 opening their Invitation never waits on a third party. An Address that cannot be placed simply has
 none: the Invitation then shows the address and both map links without a map, which is a smaller
 loss than a wrong pin.
+
+## Note
+
+One section a host adds under the greeting: a symbol from a curated few, a title, and Rich Text.
+An Event holds up to three, in the order the host put them in, and they are a list rather than
+named columns — what a guest needs to know beyond the date and the address differs per event, so
+the next kind of note is something a host writes rather than a migration.
+
+A Note carries an id of its own. Nothing else reads it: it exists so the editor can tell three
+sections apart while they are being written, and so removing the middle one cannot hand the last
+one somebody else's text.
+
+A section that was added and then left alone is dropped when the form is saved — that is a section
+the host did not want. One with only half of it filled in is refused, because a title with no text
+and a text with no title each read as a mistake on the page.
+
+Lives in [`src/lib/events/event-note.ts`](src/lib/events/event-note.ts), stored as one `jsonb`
+column on the Event.
+
+## Rich Text
+
+The shape of every longer text a host writes for their guests: the greeting and the body of each
+Note. It offers bold, italic and bullet lists, and deliberately nothing else — a
+document of paragraphs and lists, described by one Zod schema that both the editor and the server
+answer to.
+
+It is never html. The document is stored serialized — in the `text` column the plain greeting used
+before, and in each Note's body — and the guest page renders elements from validated data rather
+than handing a string to `dangerouslySetInnerHTML`. A text written before Rich Text existed is read
+as paragraphs, so there was nothing to migrate and nothing to lose.
+
+Everything that cannot carry formatting gets the same words flattened: the ics description, the
+line a messenger prints under the link, and an Agent Session reading the Event. An agent writing
+one of them writes plain text, which replaces whatever formatting stood there.
+
+Lives in [`src/lib/events/rich-text.ts`](src/lib/events/rich-text.ts), with `RichText` for reading
+and `RichTextEditor` (tiptap) for writing in `src/components/ui/`.
 
 ## Organization
 

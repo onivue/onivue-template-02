@@ -8,6 +8,8 @@ import type { McpEventResult } from '@/lib/mcp/mcp-event-service';
 
 import { MCP_APP_TOOL_META } from '@/features/mcp-app/mcp-app-resource';
 import { parseBerlinDateTime } from '@/lib/events/berlin-time';
+import { EVENT_NOTE_ICON_KEYS, EVENT_NOTE_ICONS, MAX_EVENT_NOTES } from '@/lib/events/event-note';
+import { richTextFromPlainText, serializeRichText } from '@/lib/events/rich-text';
 import { MCP_CONFIG } from '@/lib/mcp/mcp-config';
 import { toolError, toolSuccess } from '@/lib/mcp/mcp-result';
 
@@ -26,6 +28,27 @@ const dateSchema = z
 	.string()
 	.describe(
 		'Zeitpunkt in deutscher Zeit, als "2026-07-15T18:00", oder ein Tag ohne Uhrzeit als "2026-07-15". Leerer String löscht die Angabe.'
+	);
+
+// an agent writes plain text where the app writes a formatted document: its lines become
+// paragraphs, and whatever formatting stood there before is replaced along with the text
+function toRichText(value: string): null | string {
+	return serializeRichText(richTextFromPlainText(value));
+}
+
+const noteIconList = EVENT_NOTE_ICON_KEYS.map((key) => `${key} (${EVENT_NOTE_ICONS[key].label})`).join(', ');
+
+const notesSchema = z
+	.array(
+		z.object({
+			icon: z.enum(EVENT_NOTE_ICON_KEYS).describe(`Symbol des Abschnitts: ${noteIconList}.`),
+			text: z.string().min(1).max(2000).describe('Der Text des Abschnitts.'),
+			title: z.string().min(1).max(60).describe('Die Überschrift, z. B. "Essen & Trinken".'),
+		})
+	)
+	.max(MAX_EVENT_NOTES)
+	.describe(
+		`Die Abschnitte unter der Begrüßung, höchstens ${MAX_EVENT_NOTES}. Die Liste ersetzt die bestehenden Abschnitte; eine leere Liste löscht sie.`
 	);
 
 function toResult<T extends Record<string, unknown>>(result: McpEventResult<T>): CallToolResult {
@@ -83,7 +106,7 @@ export function registerEventTools(server: McpServer, session: EventSession): vo
 		{
 			annotations: { idempotentHint: true },
 			description:
-				'Ändert Titel, Zeiten, Adresse, Begrüßungstext oder Antwort-Frist eines Events. Aus der Adresse entstehen Karte und Kartenlinks automatisch.',
+				'Ändert Titel, Zeiten, Adresse, Texte oder Antwort-Frist eines Events. Aus der Adresse entstehen Karte und Kartenlinks automatisch. Die Texte werden als reiner Text gesetzt — Fettungen oder Aufzählungen, die der Gastgeber in der App gesetzt hat, gehen dabei verloren.',
 			inputSchema: {
 				endsAt: dateSchema.optional(),
 				eventId: eventIdSchema,
@@ -92,6 +115,7 @@ export function registerEventTools(server: McpServer, session: EventSession): vo
 				locationName: z.string().max(200).optional().describe('Name des Lokals, z. B. "Gasthaus Krone".'),
 				locationPostalCode: z.string().max(20).optional().describe('PLZ, z. B. "1234".'),
 				locationStreet: z.string().max(200).optional().describe('Strasse und Nummer.'),
+				notes: notesSchema.optional(),
 				responseDeadline: dateSchema.optional(),
 				startsAt: dateSchema.optional(),
 				title: z.string().min(1).max(120).optional(),
@@ -106,6 +130,7 @@ export function registerEventTools(server: McpServer, session: EventSession): vo
 			locationName,
 			locationPostalCode,
 			locationStreet,
+			notes,
 			responseDeadline,
 			startsAt,
 			title,
@@ -115,7 +140,17 @@ export function registerEventTools(server: McpServer, session: EventSession): vo
 					eventId,
 					{
 						...(endsAt === undefined ? {} : { endsAt: parseBerlinDateTime(endsAt) }),
-						...(greeting === undefined ? {} : { greeting: greeting || null }),
+						...(greeting === undefined ? {} : { greeting: toRichText(greeting) }),
+						...(notes === undefined
+							? {}
+							: {
+									notes: notes.map((note) => ({
+										body: toRichText(note.text) ?? '',
+										icon: note.icon,
+										id: crypto.randomUUID(),
+										title: note.title,
+									})),
+								}),
 						...(responseDeadline === undefined
 							? {}
 							: { responseDeadline: parseBerlinDateTime(responseDeadline, 'end-of-day') }),

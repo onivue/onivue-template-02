@@ -11,11 +11,13 @@ import { ensurePersonalOrganization } from '@/lib/auth/personal-organization';
 import { resolveAddressPatch } from '@/lib/events/event-address-patch';
 import { eventDetailsTag, eventGuestsTag, eventListTag } from '@/lib/events/event-cache';
 import { addressSingleLine, toEventAddress } from '@/lib/events/event-location';
+import { readEventNotes } from '@/lib/events/event-note';
 import { eventAccess, eventRepository } from '@/lib/events/event-services';
 import { parseGuestList, toGuest } from '@/lib/events/guest-list-parser';
 import { invitationUrl } from '@/lib/events/invitation-url';
 import { resolveNotificationSettings } from '@/lib/events/notification-settings';
 import { guestName } from '@/lib/events/response-summary';
+import { parseRichText, richTextToPlainText } from '@/lib/events/rich-text';
 
 // what an agent may do with events. the boundary is deliberate: an agent creates, maintains, and
 // may drop a single invitation, but nothing here deletes or archives an event, replaces a link or
@@ -154,7 +156,8 @@ export class McpEventService {
 						scope: field.scope,
 						type: field.type,
 					})),
-					greeting: event.greeting,
+					// an agent reads the words without their marks; the formatting is the host's own
+					greeting: richTextToPlainText(parseRichText(event.greeting)),
 					id: event.id,
 					// invitations carry no token: a link is for the guest it was made for, and reading
 					// one is what get_invitation_links and its own scope are for
@@ -169,6 +172,11 @@ export class McpEventService {
 						sentAt: invitation.sentAt?.toISOString() ?? null,
 					})),
 					location: addressSingleLine(toEventAddress(event)),
+					notes: readEventNotes(event.notes).map((note) => ({
+						icon: note.icon,
+						text: richTextToPlainText(parseRichText(note.body)),
+						title: note.title,
+					})),
 					notifications: { email: event.notificationEmail, enabled: event.notifyOnResponse },
 					responseDeadline: event.responseDeadline?.toISOString() ?? null,
 					startsAt: event.startsAt?.toISOString() ?? null,

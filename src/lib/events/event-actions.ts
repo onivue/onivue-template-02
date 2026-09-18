@@ -14,7 +14,9 @@ import { resolveAddressPatch } from '@/lib/events/event-address-patch';
 import { eventDetailsTag, eventFormTag, eventGuestsTag, eventListTag } from '@/lib/events/event-cache';
 import { isDecorationKey } from '@/lib/events/event-decoration';
 import { toEventAddress } from '@/lib/events/event-location';
+import { prepareEventNotes } from '@/lib/events/event-note';
 import { eventAccess, eventRepository } from '@/lib/events/event-services';
+import { parseRichText, richTextValueSchema, serializeRichText } from '@/lib/events/rich-text';
 
 const titleSchema = z.string().trim().min(1, 'Ein Titel fehlt.').max(120, 'Der Titel ist zu lang.');
 
@@ -26,7 +28,7 @@ const detailsSchema = z
 			.refine((value) => value === '' || isDecorationKey(value), 'Dieses 3D-Element gibt es nicht.')
 			.optional(),
 		endsAt: z.string().optional(),
-		greeting: z.string().max(2000).optional(),
+		greeting: richTextValueSchema.optional(),
 		locationCity: z.string().max(120).optional(),
 		locationName: z.string().max(200).optional(),
 		locationPostalCode: z.string().max(20).optional(),
@@ -40,6 +42,9 @@ const detailsSchema = z
 				'Das ist keine gültige E-Mail-Adresse.'
 			)
 			.optional(),
+		// shaped by prepareEventNotes rather than here: a half filled section has to say which half
+		// is missing, and an empty one is dropped instead of refused
+		notes: z.unknown().optional(),
 		notifyOnResponse: z.boolean().optional(),
 		responseDeadline: z.string().optional(),
 		startsAt: z.string().optional(),
@@ -55,6 +60,12 @@ function emptyToNull(value: string | undefined): null | string {
 	const trimmed = value?.trim();
 
 	return trimmed ? trimmed : null;
+}
+
+// the editor is client code, so what arrives is parsed through the document schema again and
+// written back from that: anything the schema does not know never reaches a column
+function toRichTextColumn(value: string | undefined): null | string {
+	return serializeRichText(parseRichText(value));
 }
 
 export async function createEvent(input: { title: string }): Promise<ActionResult<{ eventId: string }>> {
@@ -91,6 +102,12 @@ export async function updateEventDetails(eventId: string, input: z.input<typeof 
 		return failure(parsed.error.issues[0]?.message ?? ACTION_MESSAGES.invalid);
 	}
 
+	const notes = prepareEventNotes(parsed.data.notes);
+
+	if (!notes.success) {
+		return failure(notes.message);
+	}
+
 	const current = await eventRepository.findEvent(eventId, access.data.organizationId);
 
 	if (!current) {
@@ -111,7 +128,8 @@ export async function updateEventDetails(eventId: string, input: z.input<typeof 
 		...address,
 		decoration: emptyToNull(parsed.data.decoration),
 		endsAt: parseBerlinDateTime(parsed.data.endsAt),
-		greeting: emptyToNull(parsed.data.greeting),
+		greeting: toRichTextColumn(parsed.data.greeting),
+		notes: notes.notes,
 		notificationEmail: emptyToNull(parsed.data.notificationEmail),
 		notifyOnResponse: parsed.data.notifyOnResponse ?? false,
 		responseDeadline: parseBerlinDateTime(parsed.data.responseDeadline, 'end-of-day'),

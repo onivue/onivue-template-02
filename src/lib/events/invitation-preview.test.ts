@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test';
 
 import { parseBerlinDateTime } from '@/lib/events/berlin-time';
 import { invitationPreviewDescription } from '@/lib/events/invitation-preview';
+import { serializeRichText } from '@/lib/events/rich-text';
 
 function event(overrides: Partial<Parameters<typeof invitationPreviewDescription>[0]> = {}) {
 	return {
@@ -47,6 +48,25 @@ describe('invitationPreviewDescription', () => {
 
 	test('without facts the host s own words stand in', () => {
 		expect(invitationPreviewDescription(event({ greeting: 'Wir feiern!\nKomm vorbei.' }))).toBe('Wir feiern!');
+	});
+
+	test('a formatted greeting is read without its marks', () => {
+		expect(
+			invitationPreviewDescription(
+				event({
+					greeting: serializeRichText({
+						content: [
+							{
+								content: [{ marks: [{ type: 'italic' }], text: 'Wir feiern!', type: 'text' }],
+								type: 'paragraph',
+							},
+							{ content: [{ text: 'Komm vorbei.', type: 'text' }], type: 'paragraph' },
+						],
+						type: 'doc',
+					}),
+				})
+			)
+		).toBe('Wir feiern!');
 	});
 
 	test('an event that says nothing yet still gets a sentence', () => {

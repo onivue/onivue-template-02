@@ -61,6 +61,7 @@ export type EventPatch = Partial<
 		| 'locationPostalCode'
 		| 'locationStreet'
 		| 'notificationEmail'
+		| 'notes'
 		| 'notifyOnResponse'
 		| 'responseDeadline'
 		| 'startsAt'

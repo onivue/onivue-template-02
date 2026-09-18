@@ -1,16 +1,20 @@
 import { ChevronLeft, MapPin } from 'lucide-react';
 
-import type { TSelectionState } from '@/features/mcp-app/view/use-events-app';
+import type { TAddInvitationsOutcome, TSelectionState } from '@/features/mcp-app/view/use-events-app';
 
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AppMessage } from '@/features/mcp-app/view/app-message';
 import { formatEventDate } from '@/features/mcp-app/view/event-date';
+import { InvitationCreateForm } from '@/features/mcp-app/view/invitation-create-form';
 import { InvitationRow } from '@/features/mcp-app/view/invitation-row';
 
 type TInvitationListProps = {
+	onAddInvitations: (eventId: string, guestList: string) => Promise<TAddInvitationsOutcome>;
 	onBack: () => void;
+	onCopyLink: (eventId: string, invitationId: string) => Promise<null | string>;
 	onDelete: (eventId: string, invitationId: string) => Promise<null | string>;
+	onToggleSent: (eventId: string, invitationId: string, sent: boolean) => Promise<null | string>;
 	state: TSelectionState;
 };
 
@@ -23,7 +27,14 @@ function BackButton({ onBack }: { onBack: () => void }) {
 	);
 }
 
-export function InvitationList({ onBack, onDelete, state }: TInvitationListProps) {
+export function InvitationList({
+	onAddInvitations,
+	onBack,
+	onCopyLink,
+	onDelete,
+	onToggleSent,
+	state,
+}: TInvitationListProps) {
 	if (state.kind === 'none') {
 		return null;
 	}
@@ -74,6 +85,8 @@ export function InvitationList({ onBack, onDelete, state }: TInvitationListProps
 
 			<h2 className='design-label'>Einladungen ({event.invitations.length})</h2>
 
+			<InvitationCreateForm onSubmit={(guestList) => onAddInvitations(event.id, guestList)} />
+
 			{event.invitations.length === 0 ? (
 				<AppMessage
 					description='Lege Einladungen an, dann stehen sie hier mit ihrem Antwortstand.'
@@ -86,7 +99,9 @@ export function InvitationList({ onBack, onDelete, state }: TInvitationListProps
 						<InvitationRow
 							invitation={invitation}
 							key={invitation.id}
+							onCopyLink={() => onCopyLink(event.id, invitation.id)}
 							onDelete={() => onDelete(event.id, invitation.id)}
+							onToggleSent={(sent) => onToggleSent(event.id, invitation.id, sent)}
 						/>
 					))}
 				</ul>

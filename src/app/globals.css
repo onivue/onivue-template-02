@@ -4,27 +4,30 @@
 @import './theme.css';
 
 /* the invitation's ambient answer background (src/components/events/invitation-mood.tsx): a bold
-   green wash once somebody is coming — canvas-confetti draws the falling pieces there, deliberately
-   without green so the wash stays the one place that colour reads — a warm red wash once nobody
-   is. both are decoration, so a reader who asked for less motion gets the same picture standing
-   still rather than nothing at all. */
+   green wash once somebody is coming, a warm red wash once nobody is. both are decoration, so a
+   reader who asked for less motion gets the same picture standing still rather than nothing at
+   all. */
 @utility invitation-celebrate-glow {
-	animation: invitation-mood-breathe 11s ease-in-out infinite;
+	animation:
+		invitation-celebrate-breathe 13s ease-in-out infinite,
+		invitation-celebrate-drift 31s ease-in-out infinite;
+	/* four lights instead of two bands across the page, all of them the one accent green at four
+	   strengths — depth comes from where they sit and how far they carry, never from a second hue.
+	   each fades out well before the middle, which is where the panels have to stay readable. */
 	background:
+		radial-gradient(52% 40% at 6% -4%, color-mix(in oklch, var(--accent-strong) 34%, transparent), transparent 72%),
+		radial-gradient(46% 34% at 94% 4%, color-mix(in oklch, var(--accent-strong) 20%, transparent), transparent 74%),
 		radial-gradient(
-			130% 55% at 50% 0%,
-			color-mix(in oklch, var(--accent-strong) 32%, transparent),
-			transparent 70%
+			78% 44% at 68% 104%,
+			color-mix(in oklch, var(--accent-strong) 30%, transparent),
+			transparent 76%
 		),
-		radial-gradient(
-			150% 60% at 50% 100%,
-			color-mix(in oklch, var(--accent-strong) 24%, transparent),
-			transparent 74%
-		);
+		radial-gradient(64% 38% at 16% 98%, color-mix(in oklch, var(--accent-strong) 18%, transparent), transparent 78%);
+	will-change: opacity, transform;
 
 	@media (prefers-reduced-motion: reduce) {
 		animation: none;
-		opacity: 0.7;
+		opacity: 0.68;
 	}
 }
 
@@ -40,7 +43,74 @@
 	}
 }
 
-/* shared by both mood washes — the color differs per utility above, the pulse doesn't */
+/* the invitation arrives as one column, each block a beat behind the one above it: the title first,
+   the answer panel last. it staggers by position rather than by prop, so a block that renders
+   nothing — no sections written, no address yet — costs no beat and leaves no gap in the rhythm. */
+@utility invitation-enter {
+	& > * {
+		animation: invitation-enter 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+	}
+
+	& > *:nth-child(2) {
+		animation-delay: 90ms;
+	}
+
+	& > *:nth-child(3) {
+		animation-delay: 180ms;
+	}
+
+	& > *:nth-child(4) {
+		animation-delay: 270ms;
+	}
+
+	& > *:nth-child(n + 5) {
+		animation-delay: 340ms;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		& > * {
+			animation: none;
+		}
+	}
+}
+
+@keyframes invitation-enter {
+	from {
+		opacity: 0;
+		transform: translate3d(0, 1.25rem, 0);
+	}
+
+	to {
+		opacity: 1;
+		transform: translate3d(0, 0, 0);
+	}
+}
+
+/* the green one breathes shallower than the red and drifts while it does: two slow cycles that
+   never line up, so the light moves the way light does rather than pulsing on a count */
+@keyframes invitation-celebrate-breathe {
+	0%,
+	100% {
+		opacity: 0.66;
+	}
+
+	50% {
+		opacity: 1;
+	}
+}
+
+@keyframes invitation-celebrate-drift {
+	0%,
+	100% {
+		transform: translate3d(0, 0, 0) scale(1.06);
+	}
+
+	50% {
+		transform: translate3d(-2.5%, 1.5%, 0) scale(1.14);
+	}
+}
+
+/* the red wash keeps the plain pulse: nothing about that moment should feel lively */
 @keyframes invitation-mood-breathe {
 	0%,
 	100% {

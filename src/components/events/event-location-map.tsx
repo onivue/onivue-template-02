@@ -1,7 +1,7 @@
 'use client';
 
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { createMapStyle, MAP_ZOOM } from '@/lib/events/map-style';
 import { cn } from '@/lib/utils';
@@ -17,6 +17,9 @@ const PIN_CLASS = 'size-3.5 rounded-full border-2 border-surface-elevated bg-act
 
 export function EventLocationMap({ className, latitude, longitude }: EventLocationMapProps) {
 	const containerRef = useRef<HTMLDivElement>(null);
+	// tiles arrive over the network, so the map paints its ground first and the streets a moment
+	// later. holding it back until it has drawn once trades that flicker for a quiet fade.
+	const [isReady, setIsReady] = useState(false);
 
 	// webgl is an external system with its own lifecycle: it has to be created against a real
 	// element and torn down by hand. that is what an effect is for.
@@ -58,6 +61,12 @@ export function EventLocationMap({ className, latitude, longitude }: EventLocati
 
 			map = instance;
 
+			instance.once('idle', () => {
+				if (!cancelled) {
+					setIsReady(true);
+				}
+			});
+
 			const pin = document.createElement('div');
 
 			pin.className = PIN_CLASS;
@@ -78,9 +87,15 @@ export function EventLocationMap({ className, latitude, longitude }: EventLocati
 		// place, so a reader who cannot see this loses nothing by having it skipped
 		<div
 			aria-hidden='true'
-			className={cn('overflow-hidden bg-muted', className)}
+			className={cn('group relative overflow-hidden bg-muted', className)}
+			data-ready={isReady}
 			data-testid='event-location-map'
-			ref={containerRef}
-		/>
+		>
+			<div
+				className='size-full opacity-0 transition-opacity duration-500 group-data-[ready=true]:opacity-100'
+				ref={containerRef}
+			/>
+			<span className='absolute inset-0 animate-pulse bg-muted transition-opacity duration-500 group-data-[ready=true]:opacity-0' />
+		</div>
 	);
 }

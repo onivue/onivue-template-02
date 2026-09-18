@@ -2,18 +2,15 @@
 
 import { HeartCrack } from 'lucide-react';
 
-import { formatBerlin } from '@/lib/events/berlin-time';
-
 type InvitationDeclinedNoteProps = {
-	closesAt?: Date | null;
 	guestCount: number;
 };
 
 // what a guest who is not coming gets instead of the calendar and the way there: one warm line
-// saying they will be missed, and — while the window is still open — a reminder that "not coming"
-// is not final. closesAt only ever arrives here when the window is still open (see the invitation
-// route), so its presence alone decides whether that second line renders.
-export function InvitationDeclinedNote({ closesAt, guestCount }: InvitationDeclinedNoteProps) {
+// saying they will be missed. that "not coming" is not final is said once, by the answer panel
+// below, which is where the button that changes it sits — saying it twice on one screen reads as
+// pleading.
+export function InvitationDeclinedNote({ guestCount }: InvitationDeclinedNoteProps) {
 	const isGroup = guestCount > 1;
 
 	return (
@@ -31,9 +28,6 @@ export function InvitationDeclinedNote({ closesAt, guestCount }: InvitationDecli
 				</h2>
 				<p className='text-sm text-destructive/85'>
 					{isGroup ? 'Wir hätten euch gern dabei gehabt.' : 'Wir hätten dich gern dabei gehabt.'}
-					{closesAt
-						? ` Du kannst deine Antwort bis ${formatBerlin(closesAt, 'end-of-day')} noch ändern.`
-						: null}
 				</p>
 			</div>
 		</section>

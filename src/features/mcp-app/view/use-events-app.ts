@@ -5,9 +5,12 @@ import type { TMcpAppEvent, TMcpAppEventDetail } from '@/features/mcp-app/app-co
 
 import {
 	MCP_APP_TOOLS,
+	mcpAppAddInvitationsResultSchema,
 	mcpAppDeletedInvitationSchema,
 	mcpAppEventDetailSchema,
 	mcpAppEventListSchema,
+	mcpAppInvitationLinksSchema,
+	mcpAppMarkInvitationSentResultSchema,
 } from '@/features/mcp-app/app-contract';
 import { callTool, readToolResult } from '@/features/mcp-app/view/tool-call';
 
@@ -25,10 +28,14 @@ export type TSelectionState =
 	| { eventId: string; kind: 'loading' }
 	| { kind: 'none' };
 
+export type TAddInvitationsOutcome = { created: number } | { error: string };
+
 const APP_INFO = { name: 'onivue-events', version: '1.0.0' };
 
 const MESSAGES = {
 	cancelled: 'Der Aufruf wurde abgebrochen.',
+	clipboardFailed: 'Der Link konnte nicht kopiert werden.',
+	linkNotFound: 'Für diese Einladung wurde kein Link gefunden.',
 } as const;
 
 // what the model is told about the app while the person clicks around in it, so the next turn of
@@ -130,5 +137,82 @@ export function useEventsApp() {
 		return null;
 	};
 
-	return { closeEvent, connectionError: error, deleteInvitation, events, openEvent, reloadEvents, selection };
+	// created the same way a host would call the tool itself — read back afterwards, same as
+	// deletion, so the counters on both screens agree with what the server actually stored
+	const addInvitations = async (eventId: string, guestList: string): Promise<TAddInvitationsOutcome> => {
+		const outcome = await callTool(
+			app,
+			MCP_APP_TOOLS.addInvitations,
+			{ eventId, guestList },
+			mcpAppAddInvitationsResultSchema
+		);
+
+		if (!outcome.success) {
+			return { error: outcome.message };
+		}
+
+		await openEvent(eventId);
+		await reloadEvents();
+
+		return { created: outcome.data.created };
+	};
+
+	const setInvitationSent = async (eventId: string, invitationId: string, sent: boolean): Promise<null | string> => {
+		const outcome = await callTool(
+			app,
+			MCP_APP_TOOLS.markInvitationSent,
+			{ eventId, invitationId, sent },
+			mcpAppMarkInvitationSentResultSchema
+		);
+
+		if (!outcome.success) {
+			return outcome.message;
+		}
+
+		await openEvent(eventId);
+		await reloadEvents();
+
+		return null;
+	};
+
+	// its own scope on the server (events:links), because a link is the whole authorization for the
+	// guests on it — a client without that scope gets the missing-scope message here, not a crash
+	const copyInvitationLink = async (eventId: string, invitationId: string): Promise<null | string> => {
+		const outcome = await callTool(app, MCP_APP_TOOLS.getInvitationLinks, { eventId }, mcpAppInvitationLinksSchema);
+
+		if (!outcome.success) {
+			return outcome.message;
+		}
+
+		const link = outcome.data.invitations.find((invitation) => invitation.id === invitationId);
+
+		if (!link) {
+			return MESSAGES.linkNotFound;
+		}
+
+		if (!navigator.clipboard?.writeText) {
+			return MESSAGES.clipboardFailed;
+		}
+
+		try {
+			await navigator.clipboard.writeText(link.url);
+		} catch {
+			return MESSAGES.clipboardFailed;
+		}
+
+		return null;
+	};
+
+	return {
+		addInvitations,
+		closeEvent,
+		connectionError: error,
+		copyInvitationLink,
+		deleteInvitation,
+		events,
+		openEvent,
+		reloadEvents,
+		selection,
+		setInvitationSent,
+	};
 }

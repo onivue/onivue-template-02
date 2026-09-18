@@ -13,7 +13,7 @@ import mcpApp from '@/features/mcp-app/generated/mcp-app.json';
 // applies: the view may talk to nobody but its host.
 
 const DESCRIPTION =
-	'Interaktive Ansicht der Events, ihrer Einladungen und des Antwortstands. Einladungen lassen sich darin nach Rückfrage löschen.';
+	'Interaktive Ansicht der Events, ihrer Einladungen und des Antwortstands. Einladungen lassen sich darin anlegen, ihr Link kopieren, als versendet markieren und nach Rückfrage löschen.';
 
 export const MCP_APP_TOOL_META = { ui: { resourceUri: MCP_APP_RESOURCE_URI } } as const;
 
@@ -26,8 +26,15 @@ export function registerMcpApp(server: McpServer): void {
 		async () => ({
 			contents: [
 				{
-					// the view brings the app's own canvas and panels, so it wants a frame around it
-					_meta: { ui: { prefersBorder: true } },
+					_meta: {
+						ui: {
+							// the "Link kopieren" button writes to the clipboard from inside the sandbox; without
+							// this the Permission Policy blocks it even though the browser API is present
+							permissions: { clipboardWrite: {} },
+							// the view brings the app's own canvas and panels, so it wants a frame around it
+							prefersBorder: true,
+						},
+					},
 					mimeType: RESOURCE_MIME_TYPE,
 					text: mcpApp.html,
 					uri: MCP_APP_RESOURCE_URI,

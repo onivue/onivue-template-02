@@ -2,9 +2,10 @@ import { CalendarPlus, Download } from 'lucide-react';
 
 import type { EventSchedule } from '@/lib/events/event-schedule';
 
+import { EventIconTile } from '@/components/events/event-icon-tile';
 import { cn } from '@/lib/utils';
 
-type EventCalendarCardProps = {
+type EventCalendarRowProps = {
 	className?: string;
 	href: string;
 	schedule: EventSchedule | null;
@@ -12,9 +13,10 @@ type EventCalendarCardProps = {
 
 const SEPARATOR = ' · ';
 
-// the ics download, given the same weight as the address: somebody who is coming wants the date in
-// their own calendar, and a text link between two tiles is the one thing they would miss
-export function EventCalendarCard({ className, href, schedule }: EventCalendarCardProps) {
+// the ics download, one row of the panel that says what happens next: somebody who is coming wants
+// the date in their own calendar, and a text link under the address is the one thing they would
+// miss. the negative margin gives the link a hit area past the row without moving the row itself.
+export function EventCalendarRow({ className, href, schedule }: EventCalendarRowProps) {
 	if (!schedule) {
 		return null;
 	}
@@ -24,16 +26,16 @@ export function EventCalendarCard({ className, href, schedule }: EventCalendarCa
 	return (
 		<a
 			className={cn(
-				'group flex items-center gap-4 rounded-3xl border border-border bg-surface-elevated p-5 transition-colors hover:bg-muted',
+				'group -m-2 flex items-center gap-4 rounded-2xl p-2 transition-colors hover:bg-muted',
 				className
 			)}
 			data-testid='invitation-add-to-calendar'
 			download
 			href={href}
 		>
-			<span className='grid size-10 shrink-0 place-items-center rounded-2xl bg-muted text-ink-soft transition-colors group-hover:bg-lime-glow/25 group-hover:text-accent-strong'>
+			<EventIconTile className='transition-colors group-hover:bg-lime-glow/45'>
 				<CalendarPlus aria-hidden='true' className='size-5' />
-			</span>
+			</EventIconTile>
 
 			<span className='min-w-0 flex-1'>
 				<span className='block text-base leading-tight font-bold text-ink'>Zum Kalender hinzufügen</span>

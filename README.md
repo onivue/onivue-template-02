@@ -18,7 +18,8 @@ Der MCP-Server liefert seine Ergebnisse nicht nur als Text, sondern als **MCP Ap
 [SEP-1865](https://github.com/modelcontextprotocol/ext-apps/blob/main/specification/2026-01-26/apps.mdx)
 (Extension `io.modelcontextprotocol/ui`, Spec `2026-01-26`). Ruft ein Host `list_events` auf, rendert
 er das Ergebnis als interaktive Oberfläche direkt im Chat: die Events, die Einladungen des
-ausgewählten Events samt Antwortstand, und das Löschen einer Einladung nach Rückfrage.
+ausgewählten Events samt Antwortstand — dort lassen sich neue Einladungen anlegen, ihr Link kopieren,
+sie als versendet markieren, und nach Rückfrage löschen.
 
 Die Oberfläche greift nie selbst auf Datenbank oder API zu. Jeder Klick wird zu einem `tools/call`
 über den Host — dieselben Tools, die auch das Modell benutzt, mit denselben Scopes und derselben

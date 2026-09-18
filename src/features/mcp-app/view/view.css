@@ -8,7 +8,9 @@
 @source '../invitation-status.ts';
 @source '../../../components/ui/badge.tsx';
 @source '../../../components/ui/button.tsx';
+@source '../../../components/ui/checkbox.tsx';
 @source '../../../components/ui/skeleton.tsx';
+@source '../../../components/ui/textarea.tsx';
 
 /* the sandbox loads no webfont, so the brand face is named but never fetched. giving it a literal
    value here also keeps --font-sans free of a cycle when the host overrides it below. */

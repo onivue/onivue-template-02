@@ -3,6 +3,7 @@ import { describe, expect, test } from 'bun:test';
 import type { CalendarExportEvent } from '@/lib/events/calendar-export';
 
 import { toIcs, toIcsFilename } from '@/lib/events/calendar-export';
+import { serializeRichText } from '@/lib/events/rich-text';
 
 const NOW = new Date('2026-06-01T10:00:00.000Z');
 
@@ -64,6 +65,26 @@ describe('the add-to-calendar file', () => {
 		});
 		expect(withThem).toContain('LOCATION:Schlossgarten 1');
 		expect(withThem).toContain('DESCRIPTION:Wir freuen uns auf euch!');
+	});
+
+	test('a formatted greeting reaches the calendar as the words alone', () => {
+		const ics = toIcs({
+			event: event({
+				greeting: serializeRichText({
+					content: [
+						{
+							content: [{ marks: [{ type: 'bold' }], text: 'Wir freuen uns auf euch!', type: 'text' }],
+							type: 'paragraph',
+						},
+					],
+					type: 'doc',
+				}),
+			}),
+			now: NOW,
+			uid: 'e1@event.onivue',
+		});
+
+		expect(ics).toContain('DESCRIPTION:Wir freuen uns auf euch!');
 	});
 
 	test('semicolons, commas and newlines cannot break a field apart', () => {

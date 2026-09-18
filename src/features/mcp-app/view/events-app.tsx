@@ -5,8 +5,18 @@ import { useEventsApp } from '@/features/mcp-app/view/use-events-app';
 
 // two screens, never both: the events, or the invitations of the one that is open.
 export function EventsApp() {
-	const { closeEvent, connectionError, deleteInvitation, events, openEvent, reloadEvents, selection } =
-		useEventsApp();
+	const {
+		addInvitations,
+		closeEvent,
+		connectionError,
+		copyInvitationLink,
+		deleteInvitation,
+		events,
+		openEvent,
+		reloadEvents,
+		selection,
+		setInvitationSent,
+	} = useEventsApp();
 
 	if (connectionError) {
 		return (
@@ -26,7 +36,14 @@ export function EventsApp() {
 			{selection.kind === 'none' ? (
 				<EventList onOpen={openEvent} onReload={reloadEvents} state={events} />
 			) : (
-				<InvitationList onBack={closeEvent} onDelete={deleteInvitation} state={selection} />
+				<InvitationList
+					onAddInvitations={addInvitations}
+					onBack={closeEvent}
+					onCopyLink={copyInvitationLink}
+					onDelete={deleteInvitation}
+					onToggleSent={setInvitationSent}
+					state={selection}
+				/>
 			)}
 		</main>
 	);

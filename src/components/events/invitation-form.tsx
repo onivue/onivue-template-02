@@ -7,8 +7,10 @@ import { toast } from 'sonner';
 import type { ActionResult } from '@/lib/events/action-result';
 import type { AnswerValue, FormFieldDefinition, GuestResponse, Submission } from '@/lib/events/form-schema';
 
+import { InvitationDeadline } from '@/components/events/invitation-deadline';
 import { InvitationField } from '@/components/events/invitation-field';
 import { InvitationSummary } from '@/components/events/invitation-summary';
+import { Divided } from '@/components/layout/divided';
 import { Button } from '@/components/ui/button';
 import { isFieldVisible } from '@/lib/events/form-schema';
 
@@ -33,6 +35,9 @@ type InvitationFormProps = {
 	answer: AnswerState;
 	answers: { fieldId: string; guestId: null | string; value: AnswerValue }[];
 	closedReason?: 'archived' | 'deadline-passed';
+	// only ever set while the window is open and the page has nothing better to say about it, so
+	// its presence alone decides whether the deadline is named here
+	closesAt?: Date | null;
 	fields: FormFieldDefinition[];
 	guests: InvitationFormGuest[];
 	onAnswerChange: (answer: AnswerState) => void;
@@ -155,6 +160,7 @@ export function InvitationForm(props: InvitationFormProps) {
 		return (
 			<InvitationSummary
 				closedNote={props.closedReason ? CLOSED_MESSAGES[props.closedReason] : null}
+				closesAt={props.closesAt}
 				fields={props.fields}
 				guests={props.guests}
 				onEdit={isReadOnly ? undefined : () => props.onAnswerChange({ ...props.answer, isAnswered: false })}
@@ -164,7 +170,9 @@ export function InvitationForm(props: InvitationFormProps) {
 	}
 
 	return (
-		<div className='grid gap-6' data-testid='invitation-form'>
+		<Divided className='design-panel p-5 sm:p-6' data-testid='invitation-form'>
+			{props.closesAt ? <InvitationDeadline closesAt={props.closesAt} isAnswered={false} /> : null}
+
 			{props.guests.map((guest) => {
 				const state = submission.guests[guest.id];
 
@@ -173,11 +181,7 @@ export function InvitationForm(props: InvitationFormProps) {
 				}
 
 				return (
-					<section
-						className='design-panel grid gap-4 p-5 sm:p-6'
-						data-testid={`guest-${guest.id}`}
-						key={guest.id}
-					>
+					<div className='grid gap-4' data-testid={`guest-${guest.id}`} key={guest.id}>
 						<h2 className='text-lg font-bold'>{guestName(guest)}</h2>
 
 						<fieldset className='grid gap-2'>
@@ -218,12 +222,12 @@ export function InvitationForm(props: InvitationFormProps) {
 									value={state.answers[field.id] ?? emptyValue(field)}
 								/>
 							))}
-					</section>
+					</div>
 				);
 			})}
 
 			{props.fields.some((field) => field.scope === 'invitation') ? (
-				<section className='design-panel design-form p-6 sm:p-8' data-testid='invitation-fields'>
+				<div className='design-form' data-testid='invitation-fields'>
 					{props.fields
 						.filter((field) => field.scope === 'invitation')
 						.map((field) => (
@@ -234,12 +238,19 @@ export function InvitationForm(props: InvitationFormProps) {
 								value={submission.answers[field.id] ?? emptyValue(field)}
 							/>
 						))}
-				</section>
+				</div>
 			) : null}
 
-			<Button data-testid='submit-invitation' disabled={isSaving} onClick={save} size='xl' variant='strong'>
+			<Button
+				className='w-full'
+				data-testid='submit-invitation'
+				disabled={isSaving}
+				onClick={save}
+				size='xl'
+				variant='strong'
+			>
 				{isSaving ? 'Wird gespeichert …' : 'Antwort speichern'}
 			</Button>
-		</div>
+		</Divided>
 	);
 }

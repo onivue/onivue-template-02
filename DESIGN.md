@@ -40,6 +40,8 @@ Global design utilities live in `src/app/globals.css`:
 - `design-control`: the surface, border, focus, invalid, and disabled states every form control shares. Not used directly — `design-input` and `design-textarea` build on it, so a control can never drift from the rest.
 - `design-input`: pill-shaped form field at `--control-height`.
 - `design-textarea`: the same surface for multi-line input, trading the pill and the fixed height for `rounded-2xl` and a minimum height.
+- `design-richtext`: the same surface again for the rich text control, where the focus ring has to answer to the contenteditable inside it rather than to the element that carries the border.
+- `design-richtext-body`: the typography of a rich text document — paragraph rhythm, bold, italic, and bullets that sit inside the line box so one list reads the same centred under a greeting and left-aligned in a panel. The editor and the guest page share it, so a host sees what a guest will read.
 - `design-form`: the vertical rhythm of a form — one gap between fields.
 - `design-field`: one label and its control, with the gap between them.
 - `design-field-error`: inline validation message under a field.
@@ -106,35 +108,46 @@ nothing on it reads one. The title comes first, the host's greeting right under 
 two things — never both, because each says the same date and the same address:
 
 - **When and where** (`InvitationFacts`) while the answer is still open: the weekday and full date
-  on one side, the street and postal line on the other, each behind a bordered icon tile, separated
-  by a hairline rule on wide screens and stacked on a phone. They are not metadata and must not be
+  on one side, the street and postal line on the other, each behind an icon tile, separated by a
+  hairline rule on wide screens and stacked on a phone. They are not metadata and must not be
   styled as such.
-- **The two tiles** — the calendar download (`EventCalendarCard`) and the location card
-  (`EventLocationCard`) — take their place once the guest has replied and at least one of their
-  party said yes. A reader still deciding, or one who just declined, is not handed a date to save
-  and directions they did not ask for.
+- **The plan panel** takes their place once the guest has replied and at least one of their party
+  said yes: one panel holding the calendar download (`EventCalendarRow`) and the address with its
+  map and map links (`EventLocationRow`), parted by a hairline. A reader still deciding, or one who
+  just declined, is not handed a date to save and directions they did not ask for.
+
+The page itself arrives rather than appearing: `invitation-enter` on the column fades and lifts each
+block in turn, the title first and the answer panel last, about a beat apart. It staggers by
+position (`nth-child`) rather than by a prop on each block, so a block that renders nothing — no
+sections written, no address yet — costs no beat and leaves no hole in the rhythm. Under
+`prefers-reduced-motion` nothing moves at all.
+
+Two things on the page are drawn by something other than the browser and would otherwise pop in
+half-finished: the 3D ornament, whose model arrives over the network, and the map, which paints its
+ground before its streets. Both hold their space with a placeholder instead — a breathing lime pool
+under the ornament, the muted ground under the map — and fade the real thing in once it is actually
+there (`createCakeScene`'s `onReady`, maplibre's first `idle`). A skeleton that is the shape of what
+follows beats an empty box that fills with a jump.
 
 Once — and only once — an answer has actually been saved, the page gets an ambient background that
-answers back (`InvitationMood`): a soft `--accent-strong` wash with a subtle, ongoing confetti
-shower (`canvas-confetti`) when at least one guest on the invitation said yes, a slow warm wash of
-`--destructive` when nobody is coming — both washes share one breathing keyframe
-(`invitation-mood-breathe`), only the colour differs. Nobody coming also gets a red panel above the
+answers back (`InvitationMood`): a green wash when at least one guest on the invitation said yes, a
+slow warm wash of `--destructive` when nobody is coming. The green one is four soft lights — over
+the top corners and along the foot, all of them `--accent-strong` at four strengths, never a second
+hue — and it both breathes and drifts on two slow cycles that never line up, so the light moves the
+way light does rather than pulsing on a count. The red one keeps the plain pulse
+(`invitation-mood-breathe`): nothing about that moment should feel lively. Nobody coming also gets a red panel above the
 title, before anything else on the page (`InvitationDeclinedNote`) — the one thing a guest who
-declined should read first, phrased for one person or for the whole invitation. While the response
-window is still open it carries the reminder that the answer can still change, naming the same
-deadline as the read-only summary below; the generic deadline line further down the page is
-suppressed in this case rather than repeating it. It appears the moment the reply is stored and
+declined should read first, phrased for one person or for the whole invitation. It says that and
+nothing else: that "not coming" is not final is said once, by the deadline at the head of the answer
+panel below, which is where the button that changes it sits. Saying it twice on one screen reads as
+pleading. It appears the moment the reply is stored and
 greets the guest again on every return, because it is derived from the saved answer
 (`resolveResponseMood`) rather than from the act of submitting; an open form, or one being edited
 again, has a plain canvas. Both the panel and the background are decoration — the panel's message
 stands on its own without one, the background layer is `aria-hidden`, never a pointer target, and
-low enough in contrast that the panels above it keep their readability. `canvas-confetti` parses
-its own colour strings rather than reading CSS custom properties, so `InvitationMood` is the one
-place the lime, readable-accent and ink tokens are written out as hex — the same exception
-`map-style.ts` makes for MapLibre, and for the same reason: the app renders light only, so there is
-one palette to keep in step with `globals.css`. The shower runs on its own physics loop, so a
-reader who asked for less motion gets no shower at all rather than a still frame; the red wash
-still comes to rest instead of disappearing under `prefers-reduced-motion`.
+low enough in contrast that the panels above it keep their readability. Both washes come to rest
+under `prefers-reduced-motion` rather than disappearing: the picture stays, only the breathing
+stops.
 
 `InvitationPage` owns that swap, so the `AnswerState` it turns on — has the guest replied, is
 anybody coming — lives there rather than inside `InvitationForm`; the form reports each transition
@@ -150,8 +163,37 @@ address (`src/lib/events/event-location.ts`); a host never pastes one in, so cor
 never leave a stale pin behind. The host's own event page shows the same location card, so the two
 can never drift.
 
+Under those come the host's own Notes (`InvitationNotes`) — what there is to eat and drink, where
+to park, what to wear. They share **one** panel at the full width of the column, never one card per
+note: a single note set loose under the centred date and address leaves the column visibly
+lopsided, and three loose blocks would only repeat that three times. Inside, each note is a row
+built like the two facts above it — icon tile, bold title, the words underneath — separated from
+the next by a hairline. The rows stay quieter than the facts, at `text-sm` in `--ink-soft`, because
+a note is read once on the way to the form and carries no action of its own. No note written means
+no panel at all.
+
+Everything a guest acts on lives in **one** panel, not in a stack of them: the answer panel
+(`InvitationForm`, and `InvitationSummary` once the reply is in) holds the deadline at its head in
+every state that can still be changed — a guest who said no needs it most, and only a shut window
+has nothing to promise, where the panel carries the closing note instead —
+then one block per person, then the single action at the bottom, each parted from the next by a
+hairline. `Divided` (`src/components/layout/divided.tsx`) draws those rules between what actually
+rendered, so a block that decided against rendering leaves no line behind. A person, their answer
+and the button that saves it are one thing to do; three bordered boxes said they were three.
+
+Every large icon on the page sits in the same `EventIconTile`, `rounded-2xl` at `size-10`, and its
+colour follows what it sits on. **Inside a panel** it is the accent: `--lime-glow` at 25% with the
+icon in `--accent-strong` — each section the host wrote, the calendar download, the deadline. **On
+the bare canvas** it stays quiet, a hairline border with `--ink-soft`, which is what the two facts
+above the first panel use: a lime tile there has no surface to sit against and reads as a stray
+sticker. The declined note keeps its own red tile — that one is not an accent, it is the message.
+
 The settings form (`EventDetailsForm`) asks for those fields in the order the guest reads them —
-title, greeting, when, where — so a host is never editing one page in the shape of another.
+title, greeting, the notes, when, where — so a host is never editing one page in the shape of
+another. Every longer text is a `RichTextEditor`, whose toolbar offers exactly what the document
+schema allows: bold, italic, bullets. The notes themselves are added with a button
+(`EventNotesEditor`), each in a `rounded-2xl` block carrying its symbol, its title and its text,
+with the add action disabled once three exist rather than hidden.
 
 The map is MapLibre GL JS on OpenFreeMap's OpenStreetMap tiles, drawn with a style of our own
 (`src/lib/events/map-style.ts`) rather than a stock one: warm off-white ground, white streets, soft

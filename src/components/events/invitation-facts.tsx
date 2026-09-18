@@ -3,6 +3,7 @@ import { CalendarDays, MapPin } from 'lucide-react';
 import type { EventAddress } from '@/lib/events/event-location';
 import type { EventSchedule } from '@/lib/events/event-schedule';
 
+import { EventIconTile } from '@/components/events/event-icon-tile';
 import { addressLines } from '@/lib/events/event-location';
 
 type InvitationFactsProps = {
@@ -25,9 +26,9 @@ function Fact({
 }) {
 	return (
 		<div className='flex items-center gap-3 text-left' data-testid={testId}>
-			<span className='grid size-10 shrink-0 place-items-center rounded-2xl border border-border text-ink-soft'>
+			<EventIconTile tone='quiet'>
 				<Icon aria-hidden='true' className='size-5' />
-			</span>
+			</EventIconTile>
 			<div className='min-w-0'>
 				<p className='text-base leading-tight font-bold text-ink'>{title}</p>
 				{lines.map((line) => (

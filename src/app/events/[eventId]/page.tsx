@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 
 import { BulkInviteForm } from '@/components/events/bulk-invite-form';
-import { EventLocationCard } from '@/components/events/event-location-card';
+import { EventLocationRow } from '@/components/events/event-location-row';
 import { GuestTable } from '@/components/events/guest-table';
 import { ResponseCounts } from '@/components/events/response-counts';
 import { ResponseWindowStatus } from '@/components/events/response-window-status';
@@ -80,7 +80,7 @@ async function EventFacts({ params }: { params: Params }) {
 
 				<Fact icon={MapPin} label='Wo'>
 					{hasAddress(address) ? (
-						<EventLocationCard address={address} className='mt-1' />
+						<EventLocationRow address={address} className='mt-1' />
 					) : (
 						'Noch nicht festgelegt'
 					)}

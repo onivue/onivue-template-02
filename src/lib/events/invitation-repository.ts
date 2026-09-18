@@ -1,11 +1,13 @@
 import { and, asc, eq, isNull, sql } from 'drizzle-orm';
 
 import type { db } from '@/db/client';
+import type { EventNote } from '@/lib/events/event-note';
 import type { FormFieldDefinition } from '@/lib/events/form-schema';
 import type { InvitationState } from '@/lib/events/response-plan';
 import type { EventStatus } from '@/lib/events/response-window';
 
 import { event, eventAnswer, eventFormField, eventGuest, eventInvitation } from '@/db/schema';
+import { readEventNotes } from '@/lib/events/event-note';
 
 // counted in the statement, never read and written back: two guests opening the same link at the
 // same moment must not settle on one view
@@ -37,6 +39,7 @@ export type InvitationEvent = {
 	locationName: null | string;
 	locationPostalCode: null | string;
 	locationStreet: null | string;
+	notes: EventNote[];
 	responseDeadline: Date | null;
 	startsAt: Date | null;
 	status: EventStatus;
@@ -74,6 +77,7 @@ export class InvitationRepository {
 				locationName: event.locationName,
 				locationPostalCode: event.locationPostalCode,
 				locationStreet: event.locationStreet,
+				notes: event.notes,
 				organizationId: event.organizationId,
 				responseDeadline: event.responseDeadline,
 				startsAt: event.startsAt,
@@ -123,6 +127,9 @@ export class InvitationRepository {
 				locationName: row.locationName,
 				locationPostalCode: row.locationPostalCode,
 				locationStreet: row.locationStreet,
+				// what a column holds is data an older version of the app wrote; the guest page gets
+				// only the sections this one still understands
+				notes: readEventNotes(row.notes),
 				organizationId: row.organizationId,
 				responseDeadline: row.responseDeadline,
 				startsAt: row.startsAt,

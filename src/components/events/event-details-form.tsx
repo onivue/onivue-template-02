@@ -6,15 +6,18 @@ import { toast } from 'sonner';
 import type { EventRecord } from '@/lib/events/event-repository';
 
 import { EventDecoration } from '@/components/events/event-decoration';
+import { type EventNoteDraft, EventNotesEditor } from '@/components/events/event-notes-editor';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DateTimePicker } from '@/components/ui/date-time-picker';
 import { Input } from '@/components/ui/input';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
 import { toBerlinInputValue } from '@/lib/events/berlin-time';
 import { updateEventDetails } from '@/lib/events/event-actions';
 import { DECORATION_KEYS, DECORATIONS, isDecorationKey } from '@/lib/events/event-decoration';
+import { DEFAULT_EVENT_NOTE_ICON, isEventNoteIcon } from '@/lib/events/event-note';
+import { parseRichText, serializeRichText } from '@/lib/events/rich-text';
 
 type EventDetailsFormProps = {
 	event: EventRecord;
@@ -26,18 +29,28 @@ const DECORATION_LABELS: Record<string, string> = Object.fromEntries(
 	DECORATION_KEYS.map((key) => [key, DECORATIONS[key].label])
 );
 
+function toNoteDrafts(event: EventRecord): EventNoteDraft[] {
+	return event.notes.map((note) => ({
+		body: parseRichText(note.body),
+		icon: isEventNoteIcon(note.icon) ? note.icon : DEFAULT_EVENT_NOTE_ICON,
+		id: note.id,
+		title: note.title,
+	}));
+}
+
 // everything a guest gets to see about the event itself: what it is called, when and where it is,
 // and how long the door stays open
 export function EventDetailsForm({ event }: EventDetailsFormProps) {
 	const [details, setDetails] = useState({
 		decoration: event.decoration ?? '',
 		endsAt: toBerlinInputValue(event.endsAt),
-		greeting: event.greeting ?? '',
+		greeting: parseRichText(event.greeting),
 		locationCity: event.locationCity ?? '',
 		locationName: event.locationName ?? '',
 		locationPostalCode: event.locationPostalCode ?? '',
 		locationStreet: event.locationStreet ?? '',
 		notificationEmail: event.notificationEmail ?? '',
+		notes: toNoteDrafts(event),
 		notifyOnResponse: event.notifyOnResponse,
 		responseDeadline: toBerlinInputValue(event.responseDeadline, 'end-of-day'),
 		startsAt: toBerlinInputValue(event.startsAt),
@@ -48,7 +61,11 @@ export function EventDetailsForm({ event }: EventDetailsFormProps) {
 	const save = async () => {
 		setIsSaving(true);
 
-		const result = await updateEventDetails(event.id, details);
+		const result = await updateEventDetails(event.id, {
+			...details,
+			greeting: serializeRichText(details.greeting) ?? '',
+			notes: details.notes.map((note) => ({ ...note, body: serializeRichText(note.body) ?? '' })),
+		});
 
 		setIsSaving(false);
 
@@ -72,15 +89,18 @@ export function EventDetailsForm({ event }: EventDetailsFormProps) {
 				/>
 			</label>
 
-			<label className='design-field'>
+			<div className='design-field'>
 				<span className='design-label'>Begrüßungstext</span>
-				<Textarea
-					onChange={(nativeEvent) => setDetails({ ...details, greeting: nativeEvent.target.value })}
+				<RichTextEditor
+					data-testid='settings-greeting'
+					defaultValue={details.greeting}
+					label='Begrüßungstext'
+					onChange={(value) => setDetails({ ...details, greeting: value })}
 					placeholder='Wir feiern und würden uns freuen, wenn du dabei bist.'
-					rows={4}
-					value={details.greeting}
 				/>
-			</label>
+			</div>
+
+			<EventNotesEditor notes={details.notes} onChange={(notes) => setDetails({ ...details, notes })} />
 
 			<div className='design-field'>
 				<span className='design-label'>Beginn</span>

@@ -63,10 +63,12 @@ Anleitung für weitere Tools mit UI stehen in der [README im Wurzelverzeichnis](
 
 Drei Dinge gelten hier dauerhaft:
 
-- **Die App hat keinen eigenen Datenweg.** Sie ruft `list_events`, `get_event` und
-  `delete_invitation` über den Host auf — dieselben Tools, dieselben Scopes, dieselbe Zustimmung.
-  Ein Tool ist aus einer App heraus nur aufrufbar, solange seine `_meta.ui.visibility` `"app"`
-  enthält; das ist der Default und wurde hier für keines abgeschaltet.
+- **Die App hat keinen eigenen Datenweg.** Sie ruft `list_events`, `get_event`, `add_invitations`,
+  `mark_invitation_sent`, `get_invitation_links` und `delete_invitation` über den Host auf —
+  dieselben Tools, dieselben Scopes, dieselbe Zustimmung. Der Link-Button braucht deshalb
+  `events:links`; fehlt der Scope, zeigt die Oberfläche genau die Fehlermeldung, die das Tool auch
+  einem Modell gegenüber gäbe. Ein Tool ist aus einer App heraus nur aufrufbar, solange seine
+  `_meta.ui.visibility` `"app"` enthält; das ist der Default und wurde hier für keines abgeschaltet.
 - **Das Dokument ist self-contained.** Skript und Stylesheet stecken inline, es wird nichts
   nachgeladen. Deshalb deklariert die Resource keine CSP-Domains, und der Host wendet seinen
   restriktiven Default an: die Ansicht erreicht niemanden ausser ihrem Host.

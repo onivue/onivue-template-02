@@ -441,7 +441,17 @@ export const event = pgTable(
 		// events outlive the person who created them; the organization owns them
 		createdByUserId: text('created_by_user_id').references(() => user.id, { onDelete: 'set null' }),
 		title: text('title').notNull(),
+		// the greeting holds a serialized rich text document (src/lib/events/rich-text.ts). the
+		// column stays text: what was written before rich text existed is still plain text, and the
+		// parser reads it as paragraphs.
 		greeting: text('greeting'),
+		// the host's own sections under the greeting — [{ id, icon, title, body }], body being a
+		// serialized document like the greeting. a list rather than named columns, so a new kind of
+		// note is something a host writes rather than a migration.
+		notes: jsonb('notes')
+			.$type<{ body: string; icon: string; id: string; title: string }[]>()
+			.notNull()
+			.default([]),
 		// the address is kept in parts rather than as one block of text: the map links and the
 		// geocoder are both built from street and postal code, and a free-text field would have to be
 		// taken apart again at every call site

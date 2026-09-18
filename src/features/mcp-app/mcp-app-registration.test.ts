@@ -85,6 +85,16 @@ describe('the MCP app resource', () => {
 
 		expect(read.contents[0]?._meta?.ui?.csp).toBeUndefined();
 	});
+
+	test('requests clipboard-write, so the "Link kopieren" button works in the sandbox', async () => {
+		const { resources } = register();
+		const resource = resources.find((entry) => entry.uri === MCP_APP_RESOURCE_URI);
+		const read = (await resource!.read()) as {
+			contents: { _meta?: { ui?: { permissions?: { clipboardWrite?: object } } } }[];
+		};
+
+		expect(read.contents[0]?._meta?.ui?.permissions?.clipboardWrite).toEqual({});
+	});
 });
 
 describe('the event tools', () => {
@@ -110,6 +120,9 @@ describe('the event tools', () => {
 		const { tools } = register();
 
 		expect(toolNamed(tools, 'get_event').config._meta).toBeUndefined();
+		expect(toolNamed(tools, 'add_invitations').config._meta).toBeUndefined();
+		expect(toolNamed(tools, 'mark_invitation_sent').config._meta).toBeUndefined();
+		expect(toolNamed(tools, 'get_invitation_links').config._meta).toBeUndefined();
 		expect(toolNamed(tools, 'delete_invitation').config._meta).toBeUndefined();
 		expect(toolNamed(tools, 'delete_invitation').config.annotations).toEqual({ destructiveHint: true });
 	});

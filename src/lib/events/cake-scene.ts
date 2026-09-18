@@ -116,11 +116,14 @@ function normalize(model: Group): void {
 
 // one call builds the whole thing and hands back the verbs a canvas needs: render, resize, poke,
 // dispose. the caller owns the animation loop, so react never has to know what three.js is.
+// onReady fires once the mesh is actually in the scene: until then the canvas draws nothing, and
+// the caller has a skeleton to hold the space instead of a hole that fills in with a jump.
 export function createCakeScene(
 	modelUrl: string,
 	canvas: HTMLCanvasElement,
 	width: number,
-	height: number
+	height: number,
+	onReady?: () => void
 ): DecorationScene {
 	const track: Disposable[] = [];
 	const renderer = new WebGLRenderer({ alpha: true, antialias: true, canvas });
@@ -205,6 +208,7 @@ export function createCakeScene(
 
 		normalize(model);
 		pivot.add(model);
+		onReady?.();
 	});
 
 	return {

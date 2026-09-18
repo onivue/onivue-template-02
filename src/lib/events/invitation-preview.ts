@@ -2,6 +2,7 @@ import type { AddressColumns } from '@/lib/events/event-location';
 
 import { formatBerlin } from '@/lib/events/berlin-time';
 import { addressSingleLine, toEventAddress } from '@/lib/events/event-location';
+import { parseRichText, richTextToPlainText } from '@/lib/events/rich-text';
 
 const SEPARATOR = ' · ';
 const MAX_LENGTH = 200;
@@ -33,7 +34,7 @@ export function invitationPreviewDescription(event: InvitationPreviewEvent): str
 		return shorten(facts);
 	}
 
-	const greeting = event.greeting ? firstLine(event.greeting) : '';
+	const greeting = firstLine(richTextToPlainText(parseRichText(event.greeting)));
 
 	return greeting ? shorten(greeting) : FALLBACK;
 }

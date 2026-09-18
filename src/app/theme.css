@@ -273,6 +273,64 @@
 	padding-inline: 1.1rem;
 }
 
+/* the rich text control shares the textarea's surface, but the thing that takes focus is the
+   contenteditable inside it, so the ring has to answer to a descendant */
+@utility design-richtext {
+	@apply design-control;
+	border-radius: var(--radius-2xl);
+	overflow: hidden;
+
+	&:focus-within {
+		border-color: var(--lime-glow);
+		box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring) 45%, transparent);
+	}
+}
+
+/* one set of rules for the editor and for the guest page, so what a host writes is what a guest
+   reads. bullets sit inside the line box: the same list has to look right centred under a
+   greeting and left-aligned in a panel. */
+@utility design-richtext-body {
+	display: grid;
+	gap: 0.6rem;
+
+	& strong {
+		font-weight: 700;
+	}
+
+	& em {
+		font-style: italic;
+	}
+
+	/* a list item holds a paragraph, so the marker has to sit outside it — an inside marker and a
+	   block child land on two different lines. the list keeps its own alignment for the one place
+	   this body is centred: bullets under a centred greeting would otherwise drift away from their
+	   text. */
+	& ul {
+		list-style: disc outside;
+		padding-inline-start: 1.25rem;
+		text-align: left;
+	}
+
+	& li + li,
+	& li > ul {
+		margin-block-start: 0.25rem;
+	}
+
+	/* a blank line between two paragraphs is a line the host typed on purpose */
+	& p:empty {
+		min-height: 1lh;
+	}
+
+	/* the tiptap placeholder: an attribute on the empty first paragraph, not a node of its own */
+	& p.is-empty:first-child::before {
+		color: var(--ink-soft);
+		content: attr(data-placeholder);
+		float: left;
+		height: 0;
+		pointer-events: none;
+	}
+}
+
 /* the vertical rhythm of a form: one gap between fields, one between a label and its control */
 @utility design-form {
 	display: grid;
