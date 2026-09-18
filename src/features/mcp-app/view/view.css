@@ -1,0 +1,31 @@
+/* the MCP app's stylesheet. it pulls the same tokens, base layer and design-* utilities the site
+   uses, so the app rendered inside the host is the app, not a lookalike. source(none) plus the
+   explicit @source lines keep the bundle to the classes these files actually use. */
+@import 'tailwindcss' source(none);
+@import '../../../app/theme.css';
+
+@source './';
+@source '../invitation-status.ts';
+@source '../../../components/ui/badge.tsx';
+@source '../../../components/ui/button.tsx';
+@source '../../../components/ui/skeleton.tsx';
+
+/* the sandbox loads no webfont, so the brand face is named but never fetched. giving it a literal
+   value here also keeps --font-sans free of a cycle when the host overrides it below. */
+:root {
+	--font-space-grotesk: 'Space Grotesk';
+}
+
+@layer base {
+	/* the variable, not the inlined chain: a host that sends --font-sans gets to set the type, and
+	   without one this still resolves to the brand stack from the theme */
+	html {
+		font-family: var(--font-sans);
+	}
+
+	body {
+		margin: 0;
+		/* the host sizes the frame from the content, so the view must not stretch to the viewport */
+		min-height: 0;
+	}
+}

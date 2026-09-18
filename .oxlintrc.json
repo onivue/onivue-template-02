@@ -28,6 +28,7 @@
 	],
 	"rules": {
 		"import/no-unassigned-import": "off",
+		"no-underscore-dangle": ["warn", { "allow": ["_meta"] }],
 		"react/react-in-jsx-scope": "off"
 	},
 	"settings": {

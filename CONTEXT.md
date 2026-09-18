@@ -166,6 +166,23 @@ nameless.
 Shapes and mapping live in [`src/lib/mcp/mcp-connection.ts`](src/lib/mcp/mcp-connection.ts);
 disconnecting is an Account Action.
 
+## MCP App
+
+The interface an MCP host renders in the conversation when a tool result carries one
+(SEP-1865, extension `io.modelcontextprotocol/ui`). One App exists: the events, the invitations of
+the event that is open, and the deletion of a single invitation.
+
+It is a **view over the tools, not a second way in**. Every read and every write it performs is a
+`tools/call` the host makes on its behalf, against the same tools the model uses — so an App can
+never reach past a Scope its Viewer did not grant. It carries the app's own design system rather
+than a lookalike, and takes only light or dark from the host.
+
+A tool joins an App by naming its resource in `_meta.ui.resourceUri`; nothing else about the tool
+changes, and a host without App support reads the same text result as before.
+
+Lives in [`src/features/mcp-app/`](src/features/mcp-app/), built into one self-contained HTML
+document by `scripts/build-mcp-app.ts`.
+
 ## Account Overview
 
 Everything the account page needs about a Viewer beyond the Viewer itself: whether they have a
